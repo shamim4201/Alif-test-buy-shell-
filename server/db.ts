@@ -760,6 +760,45 @@ class Database {
         communicationRating: 5,
         transferSpeedRating: 5,
         createdAt: '2026-10-07T16:00:00.000Z'
+      },
+      {
+        id: 'rev_108',
+        channelId: 'chn_auntie_kitchen',
+        channelTitle: "Auntie's Village Kitchen (আন্টির রান্নাঘর ও গ্রামীণ রেসিপি)",
+        buyerId: 'usr_buyer_2',
+        buyerName: 'ফারহান মাহমুদ (Dhaka Media)',
+        sellerId: seller1.id,
+        rating: 5,
+        comment: 'অনলাইনে চ্যানেল কেনা নিয়ে অনেক ভয় ছিল, কিন্তু ChannelTrust-এর এসক্রো সিস্টেম আমাকে ১০০% নিশ্চিন্ত করেছে। যতক্ষণ না আমি নিজে গুগল ব্র্যান্ড একাউন্টের প্রাইমারি ওনার হলাম, ততক্ষণ সেলার কোনো টাকা পায়নি। কোনো প্রতারণার সুযোগ নেই, সবচেয়ে বিশ্বস্ত প্ল্যাটফর্ম!',
+        communicationRating: 5,
+        transferSpeedRating: 5,
+        createdAt: '2026-10-09T10:15:00.000Z'
+      },
+      {
+        id: 'rev_109',
+        channelId: 'chn_daily_mindset',
+        channelTitle: 'Daily Stoic Wisdom & Focus',
+        buyerId: 'usr_buyer_3',
+        buyerName: 'মাহিনুর রহমান (TechBangla Creator)',
+        sellerId: seller1.id,
+        rating: 5,
+        comment: 'এখানে কোনো জিমেইল পাসওয়ার্ড চাওয়া হয় না, যা সবচেয়ে বড় সিকিউরিটি! অফিশিয়াল ইউটিউব স্টুডিও ওনারশিপ ট্রান্সফারের নিয়মে সব সুন্দরভাবে সম্পন্ন হয়েছে। সাপোর্ট টিম প্রতি মুহূর্তে সহায়তা করেছে। ১০০% ট্রাস্টেড!',
+        communicationRating: 5,
+        transferSpeedRating: 5,
+        createdAt: '2026-10-10T14:20:00.000Z'
+      },
+      {
+        id: 'rev_110',
+        channelId: 'chn_auntie_bakes',
+        channelTitle: "Auntie Ruby's Quick Sweets & Homemade Snacks (আন্টির সহজ রেসিপি)",
+        buyerId: 'usr_buyer_4',
+        buyerName: 'ইমরান হোসাইন (Digital Venture)',
+        sellerId: seller2.id,
+        rating: 5,
+        comment: 'চ্যানেলের লাইভ অ্যানালিটিক্স, অর্গানিক অডিয়েন্স এবং মনিটাইজেশন ক্লিন স্ট্রাইক প্রমাণ ১০০% মিলে গেছে। ৭ দিনের কুলডাউন পিরিয়ডে সেলার ও প্ল্যাটফর্মের দায়িত্বশীলতা ছিল অসাধারণ। চোখ বন্ধ করে বিশ্বাস করা যায়।',
+        communicationRating: 5,
+        transferSpeedRating: 5,
+        createdAt: '2026-10-11T16:40:00.000Z'
       }
     ];
 

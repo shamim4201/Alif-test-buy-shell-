@@ -12,6 +12,7 @@ import { uploadRouter } from './server/routes/upload';
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', true);
   const PORT = Number(process.env.PORT) || 3000;
   const isProduction = process.env.NODE_ENV === 'production';
 
