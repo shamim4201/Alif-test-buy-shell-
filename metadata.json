@@ -1,0 +1,6 @@
+{
+  "name": "ChannelTrust - YouTube Channel Marketplace",
+  "description": "Professional, verified YouTube channel marketplace for creators and investors to buy and sell monetized channels safely.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
