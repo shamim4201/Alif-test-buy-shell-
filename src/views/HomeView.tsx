@@ -36,8 +36,21 @@ interface HomeViewProps {
   onSearchChange?: (term: string) => void;
 }
 
+const PLATFORMS: { id: string; label: string; icon: string; countHint?: string; desc: string; badgeColor: string }[] = [
+  { id: 'all', label: 'সকল অ্যাকাউন্ট (All Platforms)', icon: '🌟', desc: 'সব প্ল্যাটফর্মের ভেরিফাইড অ্যাকাউন্ট', badgeColor: 'border-slate-700 bg-slate-900/90 text-white' },
+  { id: 'youtube', label: '🔴 YouTube (ইউটিউব)', icon: '🔴', desc: 'মনিটাইজড ও ক্যাশ কাউ চ্যানেল', badgeColor: 'border-red-600/70 bg-red-950/80 text-red-300' },
+  { id: 'facebook', label: '🔵 Facebook (ফেসবুক)', icon: '🔵', desc: 'ইনস্ট্রিম অ্যাড ও গ্রিন পেজ', badgeColor: 'border-blue-600/70 bg-blue-950/80 text-blue-300' },
+  { id: 'tiktok', label: '🎵 TikTok (টিকটক)', icon: '🎵', desc: 'ক্রিয়েটর রিওয়ার্ডস ও শপ আইডি', badgeColor: 'border-cyan-500/70 bg-cyan-950/80 text-cyan-300' },
+  { id: 'instagram', label: '📸 Instagram (ইনস্টাগ্রাম)', icon: '📸', desc: 'থিম পেজ ও ইনফ্লুয়েন্সার অ্যাকাউন্ট', badgeColor: 'border-pink-500/70 bg-pink-950/80 text-pink-300' },
+  { id: 'telegram', label: '✈️ Telegram (টেলিগ্রাম)', icon: '✈️', desc: 'মেম্বার ও সিগন্যাল চ্যানেল', badgeColor: 'border-sky-500/70 bg-sky-950/80 text-sky-300' },
+  { id: 'twitter', label: '🐦 X / Twitter (টুইটার)', icon: '🐦', desc: 'ব্লু ব্যাজ ও এডস রেভিনিউ একাউন্ট', badgeColor: 'border-slate-500/70 bg-zinc-900/80 text-slate-200' },
+];
+
 const ACCOUNT_TYPES: { id: string; label: string; icon: string; countHint?: string }[] = [
   { id: 'all', label: 'সকল ক্যাটাগরি (All Types)', icon: '🌟' },
+  { id: 'facebook_page', label: 'ফেসবুক পেজ ও গ্রুপ (Facebook Page)', icon: '🔵' },
+  { id: 'tiktok_viral', label: 'টিকটক ভাইরাল আইডি (TikTok Rewards)', icon: '🎵' },
+  { id: 'instagram_theme', label: 'ইনস্টাগ্রাম থিম পেজ (Instagram)', icon: '📸' },
   { id: 'cooking_lifestyle', label: 'আন্টির রান্না ও কিচেন (Auntie Cooking)', icon: '👩‍🍳' },
   { id: 'faceless_cash_cow', label: 'ফেসলেস ক্যাশ কাউ (Cash Cow)', icon: '🤖' },
   { id: 'shorts_creator', label: 'ভাইরাল শর্টস চ্যানেল (Shorts)', icon: '⚡' },
@@ -65,6 +78,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const { showToast } = useAuth();
   const [channels, setChannels] = useState<ChannelListing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPlatform, setSelectedPlatform] = useState('all');
   const [selectedAccountType, setSelectedAccountType] = useState('all');
   const [budgetPreset, setBudgetPreset] = useState('all');
   const [currency, setCurrency] = useState<'USD' | 'BDT'>('USD');
@@ -79,7 +93,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   // Custom Buyer Request Modal
   const [requestModalOpen, setRequestModalOpen] = useState(false);
-  const [reqBudget, setReqBudget] = useState('$2,000 - $5,000');
+  const [reqPlatform, setReqPlatform] = useState('all');
+  const [reqBudget, setReqBudget] = useState('$1,000 - $3,000');
   const [reqType, setReqType] = useState('cooking_lifestyle');
   const [reqSubs, setReqSubs] = useState('50k - 100k');
   const [reqNote, setReqNote] = useState('');
@@ -102,6 +117,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       const res = await api.getChannels({
         search: searchTerm.trim() || undefined,
+        platform: selectedPlatform !== 'all' ? selectedPlatform : undefined,
         accountType: selectedAccountType !== 'all' ? selectedAccountType : undefined,
         budgetPreset: budgetPreset !== 'all' ? budgetPreset : undefined,
         monetization: monetizationFilter !== 'all' ? monetizationFilter : undefined,
@@ -122,10 +138,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   useEffect(() => {
     fetchChannels();
-  }, [searchTerm, selectedAccountType, budgetPreset, monetizationFilter, verifiedOnly, sort, subRange, minPrice, maxPrice]);
+  }, [searchTerm, selectedPlatform, selectedAccountType, budgetPreset, monetizationFilter, verifiedOnly, sort, subRange, minPrice, maxPrice]);
 
   const resetAllFilters = () => {
     onSearchChange?.('');
+    setSelectedPlatform('all');
     setSelectedAccountType('all');
     setBudgetPreset('all');
     setMonetizationFilter('all');
@@ -136,13 +153,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   const handleQuickAuntieFilter = () => {
+    setSelectedPlatform('youtube');
     setSelectedAccountType('cooking_lifestyle');
-    window.scrollTo({ top: 600, behavior: 'smooth' });
+    window.scrollTo({ top: 700, behavior: 'smooth' });
   };
 
   const handleSubmitCustomRequest = (e: React.FormEvent) => {
     e.preventDefault();
-    showToast('আপনার চ্যানেল রিকোয়েস্ট জমা হয়েছে! আমাদের টিম আপনার বাজেটের চ্যানেল খুঁজে ম্যাচ করিয়ে দেবে।', 'success');
+    showToast('আপনার অ্যাকাউন্ট রিকোয়েস্ট জমা হয়েছে! আমাদের টিম শীঘ্রই যোগাযোগ করবে।', 'success');
     setRequestModalOpen(false);
     setReqNote('');
   };
@@ -150,17 +168,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const featuredChannels = channels.filter((c) => c.isFeatured);
 
   // Render the filter panel (used on desktop sidebar and mobile drawer)
-  // সার্চ বার এখান থেকে বের করে উপরে লোগোর পাশে রাখা হয়েছে
   const renderSidebarFilters = () => (
     <div className="space-y-6 text-slate-200">
       {/* 1. Sidebar Header & Active Search Status */}
       <div className="pb-3 border-b border-slate-800/80">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-red-500" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white">ফিল্টার ও বাজেট</h3>
+            <Filter className="w-4 h-4 text-blue-500" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white">ফিল্টার ও প্ল্যাটফর্ম</h3>
           </div>
-          {(searchTerm || selectedAccountType !== 'all' || budgetPreset !== 'all' || monetizationFilter !== 'all' || verifiedOnly || minPrice || maxPrice || subRange !== 'all') && (
+          {(searchTerm || selectedPlatform !== 'all' || selectedAccountType !== 'all' || budgetPreset !== 'all' || monetizationFilter !== 'all' || verifiedOnly || minPrice || maxPrice || subRange !== 'all') && (
             <button
               onClick={resetAllFilters}
               className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1 font-semibold transition"
@@ -174,13 +191,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* Top Search Active Indicator & Quick Search on Side */}
         <div className="mt-2.5 space-y-2">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-red-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => onSearchChange?.(e.target.value)}
-              placeholder="সার্চ করুন (আন্টির রান্না, Cash cow...)"
-              className="w-full bg-slate-950/90 border border-slate-800 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-hidden focus:border-red-500 transition shadow-inner"
+              placeholder="সার্চ (Facebook, YouTube, TikTok, আন্টি...)"
+              className="w-full bg-slate-950/90 border border-slate-800 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-hidden focus:border-blue-500 transition shadow-inner"
             />
             {searchTerm && (
               <button
@@ -193,7 +210,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             )}
           </div>
           {searchTerm && (
-            <div className="p-1.5 rounded-lg bg-red-950/40 border border-red-800/50 flex items-center justify-between text-[11px]">
+            <div className="p-1.5 rounded-lg bg-blue-950/40 border border-blue-800/50 flex items-center justify-between text-[11px]">
               <span className="text-slate-300 truncate">
                 সক্রিয় সার্চ: <strong className="text-white">"{searchTerm}"</strong>
               </span>
@@ -209,19 +226,47 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Account Type Filter on Side */}
+      {/* 2. Platform Selector Filter on Side */}
       <div>
         <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2.5">
-          চ্যানেল টাইপ (Account Type)
+          প্ল্যাটফর্ম (Platform)
         </label>
-        <div className="space-y-1.5">
+        <div className="space-y-1">
+          {PLATFORMS.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setSelectedPlatform(p.id)}
+              className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium transition flex items-center justify-between ${
+                selectedPlatform === p.id
+                  ? 'bg-blue-600/25 text-white border border-blue-500/70 font-bold shadow-xs'
+                  : 'bg-slate-950/70 border border-slate-900 text-slate-400 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <span className="flex items-center gap-2 truncate">
+                <span>{p.icon}</span>
+                <span className="truncate">{p.label}</span>
+              </span>
+              {selectedPlatform === p.id && (
+                <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. Account Type Filter on Side */}
+      <div>
+        <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2.5">
+          ক্যাটাগরি টাইপ (Category)
+        </label>
+        <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
           {ACCOUNT_TYPES.map((type) => (
             <button
               key={type.id}
               onClick={() => setSelectedAccountType(type.id)}
-              className={`w-full px-3 py-2 rounded-xl text-left text-xs font-medium transition flex items-center justify-between ${
+              className={`w-full px-3 py-1.5 rounded-xl text-left text-xs font-medium transition flex items-center justify-between ${
                 selectedAccountType === type.id
-                  ? 'bg-red-600/20 text-white border border-red-500/60 font-bold'
+                  ? 'bg-purple-600/25 text-white border border-purple-500/60 font-bold'
                   : 'bg-slate-950/70 border border-slate-900 text-slate-400 hover:text-white hover:bg-slate-900'
               }`}
             >
@@ -230,7 +275,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <span className="truncate">{type.label}</span>
               </span>
               {selectedAccountType === type.id && (
-                <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
               )}
             </button>
           ))}
@@ -343,48 +388,73 @@ export const HomeView: React.FC<HomeViewProps> = ({
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-10 pb-16 border-b border-slate-900 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(225,29,72,0.12),transparent_50%)] pointer-events-none" />
+      <section className="relative overflow-hidden pt-10 pb-14 border-b border-slate-900 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(59,130,246,0.12),transparent_50%)] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-3xl mx-auto text-center space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/50 border border-red-800/60 text-xs font-semibold text-red-300">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/60 border border-blue-800/60 text-xs font-semibold text-blue-300 shadow-xs">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Zero Password Policy • ১০০% নিরাপদ ব্র্যান্ড একাউন্ট ট্রান্সফার</span>
+              <span>Multi-Platform Escrow • নিরাপদ অ্যাকাউন্ট ও চ্যানেল ট্রান্সফার</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-              আপনার বাজেটের ভেতরে <br />
-              <span className="bg-gradient-to-r from-red-500 via-rose-500 to-amber-400 bg-clip-text text-transparent">
-                ইউটিউব চ্যানেল কিনুন ও বিক্রি করুন
+              ফেসবুক, ইউটিউব, টিকটক সহ <br />
+              <span className="bg-gradient-to-r from-blue-400 via-rose-500 to-amber-400 bg-clip-text text-transparent">
+                সোশ্যাল মিডিয়া অ্যাকাউন্ট মার্কেটপ্লেস
               </span>
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl mx-auto">
-              আন্টির ভিলেজ রান্না ও কিচেন চ্যানেল, ফেসলেস ক্যাশ কাউ, ভাইরাল শর্টস এবং পুরানো ভিন্টেজ অ্যাকাউন্ট—আপনার বাজেটের মধ্যে সাইডবার ফিল্টার করে খুঁজে নিন।
+              ফেসবুক ইনস্ট্রিম অ্যাড পেজ, ইউটিউব চ্যানেল, টিকটক ক্রিয়েটর রিওয়ার্ডস, ইনস্টাগ্রাম থিম পেজ, টেলিগ্রাম সিগন্যাল ও এক্স (Twitter) অ্যাকাউন্ট—১০০% নিরাপদ এস্ক্রো সিস্টেমে যাচাইকৃত অ্যাকাউন্ট কিনুন ও বিক্রি করুন।
             </p>
 
             {/* Quick Action Buttons */}
             <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
               <button
-                onClick={handleQuickAuntieFilter}
-                className="px-4 py-2 rounded-xl bg-amber-950/70 hover:bg-amber-900/80 border border-amber-700/60 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                onClick={() => {
+                  setSelectedPlatform('facebook');
+                  window.scrollTo({ top: 600, behavior: 'smooth' });
+                }}
+                className="px-3.5 py-2 rounded-xl bg-blue-950/80 hover:bg-blue-900/90 border border-blue-600/70 text-blue-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
               >
-                <span>👩‍🍳 আন্টির রান্না ও কিচেন চ্যানেল দেখুন</span>
+                <span>🔵 ফেসবুক পেজ</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedPlatform('youtube');
+                  window.scrollTo({ top: 600, behavior: 'smooth' });
+                }}
+                className="px-3.5 py-2 rounded-xl bg-red-950/80 hover:bg-red-900/90 border border-red-600/70 text-red-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              >
+                <span>🔴 ইউটিউব চ্যানেল</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedPlatform('tiktok');
+                  window.scrollTo({ top: 600, behavior: 'smooth' });
+                }}
+                className="px-3.5 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900/90 border border-cyan-600/70 text-cyan-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              >
+                <span>🎵 টিকটক অ্যাকাউন্ট</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
               <button
                 onClick={() => setRequestModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-blue-950/70 hover:bg-blue-900/80 border border-blue-700/60 text-blue-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                className="px-3.5 py-2 rounded-xl bg-purple-950/80 hover:bg-purple-900/90 border border-purple-600/70 text-purple-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
               >
                 <Tag className="w-3.5 h-3.5" />
-                <span>বাজেট অনুযায়ী চ্যানেল রিকোয়েস্ট</span>
+                <span>কাস্টম অ্যাকাউন্ট রিকোয়েস্ট</span>
               </button>
 
               <button
                 onClick={() => setCurrency(currency === 'USD' ? 'BDT' : 'USD')}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition"
+                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition"
               >
                 <span>কারেন্সি: {currency === 'USD' ? '$ USD' : '৳ BDT'}</span>
               </button>
@@ -393,49 +463,79 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* Featured Highlight for Auntie's Cooking / Family Channels */}
-      <section className="py-6 bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/30 border-b border-slate-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-2xl shrink-0">
-              👩‍🍳
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                <span>আন্টির রান্না ও কিচেন একাউন্ট (Auntie Cooking Channels)</span>
-                <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full uppercase">
-                  জনপ্রিয়
+      {/* Main Browse Section with SIDEBAR Layout */}
+      <section className="py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Prominent Horizontal Platform Cards Selector */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>প্ল্যাটফর্ম নির্বাচন করুন</span>
+                  <span className="hidden sm:inline text-[11px] px-2 py-0.5 rounded-full bg-blue-900/50 text-blue-300 font-semibold border border-blue-500/30">
+                    Facebook • YouTube • TikTok • Instagram • Telegram • X
+                  </span>
                 </span>
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                অরগানিক ফ্যামিলি রেসিপি, ভিলেজ কিচেন ও রান্নার চ্যানেল—রেগুলার অডিয়েন্স ও মনিটাইজড ইনকাম সহ প্রস্তুত।
-              </p>
+              </div>
+              {selectedPlatform !== 'all' && (
+                <button
+                  onClick={() => setSelectedPlatform('all')}
+                  className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 transition cursor-pointer"
+                >
+                  <span>সবগুলো দেখুন (All)</span>
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              {PLATFORMS.map((p) => {
+                const isSelected = selectedPlatform === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedPlatform(p.id)}
+                    className={`relative p-3 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between group cursor-pointer ${
+                      isSelected
+                        ? `${p.badgeColor} ring-2 ring-blue-500 shadow-lg shadow-blue-950/50 scale-[1.02]`
+                        : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white hover:bg-slate-850'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xl sm:text-2xl">{p.icon}</span>
+                      {isSelected && (
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-xs shadow-emerald-400"></span>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-bold truncate leading-tight">
+                        {p.label.split(' ')[0] === '🔴' || p.label.split(' ')[0] === '🔵' || p.label.split(' ')[0] === '🎵' || p.label.split(' ')[0] === '📸' || p.label.split(' ')[0] === '✈️' || p.label.split(' ')[0] === '🐦' || p.label.split(' ')[0] === '🌟'
+                          ? p.label.slice(2)
+                          : p.label}
+                      </div>
+                      <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                        {p.desc}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <button
-            onClick={handleQuickAuntieFilter}
-            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition shrink-0 shadow-md shadow-amber-500/20"
-          >
-            কুকিং চ্যানেলগুলো দেখুন →
-          </button>
-        </div>
-      </section>
-
-      {/* Main Browse Section with SIDEBAR Layout (সার্চ ও ফিল্টার এখন পাশে থাকবে) */}
-      <section className="py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Bar above Listings */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-850">
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-                <span>চ্যানেল মার্কেটপ্লেস</span>
+                <span>অ্যাকাউন্ট ও চ্যানেল মার্কেটপ্লেস</span>
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300">
-                  {channels.length} টি চ্যানেল
+                  {channels.length} টি অ্যাকাউন্ট
                 </span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                বামে থাকা সাইডবার থেকে আপনার পছন্দের বাজেট ও একাউন্ট টাইপ নির্বাচন করুন।
+                {selectedPlatform === 'all'
+                  ? 'ফেসবুক, ইউটিউব, টিকটক, ইনস্টাগ্রাম, টেলিগ্রাম ও এক্স এর সকল ভেরিফাইড অ্যাকাউন্ট।'
+                  : `${selectedPlatform.toUpperCase()} প্ল্যাটফর্মের নির্বাচিত অ্যাকাউন্টসমূহ।`}
               </p>
             </div>
 
@@ -741,14 +841,33 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>নির্দিষ্ট বাজেট অনুযায়ী চ্যানেল রিকোয়েস্ট করুন</span>
+                <span>নির্দিষ্ট বাজেট অনুযায়ী অ্যাকাউন্ট রিকোয়েস্ট করুন</span>
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                আপনার বাজেট ও পছন্দের ক্যাটাগরি (যেমন আন্টির রান্না, ক্যাশ কাউ, গেমিং) উল্লেখ করুন।
+                ফেসবুক, ইউটিউব, টিকটক, ইনস্টাগ্রাম, টেলিগ্রাম বা এক্স এর যে অ্যাকাউন্ট চান তা উল্লেখ করুন।
               </p>
             </div>
 
             <form onSubmit={handleSubmitCustomRequest} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  কোন প্ল্যাটফর্মের অ্যাকাউন্ট লাগবে? (Select Platform)
+                </label>
+                <select
+                  value={reqPlatform}
+                  onChange={(e) => setReqPlatform(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                >
+                  <option value="all">যেকোনো প্ল্যাটফর্ম (Any Platform)</option>
+                  <option value="facebook">🔵 ফেসবুক পেজ বা গ্রুপ (Facebook)</option>
+                  <option value="youtube">🔴 ইউটিউব চ্যানেল (YouTube)</option>
+                  <option value="tiktok">🎵 টিকটক অ্যাকাউন্ট (TikTok)</option>
+                  <option value="instagram">📸 ইনস্টাগ্রাম পেজ (Instagram)</option>
+                  <option value="telegram">✈️ টেলিগ্রাম চ্যানেল (Telegram)</option>
+                  <option value="twitter">🐦 এক্স / টুইটার (Twitter / X)</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
                   আপনার বাজেট (কত টাকার ভেতরে কিনতে চান?)
@@ -768,19 +887,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  কোন ধরণের চ্যানেল কিনতে চান? (Account Type)
+                  ক্যাটাগরি বা ধরন (Account Type / Niche)
                 </label>
                 <select
                   value={reqType}
                   onChange={(e) => setReqType(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
                 >
-                  <option value="cooking_lifestyle">👩‍🍳 আন্টির রান্না ও কিচেন রেসিপি (Cooking & Lifestyle)</option>
-                  <option value="faceless_cash_cow">🤖 ফেসলেস ক্যাশ কাউ (Faceless Cash Cow)</option>
-                  <option value="shorts_creator">⚡ ভাইরাল শর্টস চ্যানেল (Shorts Creator)</option>
+                  <option value="facebook_page">📄 ফেসবুক মনিটাইজড পেজ (In-Stream Ads)</option>
+                  <option value="tiktok_viral">⚡ টিকটক ক্রিয়েটর রিওয়ার্ডস ও শপ (TikTok)</option>
+                  <option value="instagram_theme">🎨 ইনস্টাগ্রাম থিম ও ইনফ্লুয়েন্সার পেজ</option>
+                  <option value="cooking_lifestyle">👩‍🍳 আন্টির রান্না ও কিচেন রেসিপি (Cooking)</option>
+                  <option value="faceless_cash_cow">🤖 ফেসলেস ক্যাশ কাউ চ্যানেল (Cash Cow)</option>
+                  <option value="shorts_creator">⚡ ভাইরাল শর্টস বা রিলস একাউন্ট</option>
                   <option value="gaming_stream">🎮 গেমিং ও টেক চ্যানেল (Gaming & Tech)</option>
-                  <option value="vintage_aged">🏛️ ভিন্টেজ পুরানো একাউন্ট (Vintage 2012-2018)</option>
-                  <option value="high_cpm_finance">💰 হাই CPM ফিন্যান্স ও বিজনেস (Finance)</option>
+                  <option value="vintage_aged">🏛️ পুরানো ভিন্টেজ একাউন্ট (Aged 2014-2020)</option>
+                  <option value="high_cpm_finance">💰 হাই CPM ফিন্যান্স, ক্রিপ্টো ও ট্রেডিং</option>
                 </select>
               </div>
 

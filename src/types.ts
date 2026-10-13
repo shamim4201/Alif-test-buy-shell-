@@ -24,6 +24,8 @@ export interface AudienceData {
   genderSplit: { male: number; female: number };
 }
 
+export type PlatformType = 'youtube' | 'facebook' | 'tiktok' | 'instagram' | 'telegram' | 'twitter';
+
 export type AccountType =
   | 'cooking_lifestyle'
   | 'faceless_cash_cow'
@@ -33,6 +35,11 @@ export type AccountType =
   | 'high_cpm_finance'
   | 'vlog_personal'
   | 'education_tech'
+  | 'facebook_page'
+  | 'tiktok_viral'
+  | 'instagram_theme'
+  | 'telegram_signal'
+  | 'twitter_crypto'
   | 'general';
 
 export interface ChannelListing {
@@ -42,6 +49,7 @@ export interface ChannelListing {
   sellerEmail: string;
   sellerRating: number;
   sellerDealsCount: number;
+  platform?: PlatformType; // 'youtube' | 'facebook' | 'tiktok' | 'instagram' | 'telegram' | 'twitter'
   title: string;
   handle: string;
   channelUrl: string;
@@ -49,13 +57,16 @@ export interface ChannelListing {
   accountType?: AccountType;
   primaryLanguage?: string;
   tags?: string[];
-  subscribers: number;
+  subscribers: number; // For FB/TikTok/IG/Twitter: Followers, For TG: Members, For YT: Subscribers
   lifetimeViews: number;
   monthlyViews: number;
   monthlyRevenue: number;
   monetizationStatus: MonetizationStatus;
   strikeStatus: StrikeStatus;
   hasSilverButton?: boolean;
+  pageQuality?: 'green' | 'yellow' | 'red';
+  isVerifiedBadge?: boolean;
+  monetizationTool?: string; // e.g. "In-Stream Ads", "TikTok Creator Rewards", "AdSense", "TikTok Shop"
   askingPrice: number;
   minOfferPrice?: number;
   description: string;

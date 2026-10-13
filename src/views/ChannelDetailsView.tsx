@@ -160,7 +160,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
               rel="noopener noreferrer"
               className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition"
             >
-              <span>Verify on YouTube</span>
+              <span>Verify on {channel.platform === 'facebook' ? 'Facebook' : channel.platform === 'tiktok' ? 'TikTok' : channel.platform === 'instagram' ? 'Instagram' : channel.platform === 'telegram' ? 'Telegram' : channel.platform === 'twitter' ? 'X / Twitter' : 'YouTube'}</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -174,9 +174,48 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
             {/* Header Card */}
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
+                {/* Platform Badge */}
+                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                  channel.platform === 'facebook'
+                    ? 'bg-blue-950 text-blue-300 border-blue-600/70'
+                    : channel.platform === 'tiktok'
+                    ? 'bg-cyan-950 text-cyan-300 border-cyan-500/70'
+                    : channel.platform === 'instagram'
+                    ? 'bg-pink-950 text-pink-300 border-pink-500/70'
+                    : channel.platform === 'telegram'
+                    ? 'bg-sky-950 text-sky-300 border-sky-500/70'
+                    : channel.platform === 'twitter'
+                    ? 'bg-zinc-900 text-slate-200 border-slate-500/70'
+                    : 'bg-red-950 text-red-300 border-red-600/70'
+                }`}>
+                  {channel.platform === 'facebook'
+                    ? '🔵 Facebook Page'
+                    : channel.platform === 'tiktok'
+                    ? '🎵 TikTok Account'
+                    : channel.platform === 'instagram'
+                    ? '📸 Instagram Page'
+                    : channel.platform === 'telegram'
+                    ? '✈️ Telegram Channel'
+                    : channel.platform === 'twitter'
+                    ? '🐦 X / Twitter'
+                    : '🔴 YouTube Channel'}
+                </span>
+
                 {channel.accountType === 'cooking_lifestyle' ? (
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-950 text-amber-300 border border-amber-700/60">
                     👩‍🍳 আন্টির রান্না ও রেসিপি / Cooking &amp; Lifestyle
+                  </span>
+                ) : channel.accountType === 'facebook_page' ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-950 text-blue-300 border border-blue-700/60">
+                    📄 ইনস্ট্রিম অ্যাড মনিটাইজড পেজ
+                  </span>
+                ) : channel.accountType === 'tiktok_viral' ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-cyan-950 text-cyan-300 border border-cyan-700/60">
+                    ⚡ ক্রিয়েটর রিওয়ার্ডস ও শপ
+                  </span>
+                ) : channel.accountType === 'instagram_theme' ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-pink-950 text-pink-300 border border-pink-700/60">
+                    🎨 থিম পেজ ও ব্র্যান্ড শাউটআউট
                   </span>
                 ) : channel.accountType === 'faceless_cash_cow' ? (
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-950 text-purple-300 border border-purple-700/60">
@@ -188,18 +227,25 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                   </span>
                 ) : channel.accountType === 'vintage_aged' ? (
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/60">
-                    🏛️ Vintage {channel.creationYear} Aged Channel
+                    🏛️ Vintage {channel.creationYear} Aged Account
                   </span>
                 ) : (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-950 text-red-400 border border-red-800/60">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
                     {channel.niche}
                   </span>
                 )}
 
-                {channel.verificationStatus === 'approved' && (
+                {channel.pageQuality === 'green' && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
                     <ShieldCheck className="w-4 h-4" />
-                    Verified Channel &amp; Analytics
+                    100% Green Page Quality
+                  </span>
+                )}
+
+                {channel.verificationStatus === 'approved' && !channel.pageQuality && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
+                    <ShieldCheck className="w-4 h-4" />
+                    Verified Account &amp; Analytics
                   </span>
                 )}
 
@@ -606,31 +652,46 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Your Clean Google/Gmail Account (For YouTube Brand Account Manager Invite)
+                  {channel.platform === 'facebook'
+                    ? 'আপনার ফেসবুক প্রোফাইল লিংক বা ইমেইল (Facebook Page Admin ইনভাইটেশন পাওয়ার জন্য) *'
+                    : channel.platform === 'tiktok'
+                    ? 'আপনার ইমেইল বা ফোন নম্বর (TikTok একাউন্ট হস্তান্তরের জন্য) *'
+                    : channel.platform === 'instagram'
+                    ? 'আপনার ইমেইল ঠিকানা (Instagram একাউন্ট ও ওজি ইমেইল ট্রান্সফারের জন্য) *'
+                    : channel.platform === 'telegram'
+                    ? 'আপনার টেলিগ্রাম ইউজারনেম (@username) বা ফোন (Owner Rights ট্রান্সফারের জন্য) *'
+                    : channel.platform === 'twitter'
+                    ? 'আপনার ইমেইল বা এক্স হ্যান্ডেল (X / Twitter একাউন্ট হস্তান্তরের জন্য) *'
+                    : 'Your Clean Google/Gmail Account (For YouTube Brand Account Manager Invite) *'}
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={buyerGoogleEmail}
                   onChange={(e) => setBuyerGoogleEmail(e.target.value)}
-                  placeholder="your.buyer.google@gmail.com"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-hidden focus:border-red-500"
+                  placeholder={
+                    channel.platform === 'facebook'
+                      ? 'https://facebook.com/yourprofile or email'
+                      : channel.platform === 'telegram'
+                      ? '@your_telegram_username'
+                      : 'your.clean.email@gmail.com'
+                  }
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-hidden focus:border-blue-500"
                 />
                 <span className="text-[11px] text-amber-400/90 mt-1.5 block">
-                  Important: This is ONLY for YouTube Studio to send you a Manager invite. We will NEVER ask for your password.
+                  নিরাপত্তা নির্দেশিকা: কখনোই আপনার পাসওয়ার্ড কারও সাথে শেয়ার করবেন না। প্ল্যাটফর্ম এস্ক্রোর মাধ্যমে নিরাপদে হস্তান্তর সম্পন্ন হবে।
                 </span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-white font-semibold">
                   <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>How Payment &amp; Transfer Work</span>
+                  <span>পেমেন্ট ও ট্রান্সফার প্রসেস (Safe Escrow)</span>
                 </div>
                 <p className="text-[11px] leading-relaxed">
-                  1. Your purchase request creates a tracked order in ChannelVault.<br />
-                  2. You verify deposit into platform custody.<br />
-                  3. Seller invites your email above as Brand Account Manager.<br />
-                  4. After the standard 7-day Google cooldown, seller makes you Primary Owner and funds are released.
+                  ১. বায়ারের পেমেন্ট প্ল্যাটফর্মের নিরাপদ ভল্টে জমা থাকবে।<br />
+                  ২. সেলার ওপরের তথ্যে অ্যাডমিন/ওনারশিপ ট্রান্সফার সম্পন্ন করবেন।<br />
+                  ৩. বায়ার একাউন্ট অ্যাক্সেস নিশ্চিত করার পরই সেলারের কাছে টাকা পৌঁছে যাবে।
                 </p>
               </div>
 

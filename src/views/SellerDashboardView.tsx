@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChannelListing, Order, User } from '../types';
+import { ChannelListing, Order, User, PlatformType } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -28,14 +28,14 @@ interface SellerDashboardViewProps {
 }
 
 const NICHES = [
+  'Entertainment',
   'Gaming',
   'Finance',
   'Education',
   'Tech',
   'Lifestyle',
   'Music',
-  'Health & Fitness',
-  'Entertainment'
+  'Health & Fitness'
 ];
 
 export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
@@ -51,11 +51,12 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
   const [loading, setLoading] = useState(true);
 
   // Create Listing Form State
+  const [platform, setPlatform] = useState<PlatformType>('facebook');
   const [title, setTitle] = useState('');
   const [handle, setHandle] = useState('');
   const [channelUrl, setChannelUrl] = useState('');
-  const [niche, setNiche] = useState('Gaming');
-  const [accountType, setAccountType] = useState('cooking_lifestyle');
+  const [niche, setNiche] = useState('Entertainment');
+  const [accountType, setAccountType] = useState('facebook_page');
   const [primaryLanguage, setPrimaryLanguage] = useState('Bengali / Bangla & English');
   const [subscribers, setSubscribers] = useState('');
   const [monthlyViews, setMonthlyViews] = useState('');
@@ -126,6 +127,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
     try {
       setSubmitting(true);
       const res = await api.createChannel({
+        platform,
         title,
         handle: handle.startsWith('@') ? handle : `@${handle}`,
         channelUrl,
@@ -407,31 +409,85 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
             </div>
 
             <form onSubmit={handleCreateListing} className="space-y-5">
+              {/* Platform Selection */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-2">
+                  প্ল্যাটফর্ম নির্বাচন করুন (Select Platform) *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                  {[
+                    { id: 'facebook', label: '🔵 Facebook', color: 'border-blue-600 bg-blue-950/80 text-blue-300' },
+                    { id: 'youtube', label: '🔴 YouTube', color: 'border-red-600 bg-red-950/80 text-red-300' },
+                    { id: 'tiktok', label: '🎵 TikTok', color: 'border-cyan-500 bg-cyan-950/80 text-cyan-300' },
+                    { id: 'instagram', label: '📸 Instagram', color: 'border-pink-500 bg-pink-950/80 text-pink-300' },
+                    { id: 'telegram', label: '✈️ Telegram', color: 'border-sky-500 bg-sky-950/80 text-sky-300' },
+                    { id: 'twitter', label: '🐦 X / Twitter', color: 'border-slate-500 bg-zinc-900/80 text-slate-200' },
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setPlatform(p.id as PlatformType);
+                        if (p.id === 'facebook') setAccountType('facebook_page');
+                        else if (p.id === 'tiktok') setAccountType('tiktok_viral');
+                        else if (p.id === 'instagram') setAccountType('instagram_theme');
+                        else if (p.id === 'telegram') setAccountType('telegram_signal');
+                        else if (p.id === 'twitter') setAccountType('twitter_crypto');
+                        else setAccountType('cooking_lifestyle');
+                      }}
+                      className={`p-2.5 rounded-xl border text-xs font-bold text-center transition cursor-pointer ${
+                        platform === p.id
+                          ? `${p.color} ring-2 ring-blue-500 shadow-md`
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Channel Display Title *
+                    {platform === 'facebook'
+                      ? 'Facebook Page / Group Title *'
+                      : platform === 'tiktok'
+                      ? 'TikTok Account Title *'
+                      : platform === 'instagram'
+                      ? 'Instagram Page Title *'
+                      : platform === 'telegram'
+                      ? 'Telegram Channel Name *'
+                      : platform === 'twitter'
+                      ? 'X / Twitter Account Name *'
+                      : 'YouTube Channel Display Title *'}
                   </label>
                   <input
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Apex Tactical Gaming"
+                    placeholder={
+                      platform === 'facebook'
+                        ? 'e.g. BD Viral Media (Facebook Page)'
+                        : platform === 'tiktok'
+                        ? 'e.g. TrendVibe Comedy (TikTok)'
+                        : 'e.g. Apex Tactical Gaming'
+                    }
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Channel Handle (@handle) *
+                    Handle / Username (@handle) *
                   </label>
                   <input
                     type="text"
                     required
                     value={handle}
                     onChange={(e) => setHandle(e.target.value)}
-                    placeholder="@ApexTacticalGaming"
+                    placeholder="@YourPageOrChannel"
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
                   />
                 </div>
@@ -440,14 +496,34 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    YouTube Channel URL *
+                    {platform === 'facebook'
+                      ? 'Facebook Page URL *'
+                      : platform === 'tiktok'
+                      ? 'TikTok Profile URL *'
+                      : platform === 'instagram'
+                      ? 'Instagram Profile URL *'
+                      : platform === 'telegram'
+                      ? 'Telegram Channel Link *'
+                      : platform === 'twitter'
+                      ? 'X Profile URL *'
+                      : 'YouTube Channel URL *'}
                   </label>
                   <input
                     type="url"
                     required
                     value={channelUrl}
                     onChange={(e) => setChannelUrl(e.target.value)}
-                    placeholder="https://youtube.com/@ApexTacticalGaming"
+                    placeholder={
+                      platform === 'facebook'
+                        ? 'https://facebook.com/yourpage'
+                        : platform === 'tiktok'
+                        ? 'https://tiktok.com/@youraccount'
+                        : platform === 'instagram'
+                        ? 'https://instagram.com/youraccount'
+                        : platform === 'telegram'
+                        ? 'https://t.me/yourchannel'
+                        : 'https://youtube.com/@yourchannel'
+                    }
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
                   />
                 </div>

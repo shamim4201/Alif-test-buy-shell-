@@ -74,6 +74,7 @@ class Database {
     }
 
     this.seed();
+    this.ensureEnrichedChannels();
     this.save();
   }
 
@@ -304,6 +305,432 @@ class Database {
       ];
 
       this.data.channels.push(...extraChannels);
+      this.save();
+    }
+
+    // Ensure all existing channels have platform set to 'youtube' if missing
+    this.data.channels.forEach(c => {
+      if (!c.platform) {
+        c.platform = 'youtube';
+      }
+    });
+
+    // Check if multi-platform accounts (Facebook, TikTok, Instagram, Telegram, Twitter) exist
+    const hasSocialAccounts = this.data.channels.some(c => c.platform === 'facebook' || c.platform === 'tiktok');
+    if (!hasSocialAccounts) {
+      const seller1 = this.data.users.find(u => u.id === 'usr_seller_1') || this.data.users[1];
+      const seller2 = this.data.users.find(u => u.id === 'usr_seller_2') || this.data.users[2];
+
+      const socialAccounts: ChannelListing[] = [
+        // 1. Facebook Page (450K followers, In-stream ads)
+        {
+          id: 'acc_fb_viral_media',
+          sellerId: seller1.id,
+          sellerName: seller1.name,
+          sellerEmail: seller1.email,
+          sellerRating: 4.95,
+          sellerDealsCount: 14,
+          platform: 'facebook',
+          title: 'BD Viral Media & Entertainment (ফেসবুক পেজ - ৪৫০K ফলোয়ার)',
+          handle: '@BDViralMediaOfficial',
+          channelUrl: 'https://facebook.com/BDViralMediaOfficial',
+          niche: 'Entertainment',
+          accountType: 'facebook_page',
+          primaryLanguage: 'Bengali / Bangla',
+          tags: ['facebook', 'page', 'in-stream ads', 'মনিটাইজড পেজ', 'ফেসবুক', 'viral', 'bd entertainment'],
+          subscribers: 452000, // Followers
+          lifetimeViews: 75000000,
+          monthlyViews: 6800000,
+          monthlyRevenue: 1450,
+          monetizationStatus: 'monetized',
+          strikeStatus: 'clean',
+          pageQuality: 'green',
+          isVerifiedBadge: false,
+          monetizationTool: 'In-Stream Ads + Stars',
+          askingPrice: 4200,
+          minOfferPrice: 3800,
+          description: '১০০% গ্রিন পেজ কোয়ালিটি সহ ইনস্ট্রিম অ্যাডস ও স্টার মনিটাইজড ফেসবুক পেজ। ৪ লাখ ৫২ হাজার রিয়েল অর্গানিক ফলোয়ার। কোনো ভায়োলেশন বা পলিসি ইস্যু নেই। ফুল অ্যাডমিন হ্যান্ডওভার ও ব্যাংক সেটআপ পরিবর্তনযোগ্য।',
+          creationYear: 2021,
+          videoCount: 380,
+          analyticsScreenshots: [
+            'https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=900&auto=format&fit=crop&q=80'
+          ],
+          verificationStatus: 'approved',
+          isFeatured: true,
+          status: 'active',
+          audience: {
+            topCountries: [
+              { country: 'Bangladesh', percentage: 65 },
+              { country: 'India', percentage: 18 },
+              { country: 'Saudi Arabia', percentage: 9 },
+              { country: 'UAE', percentage: 5 }
+            ],
+            ageDistribution: [
+              { range: '18-24', percentage: 42 },
+              { range: '25-34', percentage: 44 },
+              { range: '35-44', percentage: 14 }
+            ],
+            genderSplit: { male: 68, female: 32 }
+          },
+          createdAt: '2026-10-10T10:00:00.000Z',
+          updatedAt: '2026-10-10T10:00:00.000Z'
+        },
+        // 2. Facebook Kitchen Page (125K followers)
+        {
+          id: 'acc_fb_kitchen_page',
+          sellerId: seller2.id,
+          sellerName: 'Elena Rostova & Auntie Fatima Kitchen',
+          sellerEmail: seller2.email,
+          sellerRating: 4.95,
+          sellerDealsCount: 8,
+          platform: 'facebook',
+          title: 'Banglar Kitchen & Easy Recipes (ফেসবুক মনিটাইজড পেজ - ১২৫K ফলোয়ার)',
+          handle: '@BanglarKitchenRecipes',
+          channelUrl: 'https://facebook.com/BanglarKitchenRecipes',
+          niche: 'Lifestyle',
+          accountType: 'cooking_lifestyle',
+          primaryLanguage: 'Bengali / Bangla',
+          tags: ['facebook', 'রান্না', 'page', 'in-stream ads', 'রেসিপি', 'auntie', 'cooking'],
+          subscribers: 125000,
+          lifetimeViews: 18500000,
+          monthlyViews: 1400000,
+          monthlyRevenue: 620,
+          monetizationStatus: 'monetized',
+          strikeStatus: 'clean',
+          pageQuality: 'green',
+          isVerifiedBadge: false,
+          monetizationTool: 'In-Stream Ads',
+          askingPrice: 1650,
+          minOfferPrice: 1500,
+          description: 'রান্না ও কিচেন লাইফস্টাইলের জনপ্রিয় ফেসবুক পেজ। ১ লাখ ২৫ হাজার অর্গানিক ফিমেল অডিয়েন্স। ইনস্ট্রিম অ্যাড মনিটাইজড, কোনো কপিরাইট স্ট্রাইক বা রেস্ট্রিকশন নেই।',
+          creationYear: 2022,
+          videoCount: 195,
+          analyticsScreenshots: [
+            'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=900&auto=format&fit=crop&q=80'
+          ],
+          verificationStatus: 'approved',
+          isFeatured: false,
+          status: 'active',
+          audience: {
+            topCountries: [
+              { country: 'Bangladesh', percentage: 55 },
+              { country: 'United States', percentage: 22 },
+              { country: 'United Kingdom', percentage: 12 }
+            ],
+            ageDistribution: [
+              { range: '18-24', percentage: 25 },
+              { range: '25-34', percentage: 50 },
+              { range: '35-44', percentage: 25 }
+            ],
+            genderSplit: { male: 22, female: 78 }
+          },
+          createdAt: '2026-10-10T12:00:00.000Z',
+          updatedAt: '2026-10-10T12:00:00.000Z'
+        },
+        // 3. TikTok Viral Comedy Account (320K followers, Creator Rewards)
+        {
+          id: 'acc_tt_viral_comedy',
+          sellerId: seller1.id,
+          sellerName: seller1.name,
+          sellerEmail: seller1.email,
+          sellerRating: 4.95,
+          sellerDealsCount: 14,
+          platform: 'tiktok',
+          title: 'TrendVibe Viral POV & Comedy (টিকটক ৩২০K ফলোয়ার - ক্রিয়েটর রিওয়ার্ডস)',
+          handle: '@TrendVibePOV',
+          channelUrl: 'https://tiktok.com/@TrendVibePOV',
+          niche: 'Entertainment',
+          accountType: 'tiktok_viral',
+          primaryLanguage: 'English / International',
+          tags: ['tiktok', 'টিকটক', 'creator rewards', 'viral tiktok', 'pov', 'usa account'],
+          subscribers: 320000, // Followers
+          lifetimeViews: 58000000,
+          monthlyViews: 12000000,
+          monthlyRevenue: 1850,
+          monetizationStatus: 'monetized',
+          strikeStatus: 'clean',
+          monetizationTool: 'TikTok Creator Rewards + TikTok Shop',
+          askingPrice: 3100,
+          minOfferPrice: 2800,
+          description: 'USA রিজিয়ন ক্রিয়েটর রিওয়ার্ডস প্রোগ্রাম (TikTok Creator Rewards Beta) সক্রিয়। প্রতি মাসে ১৮০০+ ডলার ইনকাম। লাইভ স্ট্রিম, ব্যাটল ও টিকটক শপ অ্যাফিলিয়েট অপশন উন্মুক্ত। ১০০% ক্লিন মূল ইমেইল সহ হস্তান্তর।',
+          creationYear: 2023,
+          videoCount: 240,
+          analyticsScreenshots: [
+            'https://images.unsplash.com/photo-1611162616091-2dc0609f06df?w=900&auto=format&fit=crop&q=80'
+          ],
+          verificationStatus: 'approved',
+          isFeatured: true,
+          status: 'active',
+          audience: {
+            topCountries: [
+              { country: 'United States', percentage: 48 },
+              { country: 'United Kingdom', percentage: 22 },
+              { country: 'Canada', percentage: 14 }
+            ],
+            ageDistribution: [
+              { range: '18-24', percentage: 55 },
+              { range: '25-34', percentage: 35 },
+              { range: '35-44', percentage: 10 }
+            ],
+            genderSplit: { male: 54, female: 46 }
+          },
+          createdAt: '2026-10-11T09:00:00.000Z',
+          updatedAt: '2026-10-11T09:00:00.000Z'
+        },
+        // 4. TikTok Tech & Gadgets (85K followers, TikTok Shop Affiliate)
+        {
+          id: 'acc_tt_smart_gadgets',
+          sellerId: seller2.id,
+          sellerName: seller2.name,
+          sellerEmail: seller2.email,
+          sellerRating: 4.88,
+          sellerDealsCount: 6,
+          platform: 'tiktok',
+          title: 'SmartGadget Deals & Shorts (টিকটক ৮৫K ফলোয়ার - শপ অ্যাফিলিয়েট)',
+          handle: '@SmartGadgetDeals',
+          channelUrl: 'https://tiktok.com/@SmartGadgetDeals',
+          niche: 'Tech',
+          accountType: 'tiktok_viral',
+          primaryLanguage: 'English',
+          tags: ['tiktok', 'টিকটক', 'gadgets', 'tech', 'affiliate', 'under 1000', 'কম বাজেট'],
+          subscribers: 85000,
+          lifetimeViews: 14200000,
+          monthlyViews: 2200000,
+          monthlyRevenue: 490,
+          monetizationStatus: 'monetized',
+          strikeStatus: 'clean',
+          monetizationTool: 'TikTok Shop Showcase & Live',
+          askingPrice: 950, // Under $1,000!
+          minOfferPrice: 850,
+          description: 'সাশ্রয়ী বাজেটের টিকটক টেক ও গ্যাজেট রিভিউ একাউন্ট। ৮৫ হাজার এক্টিভ ফলোয়ার। টিকটক শপ শোকেস ও লাইভ স্টুডিও পারমিশন সক্রিয়। নতুন উদ্যোক্তা ও অ্যাফিলিয়েট মার্কেটারদের জন্য বেস্ট স্টার্টার।',
+          creationYear: 2024,
+          videoCount: 110,
+          analyticsScreenshots: [
+            'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=900&auto=format&fit=crop&q=80'
+          ],
+          verificationStatus: 'approved',
+          isFeatured: false,
+          status: 'active',
+          audience: {
+            topCountries: [
+              { country: 'United States', percentage: 40 },
+              { country: 'Canada', percentage: 25 },
+              { country: 'Bangladesh', percentage: 15 }
+            ],
+            ageDistribution: [
+              { range: '18-24', percentage: 45 },
+              { range: '25-34', percentage: 40 },
+              { range: '35-44', percentage: 15 }
+            ],
+            genderSplit: { male: 65, female: 35 }
+          },
+          createdAt: '2026-10-11T11:00:00.000Z',
+          updatedAt: '2026-10-11T11:00:00.000Z'
+        },
+        // 5. Instagram Luxury & Motivation Page (195K followers)
+        {
+          id: 'acc_ig_billionaire_drive',
+          sellerId: seller1.id,
+          sellerName: seller1.name,
+          sellerEmail: seller1.email,
+          sellerRating: 4.95,
+          sellerDealsCount: 14,
+          platform: 'instagram',
+          title: 'The Billionaire Drive (ইনস্টাগ্রাম ১৯৫K লাক্সারি থিম পেজ)',
+          handle: '@TheBillionaireDrive',
+          channelUrl: 'https://instagram.com/TheBillionaireDrive',
+          niche: 'Finance',
+          accountType: 'instagram_theme',
+          primaryLanguage: 'English',
+          tags: ['instagram', 'ইনস্টাগ্রাম', 'theme page', 'luxury', 'motivation', 'shoutout'],
+          subscribers: 195000,
+          lifetimeViews: 42000000,
+          monthlyViews: 4500000,
+          monthlyRevenue: 1300,
+          monetizationStatus: 'monetized',
+          strikeStatus: 'clean',
+          monetizationTool: 'Brand Deals & Shoutouts',
+          askingPrice: 2800,
+          minOfferPrice: 2500,
+          description: 'হাই-কনভার্টিং লাক্সারি ও মোটিভেশন ইনস্টাগ্রাম থিম পেজ। Tier-1 কান্ট্রি (USA, UK, Australia) ৫২%+ অডিয়েন্স। নিয়মিত ব্র্যান্ড স্পনসরশিপ ও স্টোরি শাউটআউট আসে। অরিজিনাল ওজি ইমেইল সহ হস্তান্তর।',
+          creationYear: 2022,
+          videoCount: 480,
+          analyticsScreenshots: [
+            'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=900&auto=format&fit=crop&q=80'
+          ],
+          verificationStatus: 'approved',
+          isFeatured: true,
+          status: 'active',
+          audience: {
+            topCountries: [
+              { country: 'United States', percentage: 44 },
+              { country: 'United Kingdom', percentage: 20 },
+              { country: 'Germany', percentage: 12 }
+            ],
+            ageDistribution: [
+              { range: '18-24', percentage: 38 },
+              { range: '25-34', percentage: 48 },
+              { range: '35-44', percentage: 14 }
+            ],
+            genderSplit: { male: 72, female: 28 }
+          },
+          createdAt: '2026-10-11T14:00:00.000Z',
+          updatedAt: '2026-10-11T14:00:00.000Z'
+        },
+        // 6. Instagram Fashion & Chic Style (68K followers)
+        {
+          id: 'acc_ig_chic_style',
+          sellerId: seller2.id,
+          sellerName: seller2.name,
+          sellerEmail: seller2.email,
+          sellerRating: 4.88,
+          sellerDealsCount: 6,
+          platform: 'instagram',
+          title: 'ChicStyle Daily Inspo (ইনস্টাগ্রাম ৬৮K ফ্যাশন পেজ)',
+          handle: '@ChicStyleDaily',
+          channelUrl: 'https://instagram.com/ChicStyleDaily',
+          niche: 'Lifestyle',
+          accountType: 'instagram_theme',
+          primaryLanguage: 'English',
+          tags: ['instagram', 'ইনস্টাগ্রাম', 'fashion', 'outfits', 'women', 'under 1000'],
+          subscribers: 68000,
+          lifetimeViews: 8500000,
+          monthlyViews: 950000,
+          monthlyRevenue: 380,
+          monetizationStatus: 'monetized',
+          strikeStatus: 'clean',
+          monetizationTool: 'Fashion Brand Affiliate & Shoutouts',
+          askingPrice: 890, // Under $1,000!
+          minOfferPrice: 790,
+          description: 'মহিলাদের ফ্যাশন ও আউটফিট কিউরেশন পেজ। ১০০% অর্গানিক রিচ, অরিজিনাল ওজিইমেইল (OG Email) সহ ট্রান্সফার। পোশাক ও কসমেটিকস ব্র্যান্ড স্পনসরশিপের জন্য পারফেক্ট।',
+          creationYear: 2023,
+          videoCount: 220,
+          analyticsScreenshots: [
+            'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=900&auto=format&fit=crop&q=80'
+          ],
+          verificationStatus: 'approved',
+          isFeatured: false,
+          status: 'active',
+          audience: {
+            topCountries: [
+              { country: 'United States', percentage: 42 },
+              { country: 'Canada', percentage: 22 },
+              { country: 'United Kingdom', percentage: 18 }
+            ],
+            ageDistribution: [
+              { range: '18-24', percentage: 48 },
+              { range: '25-34', percentage: 42 },
+              { range: '35-44', percentage: 10 }
+            ],
+            genderSplit: { male: 15, female: 85 }
+          },
+          createdAt: '2026-10-12T08:00:00.000Z',
+          updatedAt: '2026-10-12T08:00:00.000Z'
+        },
+        // 7. Telegram Crypto & Alpha Signals (48.5K members)
+        {
+          id: 'acc_tg_crypto_alpha',
+          sellerId: seller1.id,
+          sellerName: seller1.name,
+          sellerEmail: seller1.email,
+          sellerRating: 4.95,
+          sellerDealsCount: 14,
+          platform: 'telegram',
+          title: 'Crypto Whale Alpha Signals (টেলিগ্রাম ৪৮K মেম্বার চ্যানেল)',
+          handle: '@CryptoWhaleAlpha',
+          channelUrl: 'https://t.me/CryptoWhaleAlpha',
+          niche: 'Finance',
+          accountType: 'telegram_signal',
+          primaryLanguage: 'English',
+          tags: ['telegram', 'টেলিগ্রাম', 'crypto', 'signals', 'trading', 'vip'],
+          subscribers: 48500, // Members
+          lifetimeViews: 9200000,
+          monthlyViews: 1200000,
+          monthlyRevenue: 2400,
+          monetizationStatus: 'monetized',
+          strikeStatus: 'clean',
+          monetizationTool: 'VIP Subscription + Paid Pin Ads',
+          askingPrice: 3600,
+          minOfferPrice: 3200,
+          description: 'প্রিমিয়াম ক্রিপ্টো সিগন্যাল ও ট্রেডিং ডিসকাশন টেলিগ্রাম চ্যানেল। উচ্চ ভিআইপি সাবস্ক্রিপশন কনভার্সন রেট (প্রতি মাসে $২০০০+ মেম্বারশিপ ফি)। ওনারশিপ রাইটস ইনস্ট্যান্ট ও নিরাপদ ট্রান্সফার।',
+          creationYear: 2022,
+          videoCount: 650,
+          analyticsScreenshots: [
+            'https://images.unsplash.com/photo-1621416894569-0f39ed31d247?w=900&auto=format&fit=crop&q=80'
+          ],
+          verificationStatus: 'approved',
+          isFeatured: true,
+          status: 'active',
+          audience: {
+            topCountries: [
+              { country: 'United States', percentage: 36 },
+              { country: 'Germany', percentage: 18 },
+              { country: 'UAE', percentage: 16 }
+            ],
+            ageDistribution: [
+              { range: '18-24', percentage: 25 },
+              { range: '25-34', percentage: 55 },
+              { range: '35-44', percentage: 20 }
+            ],
+            genderSplit: { male: 88, female: 12 }
+          },
+          createdAt: '2026-10-12T09:30:00.000Z',
+          updatedAt: '2026-10-12T09:30:00.000Z'
+        },
+        // 8. Twitter / X Blue Verified (75K followers)
+        {
+          id: 'acc_x_ai_radar',
+          sellerId: seller1.id,
+          sellerName: seller1.name,
+          sellerEmail: seller1.email,
+          sellerRating: 4.95,
+          sellerDealsCount: 14,
+          platform: 'twitter',
+          title: 'AI Daily & Web3 Radar (এক্স/টুইটার ৭৫K ফলোয়ার - ব্লু ভেরিফাইড)',
+          handle: '@AIDailyRadar',
+          channelUrl: 'https://x.com/AIDailyRadar',
+          niche: 'Tech',
+          accountType: 'twitter_crypto',
+          primaryLanguage: 'English',
+          tags: ['twitter', 'টুইটার', 'x', 'blue verified', 'ai', 'tech', 'revenue share'],
+          subscribers: 75200,
+          lifetimeViews: 19000000,
+          monthlyViews: 2800000,
+          monthlyRevenue: 980,
+          monetizationStatus: 'monetized',
+          strikeStatus: 'clean',
+          isVerifiedBadge: true,
+          monetizationTool: 'X Ads Revenue Sharing',
+          askingPrice: 2200,
+          minOfferPrice: 1950,
+          description: 'এক্স (Twitter) ব্লু ভেরিফাইড একাউন্ট। এডস রেভিনিউ শেয়ারিং (X Ads Revenue Sharing) সক্রিয়। টেক, এআই ও ওয়েব৩ নিশ। হাই এনগেজমেন্ট ও অর্গানিক ইম্প্রেশন।',
+          creationYear: 2021,
+          videoCount: 1200,
+          analyticsScreenshots: [
+            'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=900&auto=format&fit=crop&q=80'
+          ],
+          verificationStatus: 'approved',
+          isFeatured: false,
+          status: 'active',
+          audience: {
+            topCountries: [
+              { country: 'United States', percentage: 50 },
+              { country: 'United Kingdom', percentage: 18 },
+              { country: 'India', percentage: 12 }
+            ],
+            ageDistribution: [
+              { range: '18-24', percentage: 30 },
+              { range: '25-34', percentage: 52 },
+              { range: '35-44', percentage: 18 }
+            ],
+            genderSplit: { male: 78, female: 22 }
+          },
+          createdAt: '2026-10-12T10:00:00.000Z',
+          updatedAt: '2026-10-12T10:00:00.000Z'
+        }
+      ];
+
+      this.data.channels.push(...socialAccounts);
       this.save();
     }
   }

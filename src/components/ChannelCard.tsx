@@ -26,58 +26,144 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect, cur
     return num.toLocaleString();
   };
 
+  const getPlatformBadge = () => {
+    const p = channel.platform || 'youtube';
+    switch (p) {
+      case 'facebook':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-950/95 border border-blue-500/80 text-blue-300 shadow-md backdrop-blur-xs">
+            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+            🔵 Facebook
+          </span>
+        );
+      case 'tiktok':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-950/95 border border-cyan-400/80 text-cyan-300 shadow-md backdrop-blur-xs">
+            <span className="w-2 h-2 rounded-full bg-rose-400"></span>
+            🎵 TikTok
+          </span>
+        );
+      case 'instagram':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-pink-950/95 border border-pink-500/80 text-pink-300 shadow-md backdrop-blur-xs">
+            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            📸 Instagram
+          </span>
+        );
+      case 'telegram':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-950/95 border border-sky-400/80 text-sky-300 shadow-md backdrop-blur-xs">
+            <span className="w-2 h-2 rounded-full bg-sky-400"></span>
+            ✈️ Telegram
+          </span>
+        );
+      case 'twitter':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-zinc-950/95 border border-slate-400/80 text-slate-200 shadow-md backdrop-blur-xs">
+            <span className="w-2 h-2 rounded-full bg-white"></span>
+            🐦 X / Twitter
+          </span>
+        );
+      case 'youtube':
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-950/95 border border-red-500/80 text-red-300 shadow-md backdrop-blur-xs">
+            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+            🔴 YouTube
+          </span>
+        );
+    }
+  };
+
   const getAccountTypeBadge = () => {
     switch (channel.accountType) {
+      case 'facebook_page':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-900/80 border border-blue-600/60 text-blue-200 shadow-xs">
+            📄 ফেসবুক পেজ
+          </span>
+        );
+      case 'tiktok_viral':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-900/80 border border-cyan-500/60 text-cyan-200 shadow-xs">
+            ⚡ ক্রিয়েটর রিওয়ার্ডস
+          </span>
+        );
+      case 'instagram_theme':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-900/80 border border-purple-500/60 text-purple-200 shadow-xs">
+            🎨 থিম পেজ
+          </span>
+        );
+      case 'telegram_signal':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-900/80 border border-sky-500/60 text-sky-200 shadow-xs">
+            📡 সিগন্যাল / মেম্বার
+          </span>
+        );
+      case 'twitter_crypto':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-800/80 border border-slate-600/60 text-zinc-200 shadow-xs">
+            💎 ব্লু ভেরিফাইড
+          </span>
+        );
       case 'cooking_lifestyle':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-950/90 border border-amber-500/70 text-amber-300 shadow-md backdrop-blur-xs">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950/90 border border-amber-500/70 text-amber-300 shadow-xs">
             👩‍🍳 আন্টির রান্না / Cooking
           </span>
         );
       case 'faceless_cash_cow':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-950/90 border border-purple-500/70 text-purple-300 shadow-md backdrop-blur-xs">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-950/90 border border-purple-500/70 text-purple-300 shadow-xs">
             🤖 Faceless Cash Cow
           </span>
         );
       case 'shorts_creator':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-950/90 border border-rose-500/70 text-rose-300 shadow-md backdrop-blur-xs">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/90 border border-rose-500/70 text-rose-300 shadow-xs">
             ⚡ Viral Shorts
           </span>
         );
       case 'gaming_stream':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-950/90 border border-blue-500/70 text-blue-300 shadow-md backdrop-blur-xs">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-950/90 border border-blue-500/70 text-blue-300 shadow-xs">
             🎮 Gaming & Stream
           </span>
         );
       case 'vintage_aged':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-950/90 border border-emerald-500/70 text-emerald-300 shadow-md backdrop-blur-xs">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/90 border border-emerald-500/70 text-emerald-300 shadow-xs">
             🏛️ Vintage {channel.creationYear}
           </span>
         );
       case 'high_cpm_finance':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-950/90 border border-emerald-500/70 text-emerald-300 shadow-md backdrop-blur-xs">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/90 border border-emerald-500/70 text-emerald-300 shadow-xs">
             💰 High CPM Finance
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-950/90 border border-red-500/70 text-red-300 shadow-md backdrop-blur-xs">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800/90 border border-slate-600/70 text-slate-300 shadow-xs">
             {channel.niche}
           </span>
         );
     }
   };
 
-  // Get high quality product image for channel
+  // Get high quality product image for channel or social account
   const getChannelImage = () => {
     if (channel.analyticsScreenshots && channel.analyticsScreenshots.length > 0) {
       return channel.analyticsScreenshots[0];
     }
+    const p = channel.platform || 'youtube';
+    if (p === 'facebook') return 'https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=800&auto=format&fit=crop&q=80';
+    if (p === 'tiktok') return 'https://images.unsplash.com/photo-1611162616091-2dc0609f06df?w=800&auto=format&fit=crop&q=80';
+    if (p === 'instagram') return 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&auto=format&fit=crop&q=80';
+    if (p === 'telegram') return 'https://images.unsplash.com/photo-1621416894569-0f39ed31d247?w=800&auto=format&fit=crop&q=80';
+    if (p === 'twitter') return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
+
     switch (channel.accountType) {
       case 'cooking_lifestyle':
         return 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80';
@@ -100,14 +186,31 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect, cur
     }
   };
 
+  const getFollowerLabel = () => {
+    const p = channel.platform || 'youtube';
+    if (p === 'telegram') return 'মেম্বার';
+    if (p === 'facebook' || p === 'tiktok' || p === 'instagram' || p === 'twitter') return 'ফলোয়ার';
+    return 'সাবস্ক্রাইবার';
+  };
+
+  const getBorderHoverClass = () => {
+    const p = channel.platform || 'youtube';
+    if (p === 'facebook') return 'hover:border-blue-500/80 hover:shadow-blue-950/40';
+    if (p === 'tiktok') return 'hover:border-cyan-400/80 hover:shadow-cyan-950/40';
+    if (p === 'instagram') return 'hover:border-pink-500/80 hover:shadow-pink-950/40';
+    if (p === 'telegram') return 'hover:border-sky-400/80 hover:shadow-sky-950/40';
+    if (p === 'twitter') return 'hover:border-slate-400/80 hover:shadow-slate-900/40';
+    return 'hover:border-red-500/80 hover:shadow-red-950/40';
+  };
+
   const bdtPrice = Math.round(channel.askingPrice * 122);
 
   return (
     <div
       onClick={() => onSelect(channel.id)}
-      className="group relative bg-slate-900 border border-slate-800 hover:border-red-500/70 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-red-950/30 flex flex-col justify-between cursor-pointer"
+      className={`group relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl flex flex-col justify-between cursor-pointer ${getBorderHoverClass()}`}
     >
-      {/* 1. প্রোডাক্টের ছবি উপরে (Channel Image on Top) */}
+      {/* 1. প্রোডাক্টের ছবি উপরে (Account/Channel Image on Top) */}
       <div className="relative aspect-[16/10] sm:aspect-video w-full overflow-hidden bg-slate-950">
         <img
           src={getChannelImage()}
@@ -120,14 +223,15 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect, cur
         />
 
         {/* Gradient shadow overlay for badge readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-black/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-black/40 pointer-events-none" />
 
-        {/* Top-Left: Account Type Badge */}
-        <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 max-w-[65%]">
+        {/* Top-Left: Platform Badge & Account Type */}
+        <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 flex flex-wrap items-center gap-1.5 max-w-[75%]">
+          {getPlatformBadge()}
           {getAccountTypeBadge()}
         </div>
 
-        {/* Top-Right: Verified & Award Badges */}
+        {/* Top-Right: Verified & Badges */}
         <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-10 flex items-center gap-1 sm:gap-1.5">
           {channel.hasSilverButton && (
             <span
@@ -138,7 +242,13 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect, cur
               <span className="hidden sm:inline">100K Award</span>
             </span>
           )}
-          {channel.verificationStatus === 'approved' && (
+          {channel.pageQuality === 'green' && (
+            <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-emerald-300 bg-emerald-950/90 border border-emerald-500/70 px-1.5 sm:px-2 py-0.5 rounded-lg shadow-md backdrop-blur-xs">
+              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              <span>Green Quality</span>
+            </span>
+          )}
+          {channel.verificationStatus === 'approved' && !channel.pageQuality && (
             <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-emerald-300 bg-emerald-950/90 border border-emerald-600/60 px-1.5 sm:px-2 py-0.5 rounded-lg shadow-md backdrop-blur-xs">
               <ShieldCheck className="w-3 h-3 text-emerald-400" />
               <span>Verified</span>
@@ -148,26 +258,28 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect, cur
 
         {/* Bottom Floating Stats on Image */}
         <div className="absolute bottom-1.5 left-2 right-2 sm:bottom-2 sm:left-2.5 sm:right-2.5 z-10 flex items-center justify-between text-[10px] sm:text-xs font-semibold text-white">
-          {/* Monetization Status */}
-          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-slate-900/85 backdrop-blur-xs border border-slate-700/70 text-[10px] sm:text-[11px] text-emerald-400">
+          {/* Monetization Status or Tool */}
+          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-slate-900/90 backdrop-blur-xs border border-slate-700/70 text-[10px] sm:text-[11px] text-emerald-400">
             <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-            <span className="truncate">{channel.monetizationStatus === 'monetized' ? 'Monetized' : 'Clean Strike'}</span>
+            <span className="truncate">
+              {channel.monetizationTool || (channel.monetizationStatus === 'monetized' ? 'Monetized' : 'Clean')}
+            </span>
           </span>
 
-          {/* Subscribers Pill */}
-          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-slate-900/85 backdrop-blur-xs border border-slate-700/70 text-[10px] sm:text-[11px] text-white">
-            <Users className="w-3 h-3 text-red-400 shrink-0" />
+          {/* Subscribers / Followers Pill */}
+          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-slate-900/90 backdrop-blur-xs border border-slate-700/70 text-[10px] sm:text-[11px] text-white">
+            <Users className="w-3 h-3 text-blue-400 shrink-0" />
             <strong className="text-white">{formatNumber(channel.subscribers)}</strong>
-            <span className="text-slate-400 text-[10px] hidden sm:inline">Subs</span>
+            <span className="text-slate-300 text-[10px] hidden sm:inline">{getFollowerLabel()}</span>
           </span>
         </div>
       </div>
 
-      {/* 2. ছবির নিচে টাইটেল ও বিবরণ (Channel Title Below Image) */}
+      {/* 2. ছবির নিচে টাইটেল ও বিবরণ (Channel / Account Title Below Image) */}
       <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between">
         <div>
           {/* Title */}
-          <h3 className="text-sm sm:text-base md:text-lg font-bold text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug mb-1">
+          <h3 className="text-sm sm:text-base md:text-lg font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug mb-1">
             {channel.title}
           </h3>
 
@@ -179,13 +291,13 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect, cur
           {/* Mini Core Metrics Grid */}
           <div className="grid grid-cols-3 gap-1 sm:gap-2 py-1.5 sm:py-2 px-1.5 sm:px-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 mb-2.5 text-center">
             <div>
-              <span className="text-[9px] sm:text-[10px] text-slate-400 block truncate">সাবস্ক্রাইবার</span>
+              <span className="text-[9px] sm:text-[10px] text-slate-400 block truncate">{getFollowerLabel()}</span>
               <span className="text-[11px] sm:text-xs font-bold text-white">
                 {formatNumber(channel.subscribers)}
               </span>
             </div>
             <div>
-              <span className="text-[9px] sm:text-[10px] text-slate-400 block truncate">মাসিক ভিউ</span>
+              <span className="text-[9px] sm:text-[10px] text-slate-400 block truncate">মাসিক ভিউ/রিচ</span>
               <span className="text-[11px] sm:text-xs font-bold text-white">
                 {formatNumber(channel.monthlyViews)}
               </span>
@@ -200,7 +312,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect, cur
 
           {/* Description snippet */}
           <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-3">
-            {channel.description || 'Verified YouTube channel ready for primary ownership transfer.'}
+            {channel.description || 'Verified social account ready for primary ownership transfer.'}
           </p>
         </div>
 
@@ -211,7 +323,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect, cur
               দাম (Price)
             </span>
             <div className="flex items-baseline gap-1 sm:gap-1.5 flex-wrap">
-              <span className="text-base sm:text-xl md:text-2xl font-black text-white group-hover:text-red-400 transition-colors">
+              <span className="text-base sm:text-xl md:text-2xl font-black text-white group-hover:text-emerald-400 transition-colors">
                 ${channel.askingPrice.toLocaleString()}
               </span>
               <span className="text-[10px] sm:text-xs text-amber-400 font-semibold">
@@ -222,7 +334,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect, cur
 
           {/* Order / View Action Button */}
           <div className="text-right shrink-0">
-            <span className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 group-hover:from-red-500 group-hover:to-rose-500 text-white font-bold text-[11px] sm:text-xs shadow-md shadow-red-600/30 transition flex items-center gap-1 sm:gap-1.5 cursor-pointer">
+            <span className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 group-hover:from-blue-500 group-hover:to-indigo-500 text-white font-bold text-[11px] sm:text-xs shadow-md shadow-blue-600/30 transition flex items-center gap-1 sm:gap-1.5 cursor-pointer">
               <span>কিনুন / দেখুন</span>
               <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </span>

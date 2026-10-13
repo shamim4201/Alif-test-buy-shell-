@@ -25,6 +25,8 @@ export interface AudienceData {
   genderSplit: { male: number; female: number };
 }
 
+export type PlatformType = 'youtube' | 'facebook' | 'tiktok' | 'instagram' | 'telegram' | 'twitter';
+
 export type AccountType =
   | 'cooking_lifestyle' // রান্না, রেসিপি, ফুড ও আন্টি/ফ্যামিলি ভ্লগ
   | 'faceless_cash_cow' // ফেসলেস ক্যাশ কাউ
@@ -34,6 +36,11 @@ export type AccountType =
   | 'high_cpm_finance' // হাই CPM ফিন্যান্স ও বিজনেস
   | 'vlog_personal' // পার্সোনাল ভ্লগ
   | 'education_tech' // এডুকেশন ও টেক
+  | 'facebook_page' // ফেসবুক পেজ / গ্রুপ
+  | 'tiktok_viral' // টিকটক অ্যাকাউন্ট
+  | 'instagram_theme' // ইনস্টাগ্রাম পেজ
+  | 'telegram_signal' // টেলিগ্রাম চ্যানেল
+  | 'twitter_crypto' // টুইটার / এক্স অ্যাকাউন্ট
   | 'general';
 
 export interface ChannelListing {
@@ -43,6 +50,7 @@ export interface ChannelListing {
   sellerEmail: string;
   sellerRating: number;
   sellerDealsCount: number;
+  platform?: PlatformType; // 'youtube' | 'facebook' | 'tiktok' | 'instagram' | 'telegram' | 'twitter'
   title: string;
   handle: string;
   channelUrl: string;
@@ -50,13 +58,16 @@ export interface ChannelListing {
   accountType?: AccountType;
   primaryLanguage?: string;
   tags?: string[];
-  subscribers: number;
+  subscribers: number; // Followers for FB/TikTok/IG/Twitter, Members for Telegram, Subscribers for YT
   lifetimeViews: number;
   monthlyViews: number;
   monthlyRevenue: number; // in USD
   monetizationStatus: MonetizationStatus;
   strikeStatus: StrikeStatus;
   hasSilverButton?: boolean;
+  pageQuality?: 'green' | 'yellow' | 'red';
+  isVerifiedBadge?: boolean;
+  monetizationTool?: string;
   askingPrice: number; // in USD
   minOfferPrice?: number;
   description: string;

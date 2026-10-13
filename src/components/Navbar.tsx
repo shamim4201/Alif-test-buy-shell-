@@ -74,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span className="font-medium text-emerald-400">Strict Safety Protocol:</span>
             <span className="hidden sm:inline text-slate-300">
-              Never share Google passwords. Transfers occur securely via YouTube Studio Brand Account Manager reassignment.
+              Never share passwords. Transfers occur securely via verified platform escrow & official account ownership reassignment.
             </span>
           </div>
 
@@ -134,13 +134,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <div className="flex items-center gap-1">
                 <span className="font-extrabold text-base sm:text-xl tracking-tight text-white">Channel</span>
-                <span className="font-extrabold text-base sm:text-xl tracking-tight bg-gradient-to-r from-red-500 to-rose-400 bg-clip-text text-transparent">
+                <span className="font-extrabold text-base sm:text-xl tracking-tight bg-gradient-to-r from-blue-400 via-rose-500 to-amber-400 bg-clip-text text-transparent">
                   Trust
                 </span>
                 <BadgeCheck className="w-3.5 h-3.5 text-emerald-400 hidden xs:inline" />
               </div>
               <p className="text-[9px] sm:text-[10px] text-slate-400 -mt-0.5 sm:-mt-1 tracking-wider uppercase font-semibold hidden sm:block">
-                Verified YouTube Marketplace
+                Facebook • YouTube • TikTok • IG
               </p>
             </div>
           </button>
@@ -150,20 +150,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => onNavigate('home')}
               className={`text-sm font-medium transition flex items-center gap-1.5 ${
-                currentView === 'home' ? 'text-red-400' : 'text-slate-300 hover:text-white'
+                currentView === 'home' ? 'text-blue-400' : 'text-slate-300 hover:text-white'
               }`}
             >
               <Compass className="w-4 h-4" />
-              Browse Channels
+              Browse Accounts
             </button>
             <button
               onClick={() => onNavigate('seller-dashboard', { tab: 'create' })}
               className={`text-sm font-medium transition flex items-center gap-1.5 ${
-                currentView === 'seller-dashboard' ? 'text-red-400' : 'text-slate-300 hover:text-white'
+                currentView === 'seller-dashboard' ? 'text-blue-400' : 'text-slate-300 hover:text-white'
               }`}
             >
               <PlusCircle className="w-4 h-4 text-emerald-400" />
-              List Channel For Sale
+              List Account For Sale
             </button>
             <button
               onClick={() => onOpenLegal('safety')}

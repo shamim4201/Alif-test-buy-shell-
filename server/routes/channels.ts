@@ -17,6 +17,7 @@ channelsRouter.get('/', (req: Request, res: Response) => {
     maxPrice,
     monetization,
     verifiedOnly,
+    platform,
     sellerId,
     status,
     sort
@@ -33,29 +34,50 @@ channelsRouter.get('/', (req: Request, res: Response) => {
     channels = channels.filter(c => c.status === 'active' && c.verificationStatus === 'approved');
   }
 
+  // Filter by platform (youtube, facebook, tiktok, instagram, telegram, twitter)
+  if (platform && typeof platform === 'string' && platform !== 'all') {
+    channels = channels.filter(c => (c.platform || 'youtube') === platform);
+  }
+
   // Account Type filter
   if (accountType && typeof accountType === 'string' && accountType !== 'all') {
     channels = channels.filter(c => c.accountType === accountType);
   }
 
-  // Search keyword in title, handle, description, niche, tags, accountType
+  // Search keyword in title, handle, description, niche, tags, accountType, platform
   if (search && typeof search === 'string' && search.trim() !== '') {
     const q = search.toLowerCase().trim();
-    // Synonym mapping for Bengali / English terms (e.g. আন্টি / auntie / রান্না / cooking)
+    // Synonym mapping for Bengali / English terms (e.g. আন্টি / auntie / রান্না / cooking, facebook / ফেসবুক, tiktok / টিকটক)
     const isAuntieOrCooking = q.includes('আন্টি') || q.includes('anti') || q.includes('aunt') || q.includes('রান্না') || q.includes('কুকিং') || q.includes('রেসিপি');
     const isGaming = q.includes('গেম') || q.includes('gaming');
     const isCashCow = q.includes('ক্যাশ') || q.includes('cash');
+    const isFacebook = q.includes('ফেসবুক') || q.includes('facebook') || q.includes('fb') || q.includes('পেজ') || q.includes('page');
+    const isTiktok = q.includes('টিকটক') || q.includes('tiktok') || q.includes('tt');
+    const isInstagram = q.includes('ইনস্টাগ্রাম') || q.includes('instagram') || q.includes('insta') || q.includes('ig');
+    const isTelegram = q.includes('টেলিগ্রাম') || q.includes('telegram') || q.includes('tg');
+    const isTwitter = q.includes('টুইটার') || q.includes('twitter') || q === 'x';
+    const isYoutube = q.includes('ইউটিউব') || q.includes('youtube') || q.includes('yt');
 
     channels = channels.filter(c => {
+      const cPlatform = c.platform || 'youtube';
       const matchText =
         c.title.toLowerCase().includes(q) ||
         c.handle.toLowerCase().includes(q) ||
         c.niche.toLowerCase().includes(q) ||
         c.description.toLowerCase().includes(q) ||
+        cPlatform.toLowerCase().includes(q) ||
+        (c.monetizationTool && c.monetizationTool.toLowerCase().includes(q)) ||
         (c.tags && c.tags.some(t => t.toLowerCase().includes(q))) ||
         (c.accountType && c.accountType.toLowerCase().includes(q));
 
       if (matchText) return true;
+      if (isFacebook && cPlatform === 'facebook') return true;
+      if (isTiktok && cPlatform === 'tiktok') return true;
+      if (isInstagram && cPlatform === 'instagram') return true;
+      if (isTelegram && cPlatform === 'telegram') return true;
+      if (isTwitter && cPlatform === 'twitter') return true;
+      if (isYoutube && cPlatform === 'youtube') return true;
+
       if (isAuntieOrCooking && (c.accountType === 'cooking_lifestyle' || c.niche.toLowerCase().includes('lifestyle') || c.title.toLowerCase().includes('kitchen') || c.title.toLowerCase().includes('cooking') || c.title.toLowerCase().includes('auntie'))) {
         return true;
       }
