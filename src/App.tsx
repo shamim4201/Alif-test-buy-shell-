@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
@@ -18,6 +19,7 @@ function MainApp() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [sellerDashboardTab, setSellerDashboardTab] = useState<'listings' | 'create' | 'sales'>('listings');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
 
   // Legal Modal State
   const [legalModalOpen, setLegalModalOpen] = useState(false);
@@ -30,6 +32,15 @@ function MainApp() {
 
   const handleSearchChange = (term: string) => {
     setSearchTerm(term);
+    if (currentView !== 'home') {
+      setCurrentView('home');
+      setSelectedChannelId(null);
+      setSelectedOrderId(null);
+    }
+  };
+
+  const handleSelectPlatform = (platform: string) => {
+    setSelectedPlatform(platform);
     if (currentView !== 'home') {
       setCurrentView('home');
       setSelectedChannelId(null);
@@ -60,13 +71,15 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-red-600 selection:text-white">
       <Navbar
         currentView={currentView}
         onNavigate={handleNavigate}
         onOpenLegal={handleOpenLegal}
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
+        selectedPlatform={selectedPlatform}
+        onSelectPlatform={handleSelectPlatform}
       />
 
       <main className="flex-1">
@@ -77,6 +90,8 @@ function MainApp() {
             onOpenLegal={handleOpenLegal}
             searchTerm={searchTerm}
             onSearchChange={handleSearchChange}
+            selectedPlatform={selectedPlatform}
+            onSelectPlatform={handleSelectPlatform}
           />
         )}
 
@@ -137,8 +152,10 @@ function MainApp() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <MainApp />
-    </AuthProvider>
+    <CurrencyProvider>
+      <AuthProvider>
+        <MainApp />
+      </AuthProvider>
+    </CurrencyProvider>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChannelListing, User, Review } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { EvidenceModal } from '../components/EvidenceModal';
 import { MessagingModal } from '../components/MessagingModal';
 import { ReviewSlider } from '../components/ReviewSlider';
@@ -39,6 +40,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
   onOpenLegal
 }) => {
   const { user, openAuthModal, showToast } = useAuth();
+  const { currency, formatPrice, formatUsd, formatBdt, t } = useCurrency();
   const [channel, setChannel] = useState<ChannelListing | null>(null);
   const [seller, setSeller] = useState<User | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -59,10 +61,10 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
         const res = await api.getChannel(channelId);
         setChannel(res.channel);
         setSeller(res.seller);
-        setReviews(res.reviews);
+        setReviews(res.reviews || []);
         setOfferPrice(res.channel.askingPrice);
       } catch (err: any) {
-        showToast(err.message || 'Failed to load channel details', 'error');
+        showToast(err.message || t('অ্যাকাউন্টের তথ্য লোড করতে ব্যর্থ হয়েছে', 'Failed to load channel details'), 'error');
       } finally {
         setLoading(false);
       }
@@ -72,7 +74,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -80,13 +82,13 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
 
   if (!channel) {
     return (
-      <div className="min-h-screen bg-slate-950 p-8 text-center text-slate-300">
-        <p>Channel listing not found.</p>
+      <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col items-center justify-center p-4">
+        <h2 className="text-xl font-bold text-slate-900">{t("অ্যাকাউন্ট খুঁজে পাওয়া যায়নি", "Account not found")}</h2>
         <button
           onClick={onBack}
-          className="mt-4 px-4 py-2 bg-slate-800 rounded-xl text-white text-xs font-semibold"
+          className="mt-4 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-xl text-slate-800 text-xs font-semibold cursor-pointer"
         >
-          Back to Listings
+          {t("তালিকায় ফিরে যান", "Return to Listings")}
         </button>
       </div>
     );
@@ -109,7 +111,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
   const handleConfirmPurchase = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!buyerGoogleEmail || !buyerGoogleEmail.includes('@')) {
-      showToast('Please provide your valid Google Account email for the Brand Account manager invitation', 'error');
+      showToast(t('অনুগ্রহ করে সঠিক ইমেইল বা যোগাযোগের তথ্য দিন', 'Please provide a valid email or contact info'), 'error');
       return;
     }
 
@@ -120,37 +122,77 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
         offeredPrice: Number(offerPrice) || channel.askingPrice,
         buyerGoogleEmail: buyerGoogleEmail.trim()
       });
-      showToast('Purchase request created successfully! Proceeding to Order Vault.', 'success');
+      showToast(t('অর্ডার সফলভাবে তৈরি হয়েছে! অর্ডার ভল্টে নিয়ে যাওয়া হচ্ছে।', 'Order successfully initiated! Redirecting to Escrow Vault.'), 'success');
       setPurchaseModalOpen(false);
       onOrderCreated(res.order.id);
     } catch (err: any) {
-      showToast(err.message || 'Failed to submit purchase request', 'error');
+      showToast(err.message || t('অর্ডার তৈরিতে সমস্যা হয়েছে', 'Failed to create order'), 'error');
     } finally {
       setSubmittingOrder(false);
     }
   };
 
+  const getPlatformLabel = () => {
+    switch (channel.platform) {
+      case 'facebook': return t('🔵 ফেসবুক পেজ', '🔵 Facebook Page');
+      case 'tiktok': return t('🎵 টিকটক একাউন্ট', '🎵 TikTok Account');
+      case 'instagram': return t('📸 ইনস্টাগ্রাম পেজ', '📸 Instagram Page');
+      case 'telegram': return t('✈️ টেলিগ্রাম চ্যানেল', '✈️ Telegram Channel');
+      case 'twitter': return t('🐦 এক্স / টুইটার', '🐦 X / Twitter');
+      default: return t('🔴 ইউটিউব চ্যানেল', '🔴 YouTube Channel');
+    }
+  };
+
+  const getAccountTypeBadge = () => {
+    switch (channel.accountType) {
+      case 'cooking_lifestyle':
+        return t('👩‍🍳 আন্টির রান্না ও রেসিপি', '👩‍🍳 Cooking & Lifestyle');
+      case 'facebook_page':
+        return t('📄 ইনস্ট্রিম অ্যাড মনিটাইজড পেজ', '📄 In-Stream Ads Monetized');
+      case 'tiktok_viral':
+        return t('⚡ ক্রিয়েটর রিওয়ার্ডস ও শপ', '⚡ Creator Rewards & Shop');
+      case 'instagram_theme':
+        return t('🎨 থিম পেজ ও ব্র্যান্ড শাউটআউট', '🎨 Theme Page & Shoutouts');
+      case 'faceless_cash_cow':
+        return t('🤖 ফেসলেস ক্যাশ কাউ', '🤖 Faceless Cash Cow');
+      case 'shorts_creator':
+        return t('⚡ ভাইরাল শর্টস ক্রিয়েটর', '⚡ Viral Shorts Creator');
+      case 'vintage_aged':
+        return t(`🏛️ ভিন্টেজ ${channel.creationYear} এর পুরাতন একাউন্ট`, `🏛️ Vintage ${channel.creationYear} Aged Account`);
+      default:
+        return channel.niche;
+    }
+  };
+
+  const getFollowerTitle = () => {
+    if (channel.platform === 'telegram') return t('টেলিগ্রাম মেম্বার', 'Telegram Members');
+    if (channel.platform === 'facebook' || channel.platform === 'instagram' || channel.platform === 'twitter' || channel.platform === 'tiktok') {
+      return t('ফলোয়ার / লাইক', 'Followers / Likes');
+    }
+    return t('সাবস্ক্রাইবার / ফলোয়ার', 'Subscribers / Followers');
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-20">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 pb-20">
       {/* Top Breadcrumb & Action bar */}
-      <div className="border-b border-slate-900 bg-slate-950/80 sticky top-16 z-30 backdrop-blur-xs">
+      <div className="border-b border-slate-200 bg-white/95 sticky top-16 z-30 backdrop-blur-xs shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition"
+            className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Marketplace</span>
+            <span>{t("মার্কেটপ্লেসে ফিরে যান", "Back to Marketplace")}</span>
           </button>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
-                showToast('Channel link copied to clipboard', 'info');
+                showToast(t('লিংক কপি করা হয়েছে', 'Link copied to clipboard'), 'info');
               }}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white text-xs transition"
-              title="Share listing"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 text-xs transition cursor-pointer"
+              title={t("শেয়ার করুন", "Share")}
             >
               <Share2 className="w-4 h-4" />
             </button>
@@ -158,9 +200,14 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
               href={channel.channelUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition"
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
             >
-              <span>Verify on {channel.platform === 'facebook' ? 'Facebook' : channel.platform === 'tiktok' ? 'TikTok' : channel.platform === 'instagram' ? 'Instagram' : channel.platform === 'telegram' ? 'Telegram' : channel.platform === 'twitter' ? 'X / Twitter' : 'YouTube'}</span>
+              <span>
+                {t(
+                  `${channel.platform.toUpperCase()}-এ সরাসরি যাচাই করুন`,
+                  `Verify live on ${channel.platform.toUpperCase()}`
+                )}
+              </span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -172,109 +219,69 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
           {/* Main Left Column (2 Cols) */}
           <div className="lg:col-span-2 space-y-6">
             {/* Header Card */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs">
               <div className="flex flex-wrap items-center gap-2">
                 {/* Platform Badge */}
                 <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
                   channel.platform === 'facebook'
-                    ? 'bg-blue-950 text-blue-300 border-blue-600/70'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
                     : channel.platform === 'tiktok'
-                    ? 'bg-cyan-950 text-cyan-300 border-cyan-500/70'
+                    ? 'bg-cyan-50 text-cyan-800 border-cyan-200'
                     : channel.platform === 'instagram'
-                    ? 'bg-pink-950 text-pink-300 border-pink-500/70'
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
                     : channel.platform === 'telegram'
-                    ? 'bg-sky-950 text-sky-300 border-sky-500/70'
+                    ? 'bg-sky-50 text-sky-700 border-sky-200'
                     : channel.platform === 'twitter'
-                    ? 'bg-zinc-900 text-slate-200 border-slate-500/70'
-                    : 'bg-red-950 text-red-300 border-red-600/70'
+                    ? 'bg-slate-100 text-slate-800 border-slate-300'
+                    : 'bg-red-50 text-red-700 border-red-200'
                 }`}>
-                  {channel.platform === 'facebook'
-                    ? '🔵 Facebook Page'
-                    : channel.platform === 'tiktok'
-                    ? '🎵 TikTok Account'
-                    : channel.platform === 'instagram'
-                    ? '📸 Instagram Page'
-                    : channel.platform === 'telegram'
-                    ? '✈️ Telegram Channel'
-                    : channel.platform === 'twitter'
-                    ? '🐦 X / Twitter'
-                    : '🔴 YouTube Channel'}
+                  {getPlatformLabel()}
                 </span>
 
-                {channel.accountType === 'cooking_lifestyle' ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-950 text-amber-300 border border-amber-700/60">
-                    👩‍🍳 আন্টির রান্না ও রেসিপি / Cooking &amp; Lifestyle
-                  </span>
-                ) : channel.accountType === 'facebook_page' ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-950 text-blue-300 border border-blue-700/60">
-                    📄 ইনস্ট্রিম অ্যাড মনিটাইজড পেজ
-                  </span>
-                ) : channel.accountType === 'tiktok_viral' ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-cyan-950 text-cyan-300 border border-cyan-700/60">
-                    ⚡ ক্রিয়েটর রিওয়ার্ডস ও শপ
-                  </span>
-                ) : channel.accountType === 'instagram_theme' ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-pink-950 text-pink-300 border border-pink-700/60">
-                    🎨 থিম পেজ ও ব্র্যান্ড শাউটআউট
-                  </span>
-                ) : channel.accountType === 'faceless_cash_cow' ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-950 text-purple-300 border border-purple-700/60">
-                    🤖 Faceless Cash Cow
-                  </span>
-                ) : channel.accountType === 'shorts_creator' ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-950 text-rose-300 border border-rose-700/60">
-                    ⚡ Viral Shorts Creator
-                  </span>
-                ) : channel.accountType === 'vintage_aged' ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/60">
-                    🏛️ Vintage {channel.creationYear} Aged Account
-                  </span>
-                ) : (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                    {channel.niche}
-                  </span>
-                )}
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                  {getAccountTypeBadge()}
+                </span>
 
                 {channel.pageQuality === 'green' && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
-                    <ShieldCheck className="w-4 h-4" />
-                    100% Green Page Quality
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    {t("১০০% গ্রিন পেজ কোয়ালিটি", "100% Green Page Quality")}
                   </span>
                 )}
 
                 {channel.verificationStatus === 'approved' && !channel.pageQuality && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
-                    <ShieldCheck className="w-4 h-4" />
-                    Verified Account &amp; Analytics
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    {t("ভেরিফাইড অ্যাকাউন্ট ও অ্যানালিটিক্স", "Verified Account & Analytics")}
                   </span>
                 )}
 
                 {channel.hasSilverButton && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700">
-                    <Award className="w-4 h-4 text-amber-400" />
-                    Silver Creator Award (100k+)
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300">
+                    <Award className="w-4 h-4 text-amber-500" />
+                    {t("সিলভার প্লে বাটন প্রাপ্ত (১০০k+)", "Silver Creator Award (100k+)")}
                   </span>
                 )}
               </div>
 
               <div>
-                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   {channel.title}
                 </h1>
-                <p className="text-sm text-slate-400 font-mono mt-1">
-                  {channel.handle} • Created in {channel.creationYear}
-                  {channel.primaryLanguage && ` • Language: ${channel.primaryLanguage}`}
+                <p className="text-sm text-slate-500 font-mono mt-1">
+                  {channel.handle} • {t(`তৈরি: ${channel.creationYear}`, `Created in ${channel.creationYear}`)}
+                  {channel.primaryLanguage && ` • ${t(`ভাষা: ${channel.primaryLanguage}`, `Language: ${channel.primaryLanguage}`)}`}
                 </p>
               </div>
 
-              <p className="text-sm text-slate-300 leading-relaxed">
-                {channel.description || 'Verified YouTube channel ready for immediate Brand Account primary ownership handover.'}
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {channel.description || t('যাচাইকৃত অ্যাকাউন্ট, তাৎক্ষণিক অফিসিয়াল হস্তান্তরের জন্য প্রস্তুত।', 'Verified social account ready for immediate ownership handover.')}
               </p>
 
               {channel.tags && channel.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-2">
                   {channel.tags.map((tag, i) => (
-                    <span key={i} className="text-[11px] px-2 py-0.5 rounded-md bg-slate-950 text-slate-400 border border-slate-800">
+                    <span key={i} className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
                       #{tag}
                     </span>
                   ))}
@@ -284,132 +291,139 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
 
             {/* Core Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Users className="w-4 h-4 text-blue-400" />
-                  <span>Subscribers</span>
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-xs">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <span>{getFollowerTitle()}</span>
                 </div>
-                <p className="text-xl font-black text-white">{formatNumber(channel.subscribers)}</p>
-                <p className="text-[10px] text-slate-500">{channel.subscribers.toLocaleString()} total</p>
+                <p className="text-xl font-black text-slate-900">{formatNumber(channel.subscribers)}</p>
+                <p className="text-[10px] text-slate-500">{channel.subscribers.toLocaleString()} {t("মোট", "total")}</p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Eye className="w-4 h-4 text-purple-400" />
-                  <span>Monthly Views</span>
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-xs">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <Eye className="w-4 h-4 text-cyan-600" />
+                  <span>{t("মাসিক ভিউ / রিচ", "Monthly Views / Reach")}</span>
                 </div>
-                <p className="text-xl font-black text-white">{formatNumber(channel.monthlyViews)}</p>
-                <p className="text-[10px] text-slate-500">Last 28-day cycle</p>
+                <p className="text-xl font-black text-slate-900">{formatNumber(channel.monthlyViews)}</p>
+                <p className="text-[10px] text-slate-500">{t("শেষ ২৮ দিনের সাইকেল", "Last 28-day cycle")}</p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <TrendingUp className="w-4 h-4 text-emerald-400" />
-                  <span>Monthly Revenue</span>
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-xs">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  <span>{t("মাসিক আয়", "Monthly Revenue")}</span>
                 </div>
-                <p className="text-xl font-black text-emerald-400">
+                <p className="text-xl font-black text-emerald-600">
                   ${channel.monthlyRevenue.toLocaleString()}
                 </p>
-                <p className="text-[10px] text-slate-500">AdSense &amp; sponsorships</p>
+                <p className="text-[10px] text-slate-500">{t("ইনস্ট্রিম / অ্যাডসেন্স", "In-Stream / AdSense")}</p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Film className="w-4 h-4 text-amber-400" />
-                  <span>Total Videos</span>
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-xs">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <Film className="w-4 h-4 text-amber-600" />
+                  <span>{t("মোট ভিডিও বা পোস্ট", "Total Posts / Videos")}</span>
                 </div>
-                <p className="text-xl font-black text-white">{channel.videoCount} Videos</p>
-                <p className="text-[10px] text-slate-500">Evergreen library</p>
+                <p className="text-xl font-black text-slate-900">{channel.videoCount}</p>
+                <p className="text-[10px] text-slate-500">{t("অরিজিনাল কনটেন্ট লাইব্রেরি", "Original content library")}</p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Globe className="w-4 h-4 text-cyan-400" />
-                  <span>Lifetime Views</span>
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-xs">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <Globe className="w-4 h-4 text-sky-600" />
+                  <span>{t("লাইফটাইম ভিউজ", "Lifetime Views")}</span>
                 </div>
-                <p className="text-xl font-black text-white">{formatNumber(channel.lifetimeViews)}</p>
-                <p className="text-[10px] text-slate-500">Cumulative historical</p>
+                <p className="text-xl font-black text-slate-900">{formatNumber(channel.lifetimeViews)}</p>
+                <p className="text-[10px] text-slate-500">{t("সর্বমোট ভিউ", "Cumulative historical")}</p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Calendar className="w-4 h-4 text-rose-400" />
-                  <span>Channel Age</span>
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-1 shadow-xs">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <Calendar className="w-4 h-4 text-rose-600" />
+                  <span>{t("অ্যাকাউন্টের বয়স", "Account Age")}</span>
                 </div>
-                <p className="text-xl font-black text-white">{2026 - channel.creationYear} Years</p>
-                <p className="text-[10px] text-slate-500">Established {channel.creationYear}</p>
+                <p className="text-xl font-black text-slate-900">
+                  {2026 - channel.creationYear} {t("বছর", "Years")}
+                </p>
+                <p className="text-[10px] text-slate-500">{t(`${channel.creationYear}-এ প্রতিষ্ঠিত`, `Established in ${channel.creationYear}`)}</p>
               </div>
             </div>
 
-            {/* YouTube Studio Analytics Evidence Showcase */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-4">
+            {/* Studio Analytics Evidence Showcase */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-xs">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                    Verified Studio Analytics Proof
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                    <span>{t("যাচাইকৃত স্টুডিও অ্যানালিটিক্স প্রমাণ", "Verified Studio Analytics Proof")}</span>
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Uploaded screenshots of YouTube Studio Revenue &amp; Audience tabs
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {t(
+                      "ক্রিয়েটর স্টুডিওর আয়, ভিউজ ও অডিয়েন্স ট্যাবের হাই-রেজুলুশন স্ক্রিনশট",
+                      "Uploaded screenshots of Creator Studio Revenue & Audience tabs"
+                    )}
                   </p>
                 </div>
                 {channel.analyticsScreenshots?.length > 0 && (
                   <button
                     onClick={() => setEvidenceModalOpen(true)}
-                    className="text-xs font-semibold text-red-400 hover:text-red-300 underline"
+                    className="text-xs font-semibold text-red-600 hover:text-red-700 underline cursor-pointer"
                   >
-                    View High-Res Proof
+                    {t(`ফুলস্ক্রিন দেখুন (${channel.analyticsScreenshots.length})`, `View Fullscreen (${channel.analyticsScreenshots.length})`)}
                   </button>
                 )}
               </div>
 
               {channel.analyticsScreenshots?.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {channel.analyticsScreenshots.map((url, idx) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {channel.analyticsScreenshots.map((img, idx) => (
                     <div
                       key={idx}
                       onClick={() => setEvidenceModalOpen(true)}
-                      className="group relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video cursor-pointer"
+                      className="group relative aspect-video rounded-2xl overflow-hidden border border-slate-200 cursor-pointer bg-slate-100"
                     >
                       <img
-                        src={url}
-                        alt={`Studio Analytics ${idx + 1}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        src={img}
+                        alt="Studio screenshot"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                       />
-                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition flex items-center justify-center">
-                        <span className="px-3 py-1.5 rounded-xl bg-slate-950/80 text-white text-xs font-semibold backdrop-blur-xs border border-slate-700">
-                          Click to Enlarge ({idx + 1}/{channel.analyticsScreenshots.length})
+                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="px-3 py-1.5 rounded-xl bg-white text-slate-900 text-xs font-semibold shadow-md">
+                          {t("বড় করে দেখুন", "Click to Enlarge")}
                         </span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 text-center">
-                  Seller has not attached custom screenshots for this listing yet.
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500 text-center">
+                  {t("সেলার এখনো কোনো কাস্টম অ্যানালিটিক্স স্ক্রিনশট যুক্ত করেননি।", "Seller has not attached custom screenshots for this listing yet.")}
                 </div>
               )}
             </div>
 
             {/* Audience Demographics & Geography */}
             {channel.audience && (
-              <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-6">
-                <h3 className="text-base font-bold text-white">Audience Demographics &amp; Geography</h3>
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-6 shadow-xs">
+                <h3 className="text-base font-bold text-slate-900">
+                  {t("অডিয়েন্স ডেমোগ্রাফিক ও ভৌগোলিক তথ্য", "Audience Demographics & Geography")}
+                </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {/* Top Countries */}
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                      Top Viewer Geographies
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                      {t("শীর্ষ দর্শক দেশসমূহ", "Top Viewer Geographies")}
                     </h4>
                     <div className="space-y-2.5">
                       {channel.audience.topCountries.map((c, i) => (
                         <div key={i} className="space-y-1">
                           <div className="flex justify-between text-xs">
-                            <span className="text-slate-300 font-medium">{c.country}</span>
-                            <span className="text-slate-400">{c.percentage}%</span>
+                            <span className="text-slate-700 font-medium">{c.country}</span>
+                            <span className="text-slate-500">{c.percentage}%</span>
                           </div>
-                          <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden">
+                          <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                             <div
                               className="h-full bg-gradient-to-r from-red-600 to-rose-500 rounded-full"
                               style={{ width: `${c.percentage}%` }}
@@ -423,19 +437,19 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                   {/* Age Distribution & Gender */}
                   <div className="space-y-5">
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                        Age Distribution
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                        {t("বয়সভিত্তিক বিন্যাস", "Age Distribution")}
                       </h4>
                       <div className="space-y-2.5">
                         {channel.audience.ageDistribution.map((a, i) => (
                           <div key={i} className="space-y-1">
                             <div className="flex justify-between text-xs">
-                              <span className="text-slate-300 font-medium">{a.range} years</span>
-                              <span className="text-slate-400">{a.percentage}%</span>
+                              <span className="text-slate-700 font-medium">{a.range} {t("বছর", "years")}</span>
+                              <span className="text-slate-500">{a.percentage}%</span>
                             </div>
-                            <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden">
+                            <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full"
+                                className="h-full bg-gradient-to-r from-blue-600 to-sky-500 rounded-full"
                                 style={{ width: `${a.percentage}%` }}
                               />
                             </div>
@@ -444,14 +458,14 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-800">
+                    <div className="pt-2 border-t border-slate-200">
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-slate-400 font-medium">Gender Ratio</span>
-                        <span className="text-white font-semibold">
-                          Male {channel.audience.genderSplit.male}% • Female {channel.audience.genderSplit.female}%
+                        <span className="text-slate-500 font-medium">{t("লিঙ্গ অনুপাত (Gender)", "Gender Ratio")}</span>
+                        <span className="text-slate-900 font-semibold">
+                          {t("পুরুষ", "Male")} {channel.audience.genderSplit.male}% • {t("মহিলা", "Female")} {channel.audience.genderSplit.female}%
                         </span>
                       </div>
-                      <div className="w-full h-2.5 rounded-full bg-slate-950 overflow-hidden flex">
+                      <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden flex">
                         <div
                           className="h-full bg-blue-500"
                           style={{ width: `${channel.audience.genderSplit.male}%` }}
@@ -467,7 +481,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
               </div>
             )}
 
-            {/* একাউন্টের রিভিউ অপশন ও স্লাইডার (উপরে রিভিউ অপশন, নিচে স্লাইডার আকারে রিভিউসমূহ) */}
+            {/* রিভিউ অপশন ও স্লাইডার */}
             <ReviewSlider
               channelId={channel.id}
               channelTitle={channel.title}
@@ -479,54 +493,59 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
           {/* Right Column: Pricing & Purchase Card (1 Col) */}
           <div className="space-y-6">
             {/* Purchase / Offer Card */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 space-y-5 sticky top-28 shadow-2xl">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 space-y-5 sticky top-28 shadow-lg">
               <div>
-                <span className="text-xs text-slate-400 uppercase tracking-wider block">Asking Price (বিক্রয় মূল্য)</span>
+                <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">
+                  {t("বিক্রয় মূল্য (Asking Price)", "Asking Price")}
+                </span>
                 <div className="flex flex-wrap items-baseline gap-2 mt-1">
-                  <span className="text-3xl sm:text-4xl font-black text-white">
-                    ${channel.askingPrice.toLocaleString()}
+                  <span className="text-3xl sm:text-4xl font-black text-slate-900">
+                    {formatPrice(channel.askingPrice)}
                   </span>
-                  <span className="text-xs text-slate-400">USD</span>
-                  <span className="text-xs font-semibold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-md">
-                    ≈ ৳{Math.round(channel.askingPrice * 122).toLocaleString()} BDT
+                  <span className="text-xs font-bold text-slate-500 uppercase">{currency}</span>
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                    ≈ {currency === 'USD' ? formatBdt(channel.askingPrice) : formatUsd(channel.askingPrice)}
                   </span>
                 </div>
                 {channel.minOfferPrice && (
-                  <p className="text-xs text-slate-400 mt-1">
-                    Accepting offers from ${channel.minOfferPrice.toLocaleString()} (৳{Math.round(channel.minOfferPrice * 122).toLocaleString()})
+                  <p className="text-xs text-slate-500 mt-1">
+                    {t(
+                      `অফার গ্রহণ শুরু: ${formatPrice(channel.minOfferPrice)}`,
+                      `Accepting offers from ${formatPrice(channel.minOfferPrice)}`
+                    )}
                   </p>
                 )}
               </div>
 
               {/* Status Pill */}
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Listing Status:</span>
-                  <span className="font-bold text-emerald-400 uppercase tracking-wide">
-                    {channel.status}
+                  <span className="text-slate-500">{t("লিস্টিং স্ট্যাটাস:", "Listing Status:")}</span>
+                  <span className="font-bold text-emerald-700 uppercase tracking-wide">
+                    {channel.status === 'active' ? t('সক্রিয় (Active)', 'Active') : channel.status}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Monetization:</span>
-                  <span className="font-semibold text-white">
-                    {channel.monetizationStatus === 'monetized' ? 'YPP Active' : 'Not Monetized'}
+                  <span className="text-slate-500">{t("মনিটাইজেশন:", "Monetization:")}</span>
+                  <span className="font-semibold text-slate-800">
+                    {channel.monetizationStatus === 'monetized' ? t('সক্রিয় / Ads Active', 'YPP / Ads Active') : t('মনিটাইজড নয়', 'Not Monetized')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Strikes:</span>
-                  <span className="font-semibold text-emerald-400">0 Strikes Clean</span>
+                  <span className="text-slate-500">{t("কপিরাইট স্ট্রাইক:", "Strikes:")}</span>
+                  <span className="font-semibold text-emerald-700">{t("০ স্ট্রাইক (ক্লিন)", "0 Strikes Clean")}</span>
                 </div>
               </div>
 
-              {/* Side-by-side Charge Calculation (মূল্য + চার্জ = মোট পাশে পাশে) */}
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
-                <span className="text-[11px] text-slate-400 uppercase tracking-wider block font-semibold">
-                  মূল্য ও প্ল্যাটফর্ম চার্জ ব্রেকডাউন (Price &amp; Charge):
+              {/* Side-by-side Charge Calculation */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+                <span className="text-[11px] text-slate-500 uppercase tracking-wider block font-semibold">
+                  {t("মূল্য ও প্ল্যাটফর্ম চার্জ ব্রেকডাউন:", "Price & Platform Charge Breakdown:")}
                 </span>
-                <div className="flex flex-wrap items-center justify-between gap-1 pt-1 border-t border-slate-800/80 font-bold">
-                  <span className="text-white">${channel.askingPrice.toLocaleString()} (মূল্য)</span>
-                  <span className="text-amber-400 font-semibold">+ ${Math.round(channel.askingPrice * 0.05).toLocaleString()} (৫% চার্জ)</span>
-                  <span className="text-emerald-400">= ${(channel.askingPrice + Math.round(channel.askingPrice * 0.05)).toLocaleString()} (সর্বমোট)</span>
+                <div className="flex flex-wrap items-center justify-between gap-1 pt-1 border-t border-slate-200 font-bold">
+                  <span className="text-slate-900">{formatPrice(channel.askingPrice)} ({t("মূল্য", "Price")})</span>
+                  <span className="text-amber-700 font-semibold">+ {formatPrice(Math.round(channel.askingPrice * 0.05))} (5% {t("চার্জ", "Fee")})</span>
+                  <span className="text-emerald-700">= {formatPrice(channel.askingPrice + Math.round(channel.askingPrice * 0.05))} ({t("সর্বমোট", "Total")})</span>
                 </div>
               </div>
 
@@ -534,64 +553,68 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
               <div className="space-y-2.5">
                 <button
                   onClick={handleStartPurchase}
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-red-600/30 transition"
+                  className="w-full py-3.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-sm uppercase tracking-wider shadow-md transition cursor-pointer"
                 >
-                  Initiate Secure Purchase
+                  {t("নিরাপদ ক্রয় শুরু করুন (Buy Now)", "Initiate Secure Purchase")}
                 </button>
+
                 <button
                   onClick={() => setMessagingModalOpen(true)}
-                  className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer border border-slate-200"
                 >
-                  <MessageSquare className="w-4 h-4" />
-                  Message Seller / Inquire
+                  <MessageSquare className="w-4 h-4 text-slate-600" />
+                  <span>{t("সেলারকে মেসেজ দিন / জিজ্ঞাসা করুন", "Message Seller / Inquire")}</span>
                 </button>
               </div>
 
               {/* Safety notice banner */}
-              <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-800/40 space-y-1.5 text-xs text-emerald-200">
-                <div className="flex items-center gap-1.5 font-bold text-emerald-400">
-                  <ShieldCheck className="w-4 h-4 shrink-0" />
-                  <span>ChannelTrust Protection</span>
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1.5 text-xs text-emerald-800">
+                <div className="flex items-center gap-1.5 font-bold text-emerald-700">
+                  <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span>{t("ChannelTrust নিরাপত্তা সুরক্ষা", "ChannelTrust Protection")}</span>
                 </div>
-                <p className="text-[11px] leading-relaxed text-emerald-300/80">
-                  Transfers occur via Google Brand Account primary ownership reassignment. Google passwords are never requested or shared.
+                <p className="text-[11px] leading-relaxed text-emerald-700">
+                  {t(
+                    "অফিসিয়াল রোল ট্রান্সফারের মাধ্যমে হস্তান্তর সম্পন্ন হয়। অ্যাকাউন্টের পাসওয়ার্ড কখনোই চাওয়া বা শেয়ার করা হয় না।",
+                    "Transfers occur via standard official role reassignment. Account passwords are never requested or shared."
+                  )}
                 </p>
                 <button
                   onClick={() => onOpenLegal('safety')}
-                  className="text-[10px] text-emerald-400 underline font-semibold block"
+                  className="text-[10px] text-emerald-800 underline font-semibold block cursor-pointer"
                 >
-                  Review our 7-day transfer protocol
+                  {t("আমাদের নিরাপত্তা প্রটোকল পড়ুন", "Review our safety protocol")}
                 </button>
               </div>
 
               {/* Seller Profile Summary */}
               {seller && (
-                <div className="pt-4 border-t border-slate-800 space-y-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
-                    Seller Overview
+                <div className="pt-4 border-t border-slate-200 space-y-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+                    {t("সেলার পরিচিতি", "Seller Overview")}
                   </span>
                   <div className="flex items-center gap-3">
                     <img
                       src={seller.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${seller.name}`}
                       alt={seller.name}
-                      className="w-11 h-11 rounded-full border border-slate-700 object-cover"
+                      className="w-11 h-11 rounded-full border border-slate-200 object-cover"
                     />
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-white">{seller.name}</span>
+                        <span className="text-xs font-bold text-slate-900">{seller.name}</span>
                         {seller.isVerifiedSeller && (
-                          <span className="text-emerald-400 text-xs" title="Verified Creator Seller">✓</span>
+                          <span className="text-emerald-600 text-xs font-bold" title={t("যাচাইকৃত সেলার", "Verified Creator Seller")}>✓</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                        <span className="text-amber-400 font-semibold">★ {seller.rating || 5.0}</span>
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                        <span className="text-amber-600 font-semibold">★ {seller.rating || 5.0}</span>
                         <span>•</span>
-                        <span>{seller.dealsCount || 0} completed deals</span>
+                        <span>{seller.dealsCount || 0} {t("টি সফল চুক্তি", "completed deals")}</span>
                       </div>
                     </div>
                   </div>
                   {seller.bio && (
-                    <p className="text-xs text-slate-400 leading-relaxed italic">
+                    <p className="text-xs text-slate-600 leading-relaxed italic">
                       "{seller.bio}"
                     </p>
                   )}
@@ -622,47 +645,50 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
 
       {/* Purchase Request Modal */}
       {purchaseModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-in text-slate-100 space-y-5">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-in text-slate-800 space-y-5">
             <div>
-              <h3 className="text-xl font-extrabold text-white">Purchase Request &amp; Handover Setup</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                You are submitting an official purchase request for <strong>{channel.title}</strong>
+              <h3 className="text-xl font-extrabold text-slate-900">
+                {t("ক্রয় রিকোয়েস্ট ও হ্যান্ডওভার সেটআপ", "Purchase Request & Handover Setup")}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                {t("আপনি অফিসিয়াল পারচেজ রিকোয়েস্ট দিচ্ছেন: ", "You are submitting an official purchase request for ")}
+                <strong>{channel.title}</strong>
               </p>
             </div>
 
             <form onSubmit={handleConfirmPurchase} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Purchase Amount ($ USD)
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {t("ক্রয় মূল্য ($ USD)", "Purchase Amount ($ USD)")}
                 </label>
                 <input
                   type="number"
                   required
                   value={offerPrice}
                   onChange={(e) => setOfferPrice(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-hidden focus:border-red-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-hidden focus:border-red-500"
                 />
-                <div className="flex flex-wrap items-center justify-between gap-1 text-xs font-semibold pt-1.5 text-slate-300">
-                  <span>চ্যানেল মূল্য: ${(Number(offerPrice) || 0).toLocaleString()}</span>
-                  <span className="text-amber-400">+ ৫% চার্জ: ${Math.round((Number(offerPrice) || 0) * 0.05).toLocaleString()}</span>
-                  <span className="text-emerald-400 font-bold">= মোট: ${((Number(offerPrice) || 0) + Math.round((Number(offerPrice) || 0) * 0.05)).toLocaleString()} USD</span>
+                <div className="flex flex-wrap items-center justify-between gap-1 text-xs font-semibold pt-1.5 text-slate-600">
+                  <span>{t("অ্যাকাউন্ট মূল্য:", "Base Price:")} ${(Number(offerPrice) || 0).toLocaleString()}</span>
+                  <span className="text-amber-700">+ 5% {t("চার্জ:", "Fee:")} ${Math.round((Number(offerPrice) || 0) * 0.05).toLocaleString()}</span>
+                  <span className="text-emerald-700 font-bold">= {t("মোট:", "Total:")} ${((Number(offerPrice) || 0) + Math.round((Number(offerPrice) || 0) * 0.05)).toLocaleString()} USD</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   {channel.platform === 'facebook'
-                    ? 'আপনার ফেসবুক প্রোফাইল লিংক বা ইমেইল (Facebook Page Admin ইনভাইটেশন পাওয়ার জন্য) *'
+                    ? t('আপনার ফেসবুক প্রোফাইল লিংক বা ইমেইল (Facebook Page Admin ইনভাইটেশন পাওয়ার জন্য) *', 'Your Facebook Profile URL or Email (For Page Admin Invite) *')
                     : channel.platform === 'tiktok'
-                    ? 'আপনার ইমেইল বা ফোন নম্বর (TikTok একাউন্ট হস্তান্তরের জন্য) *'
+                    ? t('আপনার ইমেইল বা ফোন নম্বর (TikTok একাউন্ট হস্তান্তরের জন্য) *', 'Your Email or Phone (For TikTok Handover) *')
                     : channel.platform === 'instagram'
-                    ? 'আপনার ইমেইল ঠিকানা (Instagram একাউন্ট ও ওজি ইমেইল ট্রান্সফারের জন্য) *'
+                    ? t('আপনার ইমেইল ঠিকানা (Instagram একাউন্ট ও ওজি ইমেইল ট্রান্সফারের জন্য) *', 'Your Email Address (For Instagram & OG Email Transfer) *')
                     : channel.platform === 'telegram'
-                    ? 'আপনার টেলিগ্রাম ইউজারনেম (@username) বা ফোন (Owner Rights ট্রান্সফারের জন্য) *'
+                    ? t('আপনার টেলিগ্রাম ইউজারনেম (@username) বা ফোন (Owner Rights ট্রান্সফারের জন্য) *', 'Your Telegram @username or Phone (For Ownership Transfer) *')
                     : channel.platform === 'twitter'
-                    ? 'আপনার ইমেইল বা এক্স হ্যান্ডেল (X / Twitter একাউন্ট হস্তান্তরের জন্য) *'
-                    : 'Your Clean Google/Gmail Account (For YouTube Brand Account Manager Invite) *'}
+                    ? t('আপনার ইমেইল বা এক্স হ্যান্ডেল (X / Twitter একাউন্ট হস্তান্তরের জন্য) *', 'Your Email or X Handle (For Twitter / X Handover) *')
+                    : t('আপনার ফ্রেশ গুগল / জিমেইল অ্যাকাউন্ট (YouTube Brand Account Manager ইনভাইটের জন্য) *', 'Your Clean Google/Gmail Account (For YouTube Brand Account Manager Invite) *')}
                 </label>
                 <input
                   type="text"
@@ -676,22 +702,26 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                       ? '@your_telegram_username'
                       : 'your.clean.email@gmail.com'
                   }
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-hidden focus:border-blue-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-hidden focus:border-red-500"
                 />
-                <span className="text-[11px] text-amber-400/90 mt-1.5 block">
-                  নিরাপত্তা নির্দেশিকা: কখনোই আপনার পাসওয়ার্ড কারও সাথে শেয়ার করবেন না। প্ল্যাটফর্ম এস্ক্রোর মাধ্যমে নিরাপদে হস্তান্তর সম্পন্ন হবে।
+                <span className="text-[11px] text-amber-700 mt-1.5 block">
+                  {t(
+                    "নিরাপত্তা নির্দেশিকা: কখনোই আপনার পাসওয়ার্ড কারও সাথে শেয়ার করবেন না। প্ল্যাটফর্ম এস্ক্রোর মাধ্যমে নিরাপদে হস্তান্তর সম্পন্ন হবে।",
+                    "Safety Notice: Never share your passwords with anyone. Transfer completes securely via platform escrow."
+                  )}
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-white font-semibold">
-                  <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>পেমেন্ট ও ট্রান্সফার প্রসেস (Safe Escrow)</span>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-slate-900 font-semibold">
+                  <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{t("পেমেন্ট ও ট্রান্সফার প্রসেস (Safe Escrow)", "Payment & Transfer Process (Safe Escrow)")}</span>
                 </div>
                 <p className="text-[11px] leading-relaxed">
-                  ১. বায়ারের পেমেন্ট প্ল্যাটফর্মের নিরাপদ ভল্টে জমা থাকবে।<br />
-                  ২. সেলার ওপরের তথ্যে অ্যাডমিন/ওনারশিপ ট্রান্সফার সম্পন্ন করবেন।<br />
-                  ৩. বায়ার একাউন্ট অ্যাক্সেস নিশ্চিত করার পরই সেলারের কাছে টাকা পৌঁছে যাবে।
+                  {t(
+                    "১. বায়ারের পেমেন্ট প্ল্যাটফর্মের নিরাপদ ভল্টে জমা থাকবে।\n২. সেলার ওপরের তথ্যে অ্যাডমিন/ওনারশিপ ট্রান্সফার সম্পন্ন করবেন।\n৩. বায়ার একাউন্ট অ্যাক্সেস নিশ্চিত করার পরই সেলারের কাছে টাকা পৌঁছে যাবে।",
+                    "1. Buyer funds are held in secure escrow vault.\n2. Seller sends admin/owner invitation to your provided details.\n3. Funds are released to seller only after buyer confirms verified access."
+                  )}
                 </p>
               </div>
 
@@ -699,16 +729,16 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setPurchaseModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
                 >
-                  Cancel
+                  {t("বাতিল", "Cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={submittingOrder}
-                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider transition disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider transition disabled:opacity-50 cursor-pointer shadow-xs"
                 >
-                  {submittingOrder ? 'Submitting...' : 'Confirm & Proceed'}
+                  {submittingOrder ? t("সাবমিট হচ্ছে...", "Submitting...") : t("নিশ্চিত ও অগ্রসর হোন", "Confirm & Proceed")}
                 </button>
               </div>
             </form>

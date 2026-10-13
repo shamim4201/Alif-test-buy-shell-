@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Message } from '../types';
-import { X, Send, ShieldCheck, AlertTriangle, MessageSquare, CheckCheck } from 'lucide-react';
+import { X, Send, ShieldCheck, AlertTriangle, MessageSquare } from 'lucide-react';
 
 interface MessagingModalProps {
   isOpen: boolean;
@@ -83,43 +83,43 @@ export const MessagingModal: React.FC<MessagingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[600px] text-slate-100">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="relative w-full max-w-xl bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[600px] text-slate-800">
         {/* Header */}
-        <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-400">
+            <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600">
               <MessageSquare className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <span>{channelTitle || 'Channel Communication'}</span>
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Chatting with {counterpartName || 'Counterparty'} • Safe ChannelVault
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Security Alert Bar */}
-        <div className="bg-amber-950/30 border-b border-amber-900/40 px-4 py-2 flex items-center gap-2 text-xs text-amber-300">
-          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-2 text-xs text-amber-800">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>Notice: Chat is audited. Do not share Google account passwords or off-platform payment info.</span>
         </div>
 
         {/* Messages List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/60">
           {loading && messages.length === 0 ? (
-            <div className="text-center py-12 text-xs text-slate-500">Loading conversation history...</div>
+            <div className="text-center py-12 text-xs text-slate-400">Loading conversation history...</div>
           ) : messages.length === 0 ? (
-            <div className="text-center py-12 text-xs text-slate-500">
+            <div className="text-center py-12 text-xs text-slate-400">
               No messages yet. Send a message to initiate communication.
             </div>
           ) : (
@@ -129,13 +129,13 @@ export const MessagingModal: React.FC<MessagingModalProps> = ({
 
               if (isSystem) {
                 return (
-                  <div key={m.id} className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 space-y-1">
-                    <div className="flex items-center gap-1.5 text-red-400 font-bold text-[11px]">
+                  <div key={m.id} className="p-3 rounded-xl bg-white border border-slate-200 text-xs text-slate-700 space-y-1 shadow-2xs">
+                    <div className="flex items-center gap-1.5 text-red-600 font-bold text-[11px]">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       {m.senderName}
                     </div>
                     <p className="leading-relaxed">{m.text}</p>
-                    <span className="text-[10px] text-slate-500 block text-right">
+                    <span className="text-[10px] text-slate-400 block text-right">
                       {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -147,20 +147,20 @@ export const MessagingModal: React.FC<MessagingModalProps> = ({
                   key={m.id}
                   className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                 >
-                  <div className="text-[10px] text-slate-400 mb-0.5 px-1">
+                  <div className="text-[10px] text-slate-500 mb-0.5 px-1">
                     {isMe ? 'You' : m.senderName} ({m.senderRole})
                   </div>
                   <div
                     className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs ${
                       isMe
-                        ? 'bg-red-600 text-white rounded-tr-none'
-                        : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-tl-none'
+                        ? 'bg-red-600 text-white rounded-tr-none shadow-xs'
+                        : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none shadow-2xs'
                     }`}
                   >
                     <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
                     <span
                       className={`text-[9px] mt-1 block text-right ${
-                        isMe ? 'text-red-200' : 'text-slate-400'
+                        isMe ? 'text-red-100' : 'text-slate-400'
                       }`}
                     >
                       {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -174,25 +174,25 @@ export const MessagingModal: React.FC<MessagingModalProps> = ({
 
         {/* Warning Alert if triggered */}
         {warningAlert && (
-          <div className="px-4 py-2 bg-amber-950/70 border-t border-amber-800/80 text-amber-200 text-xs flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+          <div className="px-4 py-2 bg-amber-50 border-t border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{warningAlert}</span>
           </div>
         )}
 
         {/* Input box */}
-        <form onSubmit={handleSend} className="p-4 bg-slate-950 border-t border-slate-800 flex gap-2">
+        <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-200 flex gap-2">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Type a safe message (no passwords)..."
-            className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-red-500 transition"
+            className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-red-500 transition"
           />
           <button
             type="submit"
             disabled={sending || !inputText.trim()}
-            className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 flex items-center gap-1.5"
+            className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
             Send

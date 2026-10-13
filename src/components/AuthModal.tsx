@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { X, Youtube, ShieldCheck, Mail, Lock, User as UserIcon, Check } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
+import { BrandLogo } from './BrandLogo';
+import { X, Youtube, Mail, Lock, User as UserIcon, Check } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
   const { authModal, closeAuthModal, login, register, quickSwitch } = useAuth();
+  const { t } = useCurrency();
   const [isLogin, setIsLogin] = useState(authModal.mode === 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,47 +30,47 @@ export const AuthModal: React.FC = () => {
         await register({ name, email, password, role, bio });
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please check your credentials.');
+      setError(err.message || t('লগইন ব্যর্থ হয়েছে। তথ্য যাচাই করুন।', 'Authentication failed. Please check your credentials.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-in text-slate-100">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-in text-slate-900">
         <button
           onClick={closeAuthModal}
-          className="absolute right-5 top-5 p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          className="absolute right-5 top-5 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Brand header */}
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-600 to-rose-500 mx-auto flex items-center justify-center text-white shadow-lg shadow-red-600/30 mb-3">
-            <Youtube className="w-7 h-7 fill-current" />
+        <div className="text-center mb-6 flex flex-col items-center">
+          <div className="mb-3">
+            <BrandLogo theme="light" size="lg" showSubtitle={true} />
           </div>
-          <h2 className="text-xl font-extrabold text-white">
-            {isLogin ? 'Sign In to ChannelTrust' : 'Create Your Account'}
+          <h2 className="text-xl font-extrabold text-slate-900">
+            {isLogin ? t('Alif Trust-এ সাইন ইন করুন', 'Sign In to Alif Trust') : t('নতুন অ্যাকাউন্ট তৈরি করুন', 'Create Your Account')}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             {isLogin
-              ? 'Access your buyer & seller dashboards securely'
-              : 'Join the premier verified YouTube channel marketplace'}
+              ? t('আপনার বায়ার বা সেলার ড্যাশবোর্ডে নিরাপদে প্রবেশ করুন', 'Access your buyer & seller dashboards securely')
+              : t('সোশ্যাল মিডিয়া অ্যাকাউন্ট মার্কেটপ্লেসে যুক্ত হোন', 'Join the premier verified social asset marketplace')}
           </p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-red-950/60 border border-red-800 text-red-200 text-xs">
+          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
             {error}
           </div>
         )}
 
         {/* Quick Demo Personas */}
-        <div className="mb-6 p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block text-center">
-            Instant Demo Sign-In
+        <div className="mb-6 p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block text-center">
+            {t('দ্রুত ডেমো সাইন-ইন (Instant Demo)', 'Instant Demo Sign-In')}
           </span>
           <div className="grid grid-cols-3 gap-1.5">
             <button
@@ -76,9 +79,9 @@ export const AuthModal: React.FC = () => {
                 quickSwitch('buyer');
                 closeAuthModal();
               }}
-              className="px-2 py-2 rounded-xl bg-blue-950/40 hover:bg-blue-900/50 border border-blue-800/40 text-blue-300 text-xs font-medium transition text-center"
+              className="px-2 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-semibold transition text-center cursor-pointer"
             >
-              Buyer
+              {t('বায়ার (Buyer)', 'Buyer')}
             </button>
             <button
               type="button"
@@ -86,9 +89,9 @@ export const AuthModal: React.FC = () => {
                 quickSwitch('seller');
                 closeAuthModal();
               }}
-              className="px-2 py-2 rounded-xl bg-amber-950/40 hover:bg-amber-900/50 border border-amber-800/40 text-amber-300 text-xs font-medium transition text-center"
+              className="px-2 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-semibold transition text-center cursor-pointer"
             >
-              Top Seller
+              {t('টপ সেলার', 'Top Seller')}
             </button>
             <button
               type="button"
@@ -96,9 +99,9 @@ export const AuthModal: React.FC = () => {
                 quickSwitch('admin');
                 closeAuthModal();
               }}
-              className="px-2 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 border border-rose-800/40 text-rose-300 text-xs font-medium transition text-center"
+              className="px-2 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-semibold transition text-center cursor-pointer"
             >
-              Admin
+              {t('অ্যাডমিন', 'Admin')}
             </button>
           </div>
         </div>
@@ -108,46 +111,50 @@ export const AuthModal: React.FC = () => {
           {!isLogin && (
             <>
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Full Name or Company</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {t('পুরো নাম বা কোম্পানির নাম', 'Full Name or Company')}
+                </label>
                 <div className="relative">
-                  <UserIcon className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                  <UserIcon className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Media Ventures LLC"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-red-500 transition"
+                    placeholder={t('যেমন: মিডিয়া ভেনচার্স', 'e.g. Media Ventures LLC')}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-red-500 transition"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Primary Intent</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  {t('আপনার মূল উদ্দেশ্য (Primary Intent)', 'Primary Intent')}
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setRole('buyer')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
                       role === 'buyer'
-                        ? 'bg-red-600/20 border-red-500 text-white'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                        ? 'bg-red-50 border-red-500 text-red-600'
+                        : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
-                    {role === 'buyer' && <Check className="w-3.5 h-3.5 text-red-400" />}
-                    I want to Buy
+                    {role === 'buyer' && <Check className="w-3.5 h-3.5 text-red-600" />}
+                    {t('আমি কিনতে চাই', 'I want to Buy')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setRole('seller')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
                       role === 'seller'
-                        ? 'bg-red-600/20 border-red-500 text-white'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                        ? 'bg-red-50 border-red-500 text-red-600'
+                        : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
-                    {role === 'seller' && <Check className="w-3.5 h-3.5 text-red-400" />}
-                    I want to Sell
+                    {role === 'seller' && <Check className="w-3.5 h-3.5 text-red-600" />}
+                    {t('আমি বিক্রি করতে চাই', 'I want to Sell')}
                   </button>
                 </div>
               </div>
@@ -155,44 +162,50 @@ export const AuthModal: React.FC = () => {
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              {t('ইমেইল অ্যাড্রেস', 'Email Address')}
+            </label>
             <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+              <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@domain.com"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-red-500 transition"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-red-500 transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              {t('পাসওয়ার্ড', 'Password')}
+            </label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+              <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-red-500 transition"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-red-500 transition"
               />
             </div>
           </div>
 
           {!isLogin && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Short Bio / Background (Optional)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {t('সংক্ষিপ্ত বায়ো / অভিজ্ঞতা (ঐচ্ছিক)', 'Short Bio / Background (Optional)')}
+              </label>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 rows={2}
-                placeholder="Tell buyers or sellers about your media experience..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-red-500 transition"
+                placeholder={t('আপনার কাজের অভিজ্ঞতা সম্পর্কে লিখুন...', 'Tell buyers or sellers about your media experience...')}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-red-500 transition"
               />
             </div>
           )}
@@ -200,23 +213,23 @@ export const AuthModal: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-sm shadow-lg shadow-red-600/30 transition disabled:opacity-50"
+            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-sm shadow-lg shadow-red-600/30 transition disabled:opacity-50 cursor-pointer"
           >
-            {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Free Account'}
+            {loading ? t('প্রক্রিয়াধীন...', 'Processing...') : isLogin ? t('সাইন ইন করুন', 'Sign In') : t('ফ্রি অ্যাকাউন্ট তৈরি করুন', 'Create Free Account')}
           </button>
         </form>
 
         {/* Toggle Mode */}
-        <div className="mt-5 pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
-          {isLogin ? "Don't have an account yet?" : 'Already have an account?'}
+        <div className="mt-5 pt-4 border-t border-slate-200 text-center text-xs text-slate-500">
+          {isLogin ? t('এখনো কোনো অ্যাকাউন্ট নেই?', "Don't have an account yet?") : t('ইতিমধ্যে অ্যাকাউন্ট আছে?', 'Already have an account?')}
           <button
             onClick={() => {
               setIsLogin(!isLogin);
               setError(null);
             }}
-            className="ml-1.5 font-bold text-red-400 hover:text-red-300 underline"
+            className="ml-1.5 font-bold text-red-600 hover:text-red-700 underline cursor-pointer"
           >
-            {isLogin ? 'Register now' : 'Sign In'}
+            {isLogin ? t('রেজিস্ট্রেশন করুন', 'Register now') : t('সাইন ইন', 'Sign In')}
           </button>
         </div>
       </div>
