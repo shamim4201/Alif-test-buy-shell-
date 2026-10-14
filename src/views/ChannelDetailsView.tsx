@@ -26,6 +26,13 @@ import {
   Share2
 } from 'lucide-react';
 
+import {
+  getLocalizedChannelTitle,
+  getLocalizedChannelDescription,
+  getLocalizedChannelLanguage,
+  getLocalizedChannelNiche
+} from '../translations/translations';
+
 interface ChannelDetailsViewProps {
   channelId: string;
   onBack: () => void;
@@ -40,7 +47,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
   onOpenLegal
 }) => {
   const { user, openAuthModal, showToast } = useAuth();
-  const { currency, formatPrice, formatUsd, formatBdt, t } = useCurrency();
+  const { currency, formatPrice, formatUsd, formatBdt, language, t } = useCurrency();
   const [channel, setChannel] = useState<ChannelListing | null>(null);
   const [seller, setSeller] = useState<User | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -160,7 +167,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
       case 'vintage_aged':
         return t(`🏛️ ভিন্টেজ ${channel.creationYear} এর পুরাতন একাউন্ট`, `🏛️ Vintage ${channel.creationYear} Aged Account`);
       default:
-        return channel.niche;
+        return getLocalizedChannelNiche(channel.niche, language);
     }
   };
 
@@ -204,8 +211,8 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
             >
               <span>
                 {t(
-                  `${channel.platform.toUpperCase()}-এ সরাসরি যাচাই করুন`,
-                  `Verify live on ${channel.platform.toUpperCase()}`
+                  `${(channel.platform || 'youtube').toUpperCase()}-এ সরাসরি যাচাই করুন`,
+                  `Verify live on ${(channel.platform || 'youtube').toUpperCase()}`
                 )}
               </span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -266,16 +273,16 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
 
               <div>
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  {channel.title}
+                  {getLocalizedChannelTitle(channel, language)}
                 </h1>
                 <p className="text-sm text-slate-500 font-mono mt-1">
                   {channel.handle} • {t(`তৈরি: ${channel.creationYear}`, `Created in ${channel.creationYear}`)}
-                  {channel.primaryLanguage && ` • ${t(`ভাষা: ${channel.primaryLanguage}`, `Language: ${channel.primaryLanguage}`)}`}
+                  {channel.primaryLanguage && ` • ${t('ভাষা: ', 'Language: ')}${getLocalizedChannelLanguage(channel.primaryLanguage, language)}`}
                 </p>
               </div>
 
               <p className="text-sm text-slate-600 leading-relaxed">
-                {channel.description || t('যাচাইকৃত অ্যাকাউন্ট, তাৎক্ষণিক অফিসিয়াল হস্তান্তরের জন্য প্রস্তুত।', 'Verified social account ready for immediate ownership handover.')}
+                {getLocalizedChannelDescription(channel, language) || t('যাচাইকৃত অ্যাকাউন্ট, তাৎক্ষণিক অফিসিয়াল হস্তান্তরের জন্য প্রস্তুত।', 'Verified social account ready for immediate ownership handover.')}
               </p>
 
               {channel.tags && channel.tags.length > 0 && (
@@ -484,7 +491,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
             {/* রিভিউ অপশন ও স্লাইডার */}
             <ReviewSlider
               channelId={channel.id}
-              channelTitle={channel.title}
+              channelTitle={getLocalizedChannelTitle(channel, language)}
               initialReviews={reviews}
               onReviewAdded={(newRev) => setReviews((prev) => [newRev, ...prev])}
             />
@@ -496,7 +503,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 space-y-5 sticky top-28 shadow-lg">
               <div>
                 <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">
-                  {t("বিক্রয় মূল্য (Asking Price)", "Asking Price")}
+                  {t("বিক্রয় মূল্য", "Asking Price")}
                 </span>
                 <div className="flex flex-wrap items-baseline gap-2 mt-1">
                   <span className="text-3xl sm:text-4xl font-black text-slate-900">
@@ -630,7 +637,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
         isOpen={evidenceModalOpen}
         onClose={() => setEvidenceModalOpen(false)}
         screenshots={channel.analyticsScreenshots}
-        channelTitle={channel.title}
+        channelTitle={getLocalizedChannelTitle(channel, language)}
       />
 
       {/* In-flight Direct Messaging Modal */}
@@ -638,7 +645,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
         isOpen={messagingModalOpen}
         onClose={() => setMessagingModalOpen(false)}
         channelId={channel.id}
-        channelTitle={channel.title}
+        channelTitle={getLocalizedChannelTitle(channel, language)}
         counterpartName={channel.sellerName}
         recipientId={channel.sellerId}
       />
@@ -653,7 +660,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
               </h3>
               <p className="text-xs text-slate-500 mt-1">
                 {t("আপনি অফিসিয়াল পারচেজ রিকোয়েস্ট দিচ্ছেন: ", "You are submitting an official purchase request for ")}
-                <strong>{channel.title}</strong>
+                <strong>{getLocalizedChannelTitle(channel, language)}</strong>
               </p>
             </div>
 

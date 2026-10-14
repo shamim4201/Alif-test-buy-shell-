@@ -3,6 +3,7 @@ import { Order, ChannelListing } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { getLocalizedChannelTitle } from '../translations/translations';
 import {
   ShoppingBag,
   Clock,
@@ -27,7 +28,7 @@ export const BuyerDashboardView: React.FC<BuyerDashboardViewProps> = ({
   onOpenLegal
 }) => {
   const { user, showToast } = useAuth();
-  const { currency, formatPrice, formatUsd, formatBdt, t } = useCurrency();
+  const { currency, formatPrice, formatUsd, formatBdt, language, t } = useCurrency();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -83,7 +84,7 @@ export const BuyerDashboardView: React.FC<BuyerDashboardViewProps> = ({
               <p className="text-xl font-black text-slate-900 mt-1">{orders.length}</p>
             </div>
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
-              <span className="text-xs text-slate-500">{t('চলমান হস্তান্তর (Active)', 'Active Handovers')}</span>
+              <span className="text-xs text-slate-500">{t('চলমান হস্তান্তর', 'Active Handovers')}</span>
               <p className="text-xl font-black text-amber-600 mt-1">{activeOrders.length}</p>
             </div>
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
@@ -172,7 +173,7 @@ export const BuyerDashboardView: React.FC<BuyerDashboardViewProps> = ({
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-bold text-slate-900">{order.channelTitle}</h3>
+                    <h3 className="text-lg font-bold text-slate-900">{getLocalizedChannelTitle({ title: order.channelTitle }, language)}</h3>
                     <p className="text-xs text-slate-500">
                       {t('সেলার: ', 'Seller: ')}<strong>{order.sellerName}</strong> ({order.sellerEmail}) •{' '}
                       {t('তারিখ: ', 'Created: ')}{new Date(order.createdAt).toLocaleDateString()}

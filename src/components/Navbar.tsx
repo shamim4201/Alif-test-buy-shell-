@@ -32,14 +32,14 @@ interface NavbarProps {
   onSelectPlatform?: (platform: string) => void;
 }
 
-const PLATFORM_DROPDOWN_OPTIONS = [
-  { id: 'all', label: 'All Accounts / সকল একাউন্ট' },
-  { id: 'youtube', label: 'YouTube (ইউটিউব)' },
-  { id: 'facebook', label: 'Facebook (ফেসবুক)' },
-  { id: 'tiktok', label: 'TikTok (টিকটক)' },
-  { id: 'telegram', label: 'Telegram (টেলিগ্রাম)' },
-  { id: 'instagram', label: 'Instagram (ইনস্টাগ্রাম)' },
-  { id: 'twitter', label: 'X / Twitter (টুইটার)' }
+const getPlatformDropdownOptions = (t: (bn: string, en: string) => string) => [
+  { id: 'all', label: t('সকল অ্যাকাউন্ট', 'All Accounts') },
+  { id: 'youtube', label: t('ইউটিউব চ্যানেল', 'YouTube Channels') },
+  { id: 'facebook', label: t('ফেসবুক পেজ', 'Facebook Pages') },
+  { id: 'tiktok', label: t('টিকটক অ্যাকাউন্ট', 'TikTok Accounts') },
+  { id: 'telegram', label: t('টেলিগ্রাম চ্যানেল', 'Telegram Channels') },
+  { id: 'instagram', label: t('ইনস্টাগ্রাম পেজ', 'Instagram Pages') },
+  { id: 'twitter', label: t('এক্স / টুইটার', 'X / Twitter') }
 ];
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -177,32 +177,33 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const displayName = user?.name ? user.name.split(' ')[0] : 'MD';
 
+  const platformDropdownOptions = getPlatformDropdownOptions(t);
   const currentCategoryLabel =
-    PLATFORM_DROPDOWN_OPTIONS.find((c) => c.id === activeCategory)?.label || 'All';
+    platformDropdownOptions.find((c) => c.id === activeCategory)?.label || t('সকল', 'All');
 
   return (
     <>
       {/* =========================================================
           TIER 1: AMAZON TOP MAIN HEADER (#131921)
          ========================================================= */}
-      <header className="sticky top-0 z-40 bg-[#131921] text-white select-none">
-        <div className="max-w-[1550px] mx-auto px-2 sm:px-4 py-1.5 flex items-center justify-between gap-1 sm:gap-2">
+      <header className="sticky top-0 z-40 bg-[#131921] text-white select-none w-full max-w-full overflow-hidden">
+        <div className="max-w-[1550px] mx-auto px-2 sm:px-4 py-1 sm:py-1.5 flex items-center justify-between gap-1 sm:gap-2 w-full">
           {/* 1. BRAND LOGO: Alif Trust buy&shell (alif sheen group) */}
           <div
             onClick={() => {
               onNavigate('home');
               onSelectPlatform?.('all');
             }}
-            className="flex items-center px-1.5 py-1 rounded-xs border border-transparent hover:border-white cursor-pointer transition shrink-0 group select-none"
+            className="flex items-center px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-xs border border-transparent hover:border-white cursor-pointer transition shrink-0 group select-none"
             title="Alif Trust Buy & Sell - alif sheen group"
           >
             <BrandLogo theme="dark" size="md" showSubtitle={true} />
           </div>
 
-          {/* 2. USER LOCATION PIN (Shows viewer's actual location, not delivery) */}
+          {/* 2. USER LOCATION PIN (Desktop & Tablet: hidden on small mobile) */}
           <button
             onClick={() => setLocationModalOpen(true)}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-xs border border-transparent hover:border-white cursor-pointer transition text-left shrink-0"
+            className="hidden md:flex items-center gap-1.5 px-2 py-1.5 rounded-xs border border-transparent hover:border-white cursor-pointer transition text-left shrink-0"
             title={t("আপনার লোকেশন পরিবর্তন করতে ক্লিক করুন", "Click to change your location")}
           >
             <MapPin className="w-4 h-4 text-[#febd69] shrink-0 mt-1" />
@@ -218,7 +219,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {/* 3. CURRENCY & LANGUAGE SELECTOR ($ USD / ৳ BDT & বাংলা / EN) */}
-          <div className="relative shrink-0 mx-1 sm:mx-3 z-30" ref={currencyDropdownRef}>
+          <div className="relative shrink-0 mx-0.5 sm:mx-3 z-30" ref={currencyDropdownRef}>
             <button
               type="button"
               onClick={(e) => {
@@ -226,25 +227,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                 e.stopPropagation();
                 setCurrencyDropdownOpen((prev) => !prev);
               }}
-              className="h-9 sm:h-10 bg-[#e6e6e6] hover:bg-[#dadada] text-slate-900 text-xs font-bold px-3 py-1.5 flex items-center gap-1.5 rounded-md border border-[#cdcdcd] transition cursor-pointer select-none whitespace-nowrap active:bg-[#ccc] shadow-xs"
+              className="h-8 sm:h-10 bg-[#e6e6e6] hover:bg-[#dadada] text-slate-900 text-xs font-bold px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-1.5 rounded-md border border-[#cdcdcd] transition cursor-pointer select-none whitespace-nowrap active:bg-[#ccc] shadow-xs"
               title={t("ওয়েবসাইটের কারেন্সি ও ভাষা পরিবর্তন করুন", "Change website currency & language")}
             >
-              <span className="text-sm font-black text-amber-700">
+              <span className="text-xs sm:text-sm font-black text-amber-700">
                 {currency === 'USD' ? '$' : '৳'}
               </span>
-              <span className="font-black text-slate-900 tracking-tight">
+              <span className="font-black text-slate-900 tracking-tight text-xs sm:text-sm">
                 {currency}
               </span>
               <span className="text-[11px] font-semibold text-slate-600 hidden sm:inline">
                 • {language === 'BN' ? 'বাংলা' : 'EN'}
               </span>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-600 shrink-0 transition-transform ${currencyDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-600 shrink-0 transition-transform ${currencyDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* CURRENCY & LANGUAGE DROPDOWN POPUP */}
             {currencyDropdownOpen && (
               <div
-                className="absolute left-0 top-[43px] w-[305px] sm:w-[335px] max-w-[92vw] bg-white border border-slate-300 rounded-xl shadow-2xl p-3.5 text-xs text-slate-800 z-50 animate-fade-in divide-y divide-slate-100"
+                className="absolute right-0 sm:left-0 top-[38px] sm:top-[43px] w-[290px] sm:w-[335px] max-w-[calc(100vw-24px)] bg-white border border-slate-300 rounded-xl shadow-2xl p-3 sm:p-3.5 text-xs text-slate-800 z-50 animate-fade-in divide-y divide-slate-100"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* POPUP HEADER */}
@@ -471,19 +472,28 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* 5. HELLO, USER / ACCOUNT & LISTS (Exactly like screenshot) */}
+          {/* 5. HELLO, USER / ACCOUNT & LISTS */}
           <div className="relative shrink-0" ref={accountDropdownRef}>
             <button
               onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
-              className="flex flex-col text-left px-2 py-1.5 rounded-xs border border-transparent hover:border-white cursor-pointer transition"
+              className="flex items-center sm:flex-col text-left px-1 sm:px-2 py-1 sm:py-1.5 rounded-xs border border-transparent hover:border-white cursor-pointer transition gap-1 sm:gap-0"
             >
-              <span className="text-[11px] text-[#ccc] leading-none truncate max-w-[110px]">
+              <span className="hidden sm:inline text-[11px] text-[#ccc] leading-none truncate max-w-[110px]">
                 {t("হ্যালো, ", "Hello, ") + displayName}
               </span>
-              <span className="text-[13px] font-bold text-white flex items-center gap-0.5 leading-tight">
+              <span className="hidden sm:flex text-[13px] font-bold text-white items-center gap-0.5 leading-tight">
                 {t("অ্যাকাউন্ট ও তালিকা", "Account & Lists")}
                 <ChevronDown className="w-3 h-3 text-[#aaa] shrink-0" />
               </span>
+
+              {/* Mobile View: Compact user pill */}
+              <div className="flex sm:hidden items-center gap-1">
+                <UserIcon className="w-4 h-4 text-[#febd69] shrink-0" />
+                <span className="text-[11px] font-bold text-white max-w-[55px] truncate">
+                  {displayName}
+                </span>
+                <ChevronDown className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+              </div>
             </button>
 
             {accountDropdownOpen && (
@@ -644,12 +654,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* 7. CART / ESCROW VAULT */}
           <button
             onClick={() => onNavigate('buyer-dashboard')}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-xs border border-transparent hover:border-white cursor-pointer transition shrink-0"
+            className="flex items-center gap-1 px-1 sm:px-2 py-1 sm:py-1.5 rounded-xs border border-transparent hover:border-white cursor-pointer transition shrink-0"
             title={t("শপিং কার্ট ও এস্ক্রো অর্ডার", "Shopping Cart & Escrow Orders")}
           >
             <div className="relative">
-              <ShoppingCart className="w-8 h-8 text-white" />
-              <span className="absolute top-0 right-1 text-xs font-black text-[#febd69] bg-[#131921] px-1 rounded-full leading-none">
+              <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+              <span className="absolute -top-1 -right-1 sm:top-0 sm:right-1 text-[10px] sm:text-xs font-black text-[#febd69] bg-[#131921] px-1 rounded-full leading-none">
                 0
               </span>
             </div>
@@ -668,7 +678,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="flex items-center gap-1.5 px-2 py-1 rounded-xs border border-transparent hover:border-white cursor-pointer font-bold shrink-0 text-white"
             >
               <Menu className="w-4 h-4" />
-              <span>{t("সব ক্যাটাগরি", "All")}</span>
+              <span>{t("সব ক্যাটাগরি", "All Categories")}</span>
             </button>
 
             {/* Escrow Trust Vault Badge */}
@@ -680,7 +690,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="px-2.5 py-0.5 rounded-full bg-white text-slate-900 border border-amber-300 font-extrabold text-[11px] sm:text-xs flex items-center gap-1 shadow-xs hover:bg-slate-100 cursor-pointer shrink-0"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="italic font-black text-amber-600 tracking-tight">TrustPay</span>
+              <span className="italic font-black text-amber-600 tracking-tight">{t("ট্রাস্টপে", "TrustPay")}</span>
               <span className="font-semibold text-slate-700">{t("এস্ক্রো সিকিউরড", "Escrow Secured")}</span>
             </button>
 
@@ -738,7 +748,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'border-transparent hover:border-white text-[#eee]'
               }`}
             >
-              Telegram
+              {t("টেলিগ্রাম চ্যানেল", "Telegram Channels")}
             </button>
 
             <button
@@ -752,7 +762,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'border-transparent hover:border-white text-[#eee]'
               }`}
             >
-              Instagram
+              {t("ইনস্টাগ্রাম পেজ", "Instagram Pages")}
             </button>
 
             <button
@@ -795,35 +805,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="px-2 py-1 rounded-xs border border-transparent hover:border-white text-[#eee] transition cursor-pointer shrink-0 hidden lg:inline-block"
             >
               {t("এস্ক্রো রেজিস্ট্রি", "Escrow Registry")}
-            </button>
-          </div>
-        </div>
-
-        {/* TIER 3: MOBILE QUICK LOCATION & CURRENCY BAR (Visible on smaller screens) */}
-        <div className="md:hidden bg-[#37475a] text-white px-3 py-1.5 flex items-center justify-between text-xs border-t border-[#485769]">
-          <button
-            onClick={() => setLocationModalOpen(true)}
-            className="flex items-center gap-1.5 text-left cursor-pointer hover:underline"
-          >
-            <MapPin className="w-3.5 h-3.5 text-[#febd69] shrink-0" />
-            <span className="text-slate-200">
-              {t("আপনার লোকেশন:", "Your Location:")} <strong className="text-white font-bold">{userLocation}</strong>
-            </span>
-          </button>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrencyModalOpen(true)}
-              className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[#febd69] font-black text-[11px] border border-amber-400/40 cursor-pointer flex items-center gap-1"
-              title={t("কারেন্সি ও ভাষা পরিবর্তন করুন", "Change Currency & Language")}
-            >
-              <span>{currency === 'USD' ? '$ USD' : '৳ BDT'}</span>
-              <span className="text-white font-normal text-[10px]">({language === 'BN' ? 'বাংলা' : 'EN'})</span>
-            </button>
-            <button
-              onClick={() => setLocationModalOpen(true)}
-              className="text-[11px] font-semibold text-slate-300 hover:text-white underline cursor-pointer"
-            >
-              {t("পরিবর্তন", "Change")}
             </button>
           </div>
         </div>
@@ -878,7 +859,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="w-full text-left py-2 px-2 rounded-md hover:bg-slate-100 font-semibold cursor-pointer flex items-center justify-between"
                     >
                       <span>{t("সকল একাউন্ট ব্রাউজ করুন", "Browse All Accounts")}</span>
-                      <span className="text-xs text-slate-400">All</span>
+                      <span className="text-xs text-slate-400">{t("সব", "All")}</span>
                     </button>
                   </li>
                   <li>
@@ -890,8 +871,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                       className="w-full text-left py-2 px-2 rounded-md hover:bg-slate-100 cursor-pointer flex items-center justify-between"
                     >
-                      <span>{t("🔴 YouTube (ইউটিউব চ্যানেল)", "🔴 YouTube Channels")}</span>
-                      <span className="text-xs text-slate-400">Monetized</span>
+                      <span>{t("🔴 ইউটিউব চ্যানেল", "🔴 YouTube Channels")}</span>
+                      <span className="text-xs text-slate-400">{t("মনিটাইজড", "Monetized")}</span>
                     </button>
                   </li>
                   <li>
@@ -903,8 +884,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                       className="w-full text-left py-2 px-2 rounded-md hover:bg-slate-100 cursor-pointer flex items-center justify-between"
                     >
-                      <span>{t("🔵 Facebook (ফেসবুক পেজ ও আইডি)", "🔵 Facebook Pages")}</span>
-                      <span className="text-xs text-slate-400">In-Stream</span>
+                      <span>{t("🔵 ফেসবুক পেজ ও আইডি", "🔵 Facebook Pages")}</span>
+                      <span className="text-xs text-slate-400">{t("ইনস্ট্রিম", "In-Stream")}</span>
                     </button>
                   </li>
                   <li>
@@ -916,8 +897,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                       className="w-full text-left py-2 px-2 rounded-md hover:bg-slate-100 cursor-pointer flex items-center justify-between"
                     >
-                      <span>{t("🎵 TikTok (টিকটক ভাইরাল আইডি)", "🎵 TikTok Viral IDs")}</span>
-                      <span className="text-xs text-slate-400">Rewards</span>
+                      <span>{t("🎵 টিকটক ভাইরাল আইডি", "🎵 TikTok Viral IDs")}</span>
+                      <span className="text-xs text-slate-400">{t("রিওয়ার্ডস", "Rewards")}</span>
                     </button>
                   </li>
                   <li>
@@ -929,8 +910,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                       className="w-full text-left py-2 px-2 rounded-md hover:bg-slate-100 cursor-pointer flex items-center justify-between"
                     >
-                      <span>{t("✈️ Telegram (টেলিগ্রাম চ্যানেল)", "✈️ Telegram Channels")}</span>
-                      <span className="text-xs text-slate-400">Active</span>
+                      <span>{t("✈️ টেলিগ্রাম চ্যানেল", "✈️ Telegram Channels")}</span>
+                      <span className="text-xs text-slate-400">{t("সক্রিয়", "Active")}</span>
                     </button>
                   </li>
                   <li>
@@ -942,8 +923,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                       className="w-full text-left py-2 px-2 rounded-md hover:bg-slate-100 cursor-pointer flex items-center justify-between"
                     >
-                      <span>{t("📸 Instagram (ইনস্টাগ্রাম পেজ)", "📸 Instagram Pages")}</span>
-                      <span className="text-xs text-slate-400">Influencer</span>
+                      <span>{t("📸 ইনস্টাগ্রাম পেজ", "📸 Instagram Pages")}</span>
+                      <span className="text-xs text-slate-400">{t("ইনফ্লুয়েন্সার", "Influencer")}</span>
                     </button>
                   </li>
                 </ul>
@@ -963,9 +944,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                       className="w-full text-left py-2 px-2 rounded-md hover:bg-slate-100 font-semibold text-amber-700 cursor-pointer flex items-center justify-between"
                     >
-                      <span>{t("অ্যাকাউন্ট বিক্রির লিস্টিং (Sell)", "Sell Social Media Account")}</span>
+                      <span>{t("অ্যাকাউন্ট বিক্রির লিস্টিং", "Sell Social Media Account")}</span>
                       <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold">
-                        Seller Hub
+                        {t("সেলার হাব", "Seller Hub")}
                       </span>
                     </button>
                   </li>

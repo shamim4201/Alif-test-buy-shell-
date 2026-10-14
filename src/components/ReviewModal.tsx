@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { X, Star } from 'lucide-react';
 
 interface ReviewModalProps {
@@ -21,6 +22,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   onSuccess
 }) => {
   const { showToast } = useAuth();
+  const { t } = useCurrency();
   const [rating, setRating] = useState(5);
   const [communicationRating, setCommunicationRating] = useState(5);
   const [transferSpeedRating, setTransferSpeedRating] = useState(5);
@@ -40,11 +42,11 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         communicationRating,
         transferSpeedRating
       });
-      showToast('Thank you! Your verified transaction review has been published.', 'success');
+      showToast(t('ধন্যবাদ! আপনার যাচাইকৃত লেনদেন রিভিউ সফলভাবে প্রকাশিত হয়েছে।', 'Thank you! Your verified transaction review has been published.'), 'success');
       onSuccess();
       onClose();
     } catch (err: any) {
-      showToast(err.message || 'Failed to submit review', 'error');
+      showToast(err.message || t('রিভিউ জমা দিতে ব্যর্থ হয়েছে', 'Failed to submit review'), 'error');
     } finally {
       setLoading(false);
     }
@@ -68,7 +70,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             />
           </button>
         ))}
-        <span className="text-xs text-amber-600 font-bold ml-2">{value}.0 / 5.0</span>
+        <span className="text-xs text-amber-600 font-bold ml-2">{value}.0 / {t('৫.০', '5.0')}</span>
       </div>
     </div>
   );
@@ -87,27 +89,32 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 mx-auto flex items-center justify-center text-amber-500 mb-3">
             <Star className="w-6 h-6 fill-current" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900">Review Channel Acquisition</h2>
+          <h2 className="text-xl font-bold text-slate-900">
+            {t('লেনদেন অভিজ্ঞতা ও রিভিউ দিন', 'Review Channel Acquisition')}
+          </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Share your experience acquiring <strong>{channelTitle}</strong> from <strong>{sellerName}</strong>
+            {t('আপনার অভিজ্ঞতা শেয়ার করুন: ', 'Share your experience acquiring ')}
+            <strong>{channelTitle}</strong>
+            {t(' বিক্রেতা: ', ' from ')}
+            <strong>{sellerName}</strong>
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {renderStarSelector(rating, setRating, 'Overall Transaction Experience')}
-          {renderStarSelector(communicationRating, setCommunicationRating, 'Seller Communication & Responsiveness')}
-          {renderStarSelector(transferSpeedRating, setTransferSpeedRating, 'Google Brand Account Transfer Efficiency')}
+          {renderStarSelector(rating, setRating, t('সামগ্রিক লেনদেন সন্তুষ্টি', 'Overall Transaction Experience'))}
+          {renderStarSelector(communicationRating, setCommunicationRating, t('সেলার রেসপন্স ও যোগাযোগ', 'Seller Communication & Responsiveness'))}
+          {renderStarSelector(transferSpeedRating, setTransferSpeedRating, t('অফিসিয়াল ওনারশিপ হস্তান্তর দক্ষতা', 'Account Transfer Efficiency'))}
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Your Feedback &amp; Verification Experience
+              {t('আপনার বিস্তারিত মতামত ও অভিজ্ঞতা লিখুন *', 'Your Feedback & Verification Experience *')}
             </label>
             <textarea
               required
               rows={3}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Describe how the 7-day transfer went, accuracy of analytics, and seller helpfulness..."
+              placeholder={t('হস্তান্তর প্রক্রিয়া কেমন ছিল, অ্যানালিটিক্সের নির্ভুলতা এবং প্ল্যাটফর্ম অভিজ্ঞতা বর্ণনা করুন...', 'Describe how the transfer went, accuracy of analytics, and seller helpfulness...')}
               className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-red-500 transition"
             />
           </div>
@@ -117,7 +124,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             disabled={loading || !comment.trim()}
             className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white font-bold text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
           >
-            {loading ? 'Submitting...' : 'Publish Verified Review'}
+            {loading ? t('সাবমিট হচ্ছে...', 'Submitting...') : t('যাচাইকৃত রিভিউ প্রকাশ করুন', 'Publish Verified Review')}
           </button>
         </form>
       </div>

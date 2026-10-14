@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCurrency } from '../context/CurrencyContext';
 import { X, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
 
 interface EvidenceModalProps {
@@ -14,6 +15,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
   screenshots,
   channelTitle
 }) => {
+  const { t } = useCurrency();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   if (!isOpen || !screenshots || screenshots.length === 0) return null;
@@ -30,10 +32,10 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
             <ShieldCheck className="w-5 h-5 text-emerald-600" />
             <div>
               <h3 className="text-sm font-bold text-slate-900">
-                Studio Analytics Proof: {channelTitle}
+                {t('স্টুডিও অ্যানালিটিক্স প্রমাণ: ', 'Studio Analytics Proof: ')}{channelTitle}
               </h3>
               <p className="text-xs text-slate-500">
-                Verified Seller Screenshot {currentIndex + 1} of {screenshots.length}
+                {t('যাচাইকৃত সেলার স্ক্রিনশট ', 'Verified Seller Screenshot ')}{currentIndex + 1} / {screenshots.length}
               </p>
             </div>
           </div>
@@ -49,7 +51,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
         <div className="relative flex-1 bg-slate-900 flex items-center justify-center min-h-[400px] max-h-[650px] p-4 overflow-hidden">
           <img
             src={screenshots[currentIndex]}
-            alt={`Analytics screenshot ${currentIndex + 1}`}
+            alt={t(`অ্যানালিটিক্স স্ক্রিনশট ${currentIndex + 1}`, `Analytics screenshot ${currentIndex + 1}`)}
             className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
           />
 
@@ -58,14 +60,14 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
               <button
                 onClick={prev}
                 className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white border border-slate-700 transition cursor-pointer"
-                aria-label="Previous image"
+                aria-label={t("পূর্ববর্তী ছবি", "Previous image")}
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
               <button
                 onClick={next}
                 className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white border border-slate-700 transition cursor-pointer"
-                aria-label="Next image"
+                aria-label={t("পরবর্তী ছবি", "Next image")}
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
@@ -92,7 +94,10 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
           </div>
 
           <div className="text-right text-[11px] text-slate-500">
-            Analytics screenshots are cross-referenced with channel metrics during admin moderation.
+            {t(
+              'প্ল্যাটফর্ম অ্যাডমিন মডারেশনের সময় সমস্ত অ্যানালিটিক্স স্ক্রিনশট সরাসরি চ্যানেলের সাথে যাচাই করা হয়।',
+              'Analytics screenshots are cross-referenced with channel metrics during platform moderation.'
+            )}
           </div>
         </div>
       </div>

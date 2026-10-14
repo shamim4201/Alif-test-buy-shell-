@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AdminStats, ChannelListing, Order, User } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
+import { getLocalizedChannelTitle, ORDER_STATUS_TRANSLATIONS, ROLE_TRANSLATIONS } from '../translations/translations';
 import { EvidenceModal } from '../components/EvidenceModal';
 import {
   ShieldAlert,
@@ -30,6 +32,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onSelectChannel
 }) => {
   const { user, showToast } = useAuth();
+  const { currency, formatPrice, language, t } = useCurrency();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [channels, setChannels] = useState<ChannelListing[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -64,7 +67,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       setOrders(ordersRes.orders || []);
       setUsersList(usersRes.users || []);
     } catch (err: any) {
-      showToast(err.message || 'Failed to load administration data', 'error');
+      showToast(err.message || t('অ্যাডমিন ডাটা লোড করতে ব্যর্থ হয়েছে', 'Failed to load administration data'), 'error');
     } finally {
       setLoading(false);
     }
@@ -77,30 +80,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const handleReviewListing = async (channelId: string, status: 'approved' | 'rejected') => {
     try {
       await api.reviewChannel(channelId, status);
-      showToast(`Listing marked as ${status}`, 'success');
+      showToast(t(`লিস্টিংটি ${status === 'approved' ? 'অনুমোদিত' : 'বাতিল'} করা হয়েছে`, `Listing marked as ${status}`), 'success');
       loadData();
     } catch (err: any) {
-      showToast(err.message || 'Failed to update channel status', 'error');
+      showToast(err.message || t('চ্যানেল স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে', 'Failed to update channel status'), 'error');
     }
   };
 
   const handleToggleVerified = async (userId: string) => {
     try {
       await api.toggleUserVerified(userId);
-      showToast('Seller verified status updated', 'success');
+      showToast(t('সেলার ভেরিফিকেশন স্ট্যাটাস আপডেট হয়েছে', 'Seller verified status updated'), 'success');
       loadData();
     } catch (err: any) {
-      showToast(err.message || 'Failed to toggle verification', 'error');
+      showToast(err.message || t('ভেরিফিকেশন পরিবর্তন ব্যর্থ হয়েছে', 'Failed to toggle verification'), 'error');
     }
   };
 
   const handleToggleBan = async (userId: string) => {
     try {
       await api.toggleUserBan(userId);
-      showToast('User status updated', 'info');
+      showToast(t('ব্যবহারকারীর স্ট্যাটাস পরিবর্তিত হয়েছে', 'User status updated'), 'info');
       loadData();
     } catch (err: any) {
-      showToast(err.message || 'Failed to update user', 'error');
+      showToast(err.message || t('ইউজার আপডেট ব্যর্থ হয়েছে', 'Failed to update user'), 'error');
     }
   };
 
@@ -110,12 +113,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     try {
       setSubmittingResolution(true);
       await api.resolveDispute(resolvingOrder.id, resolutionAction, resolutionNotes);
-      showToast(`Dispute resolved with action: ${resolutionAction}`, 'success');
+      showToast(t('বিরোধ সফলভাবে নিষ্পত্তি করা হয়েছে', `Dispute resolved with action: ${resolutionAction}`), 'success');
       setResolvingOrder(null);
       setResolutionNotes('');
       loadData();
     } catch (err: any) {
-      showToast(err.message || 'Failed to resolve dispute', 'error');
+      showToast(err.message || t('বিরোধ নিষ্পত্তি ব্যর্থ হয়েছে', 'Failed to resolve dispute'), 'error');
     } finally {
       setSubmittingResolution(false);
     }
@@ -134,14 +137,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
                   <ShieldAlert className="w-3.5 h-3.5" />
-                  Compliance &amp; Moderation
+                  {t('কমপ্লায়েন্স ও নিরাপত্তা কন্ট্রোল', 'Compliance & Moderation')}
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
-                ChannelTrust Administration Control
+                {t('আলিফ ট্রাস্ট অ্যাডমিন ম্যানেজমেন্ট', 'Alif Trust Administration Control')}
               </h1>
               <p className="text-xs text-slate-500 mt-1">
-                Approve verified channel listings, audit account transfers, and mediate disputes.
+                {t('যাচাইকৃত চ্যানেল অনুমোদন, অ্যাকাউন্ট হ্যান্ডওভার অডিট এবং বিরোধ নিষ্পত্তি করুন।', 'Approve verified channel listings, audit account transfers, and mediate disputes.')}
               </p>
             </div>
           </div>
@@ -150,32 +153,32 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           {stats && (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mt-6">
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
-                <span className="text-[11px] text-slate-500 block font-medium">Settled Volume</span>
+                <span className="text-[11px] text-slate-500 block font-medium">{t('সম্পন্ন লেনদেন', 'Settled Volume')}</span>
                 <p className="text-lg font-black text-slate-900 mt-0.5">${stats.totalVolume.toLocaleString()}</p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
-                <span className="text-[11px] text-slate-500 block font-medium">Platform Fees (5%)</span>
+                <span className="text-[11px] text-slate-500 block font-medium">{t('প্ল্যাটফর্ম ফি (৫%)', 'Platform Fees (5%)')}</span>
                 <p className="text-lg font-black text-emerald-600 mt-0.5">${stats.totalFees.toLocaleString()}</p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
-                <span className="text-[11px] text-slate-500 block font-medium">Pending Listings</span>
+                <span className="text-[11px] text-slate-500 block font-medium">{t('অপেক্ষমাণ লিস্টিং', 'Pending Listings')}</span>
                 <p className="text-lg font-black text-amber-600 mt-0.5">{stats.pendingApprovalsCount}</p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
-                <span className="text-[11px] text-slate-500 block font-medium">Active Listings</span>
+                <span className="text-[11px] text-slate-500 block font-medium">{t('সক্রিয় লিস্টিং', 'Active Listings')}</span>
                 <p className="text-lg font-black text-slate-900 mt-0.5">{stats.activeListings}</p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
-                <span className="text-[11px] text-slate-500 block font-medium">Active Disputes</span>
+                <span className="text-[11px] text-slate-500 block font-medium">{t('চলমান বিরোধ', 'Active Disputes')}</span>
                 <p className="text-lg font-black text-red-600 mt-0.5">{stats.disputedOrdersCount}</p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
-                <span className="text-[11px] text-slate-500 block font-medium">Registered Users</span>
+                <span className="text-[11px] text-slate-500 block font-medium">{t('নিবন্ধিত ইউজার', 'Registered Users')}</span>
                 <p className="text-lg font-black text-blue-600 mt-0.5">{stats.totalUsers}</p>
               </div>
             </div>
@@ -185,50 +188,50 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
       {/* Tabs */}
       <div className="border-b border-slate-200 bg-white sticky top-16 z-20 backdrop-blur-xs shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-6 overflow-x-auto">
           <button
             onClick={() => setActiveTab('approvals')}
-            className={`py-3.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
+            className={`py-3.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === 'approvals'
                 ? 'border-rose-600 text-rose-600'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
             <FileCheck className="w-4 h-4" />
-            Pending Listings ({pendingApprovals.length})
+            {t('অনুমোদন অপেক্ষমাণ তালিকা', 'Pending Listings')} ({pendingApprovals.length})
           </button>
           <button
             onClick={() => setActiveTab('disputes')}
-            className={`py-3.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
+            className={`py-3.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === 'disputes'
                 ? 'border-rose-600 text-rose-600'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
             <Scale className="w-4 h-4" />
-            Dispute Arbitration ({disputedOrders.length})
+            {t('বিরোধ নিষ্পত্তি ও আরবিট্রেশন', 'Dispute Arbitration')} ({disputedOrders.length})
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`py-3.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
+            className={`py-3.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === 'users'
                 ? 'border-rose-600 text-rose-600'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
             <Users className="w-4 h-4" />
-            User Access Control ({usersList.length})
+            {t('ব্যবহারকারী নিয়ন্ত্রণ', 'User Access Control')} ({usersList.length})
           </button>
           <button
             onClick={() => setActiveTab('orders')}
-            className={`py-3.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
+            className={`py-3.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === 'orders'
                 ? 'border-rose-600 text-rose-600'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
             <Lock className="w-4 h-4" />
-            All Orders Audit ({orders.length})
+            {t('সকল অর্ডার অডিট', 'All Orders Audit')} ({orders.length})
           </button>
         </div>
       </div>
@@ -240,9 +243,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {pendingApprovals.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 p-8 space-y-3 shadow-xs">
                 <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
-                <h3 className="text-base font-bold text-slate-900">All Clear! No Pending Approvals</h3>
+                <h3 className="text-base font-bold text-slate-900">
+                  {t('সব ক্লিয়ার! কোনো পেন্ডিং অনুমোদন নেই', 'All Clear! No Pending Approvals')}
+                </h3>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  All submitted account listings have been reviewed and approved or resolved.
+                  {t('জমাকৃত সকল চ্যানেল তালিকা নিরীক্ষা করে অনুমোদন বা মীমাংসা করা হয়েছে।', 'All submitted account listings have been reviewed and approved or resolved.')}
                 </p>
               </div>
             ) : (
@@ -256,11 +261,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
-                            Pending Audit
+                            {t('অডিট অপেক্ষমাণ', 'Pending Audit')}
                           </span>
                           <span className="text-xs text-slate-500 font-mono">{channel.id}</span>
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 mt-1">{channel.title}</h3>
+                        <h3 className="text-lg font-bold text-slate-900 mt-1">
+                          {getLocalizedChannelTitle(channel, language)}
+                        </h3>
                         <p className="text-xs text-slate-500 font-mono">
                           {channel.handle} •{' '}
                           <a
@@ -269,7 +276,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             rel="noreferrer"
                             className="text-red-600 hover:underline inline-flex items-center gap-1 font-semibold"
                           >
-                            <span>Verify URL</span>
+                            <span>{t('ইউআরএল যাচাই করুন', 'Verify URL')}</span>
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         </p>
@@ -281,14 +288,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
                         >
                           <CheckCircle2 className="w-4 h-4" />
-                          Approve Listing
+                          {t('অনুমোদন করুন', 'Approve Listing')}
                         </button>
                         <button
                           onClick={() => handleReviewListing(channel.id, 'rejected')}
                           className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                         >
                           <XCircle className="w-4 h-4" />
-                          Reject with Notes
+                          {t('বাতিল করুন', 'Reject with Notes')}
                         </button>
                       </div>
                     </div>
@@ -296,19 +303,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {/* Stats to verify */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
                       <div>
-                        <span className="text-slate-500 block">Seller:</span>
+                        <span className="text-slate-500 block">{t('বিক্রেতা:', 'Seller:')}</span>
                         <strong className="text-slate-900">{channel.sellerName}</strong> ({channel.sellerEmail})
                       </div>
                       <div>
-                        <span className="text-slate-500 block">Claimed Subs/Followers:</span>
+                        <span className="text-slate-500 block">{t('সাবস্ক্রাইবার/ফলোয়ার:', 'Claimed Subs/Followers:')}</span>
                         <strong className="text-slate-900">{channel.subscribers.toLocaleString()}</strong>
                       </div>
                       <div>
-                        <span className="text-slate-500 block">Claimed Revenue:</span>
+                        <span className="text-slate-500 block">{t('মাসিক আয়:', 'Claimed Revenue:')}</span>
                         <strong className="text-emerald-600">${channel.monthlyRevenue.toLocaleString()}/mo</strong>
                       </div>
                       <div>
-                        <span className="text-slate-500 block">Asking Price:</span>
+                        <span className="text-slate-500 block">{t('বিক্রয় মূল্য:', 'Asking Price:')}</span>
                         <strong className="text-slate-900">${channel.askingPrice.toLocaleString()}</strong>
                       </div>
                     </div>
@@ -317,20 +324,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-semibold text-slate-700">
-                          Submitted Analytics Evidence ({channel.analyticsScreenshots.length} files):
+                          {t('জমাকৃত অ্যানালিটিক্স প্রমাণ (', 'Submitted Analytics Evidence (')}{channel.analyticsScreenshots.length}{t('টি ফাইল):', ' files):')}
                         </span>
                         {channel.analyticsScreenshots.length > 0 && (
                           <button
                             onClick={() => {
                               setSelectedProof({
                                 screenshots: channel.analyticsScreenshots,
-                                title: channel.title
+                                title: getLocalizedChannelTitle(channel, language)
                               });
                               setEvidenceModalOpen(true);
                             }}
                             className="text-xs text-red-600 hover:underline font-semibold cursor-pointer"
                           >
-                            Inspect Full Proof Lightbox →
+                            {t('সম্পূর্ণ প্রমাণ লাইটবক্সে দেখুন →', 'Inspect Full Proof Lightbox →')}
                           </button>
                         )}
                       </div>
@@ -342,7 +349,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             onClick={() => {
                               setSelectedProof({
                                 screenshots: channel.analyticsScreenshots,
-                                title: channel.title
+                                title: getLocalizedChannelTitle(channel, language)
                               });
                               setEvidenceModalOpen(true);
                             }}
@@ -366,9 +373,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {disputedOrders.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 p-8 space-y-3 shadow-xs">
                 <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
-                <h3 className="text-base font-bold text-slate-900">No Active Disputes</h3>
+                <h3 className="text-base font-bold text-slate-900">
+                  {t('কোনো সক্রিয় বিরোধ নেই', 'No Active Disputes')}
+                </h3>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  All transactions are operating smoothly within the transfer lifecycle.
+                  {t('সব লেনদেন ও হস্তান্তর নিয়মমাফিক ও সুষ্ঠুভাবে চলমান রয়েছে।', 'All transactions are operating smoothly within the transfer lifecycle.')}
                 </p>
               </div>
             ) : (
@@ -382,17 +391,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200">
-                            Arbitration Case
+                            {t('আরবিট্রেশন কেস', 'Arbitration Case')}
                           </span>
                           <span className="text-xs text-slate-500 font-mono">{order.id}</span>
                         </div>
                         <h3 className="text-lg font-bold text-slate-900 mt-1">{order.channelTitle}</h3>
                         <p className="text-xs text-red-700 font-medium mt-1">
-                          Dispute Reason: "{order.disputeReason}"
+                          {t('বিরোধের কারণ: "', 'Dispute Reason: "')}{order.disputeReason}"
                         </p>
                         <p className="text-[11px] text-slate-500 mt-0.5">
-                          Opened by {order.disputeRaisedBy?.toUpperCase()} on{' '}
-                          {order.disputeRaisedAt ? new Date(order.disputeRaisedAt).toLocaleString() : ''}
+                          {t('অভিযোগকারী: ', 'Opened by ')}{order.disputeRaisedBy?.toUpperCase()}{' '}
+                          {order.disputeRaisedAt ? new Date(order.disputeRaisedAt).toLocaleString(language === 'BN' ? 'bn-BD' : 'en-US') : ''}
                         </p>
                       </div>
 
@@ -400,26 +409,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onClick={() => setResolvingOrder(order)}
                         className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer shadow-xs"
                       >
-                        Arbitrate &amp; Resolve
+                        {t('মীমাংসা করুন', 'Arbitrate & Resolve')}
                       </button>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
                       <div>
-                        <span className="text-slate-500 block">Buyer:</span>
+                        <span className="text-slate-500 block">{t('ক্রেতা:', 'Buyer:')}</span>
                         <strong className="text-slate-900">{order.buyerName}</strong> ({order.buyerEmail})
                       </div>
                       <div>
-                        <span className="text-slate-500 block">Seller:</span>
+                        <span className="text-slate-500 block">{t('বিক্রেতা:', 'Seller:')}</span>
                         <strong className="text-slate-900">{order.sellerName}</strong> ({order.sellerEmail})
                       </div>
                       <div>
-                        <span className="text-slate-500 block">Frozen Custody:</span>
+                        <span className="text-slate-500 block">{t('সুরক্ষিত এস্ক্রো:', 'Frozen Custody:')}</span>
                         <strong className="text-emerald-700 font-bold">${order.totalAmount.toLocaleString()}</strong>
                       </div>
                       <div>
-                        <span className="text-slate-500 block">Action Required:</span>
-                        <strong className="text-amber-700 font-bold">Admin Ruling Pending</strong>
+                        <span className="text-slate-500 block">{t('প্রয়োজনীয় পদক্ষেপ:', 'Action Required:')}</span>
+                        <strong className="text-amber-700 font-bold">{t('অ্যাডমিন সিদ্ধান্ত প্রয়োজন', 'Admin Ruling Pending')}</strong>
                       </div>
                     </div>
                   </div>
@@ -436,12 +445,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
                   <tr>
-                    <th className="p-4">User</th>
-                    <th className="p-4">Email</th>
-                    <th className="p-4">Role</th>
-                    <th className="p-4">Verified Seller</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-right">Actions</th>
+                    <th className="p-4">{t('ব্যবহারকারী', 'User')}</th>
+                    <th className="p-4">{t('ইমেইল', 'Email')}</th>
+                    <th className="p-4">{t('ভূমিকা', 'Role')}</th>
+                    <th className="p-4">{t('ভেরিফাইড ব্যাজ', 'Verified Seller')}</th>
+                    <th className="p-4">{t('স্ট্যাটাস', 'Status')}</th>
+                    <th className="p-4 text-right">{t('অ্যাকশন', 'Actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -466,7 +475,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               : 'bg-blue-50 text-blue-700 border border-blue-200'
                           }`}
                         >
-                          {u.role}
+                          {ROLE_TRANSLATIONS[u.role]?.[language] || u.role}
                         </span>
                       </td>
                       <td className="p-4">
@@ -479,7 +488,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 : 'bg-slate-100 text-slate-600 hover:text-slate-900'
                             }`}
                           >
-                            {u.isVerifiedSeller ? '✓ Verified' : 'Grant Badge'}
+                            {u.isVerifiedSeller ? t('✓ ভেরিফাইড', '✓ Verified') : t('ব্যাজ দিন', 'Grant Badge')}
                           </button>
                         ) : (
                           <span className="text-slate-400">—</span>
@@ -487,9 +496,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </td>
                       <td className="p-4">
                         {u.isBanned ? (
-                          <span className="text-red-600 font-bold">Suspended</span>
+                          <span className="text-red-600 font-bold">{t('স্থগিত', 'Suspended')}</span>
                         ) : (
-                          <span className="text-emerald-700 font-medium">Active</span>
+                          <span className="text-emerald-700 font-medium">{t('সক্রিয়', 'Active')}</span>
                         )}
                       </td>
                       <td className="p-4 text-right">
@@ -502,7 +511,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
                             }`}
                           >
-                            {u.isBanned ? 'Reinstate' : 'Suspend'}
+                            {u.isBanned ? t('পুনর্বহাল', 'Reinstate') : t('সাসপেন্ড', 'Suspend')}
                           </button>
                         )}
                       </td>
@@ -527,13 +536,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono text-slate-500">{o.id}</span>
                     <span className="text-xs font-bold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                      {o.status.replace('_', ' ')}
+                      {ORDER_STATUS_TRANSLATIONS[o.status]?.[language] || o.status.replace('_', ' ')}
                     </span>
                   </div>
                   <h4 className="text-sm font-bold text-slate-900 mt-0.5">{o.channelTitle}</h4>
                   <p className="text-xs text-slate-500">
-                    Buyer: {o.buyerName} • Seller: {o.sellerName} • Ref:{' '}
-                    {o.paymentDetails?.transactionRef || 'Pending verification'}
+                    {t('ক্রেতা: ', 'Buyer: ')}{o.buyerName} • {t('বিক্রেতা: ', 'Seller: ')}{o.sellerName} • {t('রেফারেন্স: ', 'Ref: ')}
+                    {o.paymentDetails?.transactionRef || t('যাচাইকরণ চলমান', 'Pending verification')}
                   </p>
                 </div>
 
@@ -542,7 +551,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     ${o.totalAmount.toLocaleString()}
                   </span>
                   <span className="text-[10px] text-slate-500 block">
-                    Fee: ${o.platformFee.toLocaleString()}
+                    {t('ফি: $', 'Fee: $')}{o.platformFee.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -563,15 +572,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       {resolvingOrder && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="relative w-full max-w-lg bg-white border border-red-200 rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-in text-slate-800 space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">Arbitrate Dispute: {resolvingOrder.id}</h3>
+            <h3 className="text-lg font-bold text-slate-900">
+              {t('বিরোধ নিষ্পত্তি: ', 'Arbitrate Dispute: ')}{resolvingOrder.id}
+            </h3>
             <p className="text-xs text-slate-500">
-              Dispute for <strong>{resolvingOrder.channelTitle}</strong> (${resolvingOrder.totalAmount.toLocaleString()} USD).
+              {t('বিরোধাধীন চ্যানেল: ', 'Dispute for ')}<strong>{resolvingOrder.channelTitle}</strong> (${resolvingOrder.totalAmount.toLocaleString()} USD).
             </p>
 
             <form onSubmit={handleResolveDispute} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Resolution Ruling
+                  {t('আরবিট্রেশন সিদ্ধান্ত', 'Resolution Ruling')}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -583,7 +594,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         : 'bg-slate-50 border-slate-200 text-slate-600'
                     }`}
                   >
-                    Refund Buyer in Full
+                    {t('ক্রেতাকে সম্পূর্ণ রিফান্ড দিন', 'Refund Buyer in Full')}
                   </button>
                   <button
                     type="button"
@@ -594,21 +605,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         : 'bg-slate-50 border-slate-200 text-slate-600'
                     }`}
                   >
-                    Release Payout to Seller
+                    {t('সেলারকে ফান্ড রিলিজ করুন', 'Release Payout to Seller')}
                   </button>
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Official Arbitration Findings &amp; Log Notes
+                  {t('অফিসিয়াল পর্যবেক্ষণ ও নোট *', 'Official Arbitration Findings & Log Notes *')}
                 </label>
                 <textarea
                   required
                   rows={3}
                   value={resolutionNotes}
                   onChange={(e) => setResolutionNotes(e.target.value)}
-                  placeholder="State the findings based on manager logs and message history..."
+                  placeholder={t('ম্যানেজার লগ ও মেসেজ হিস্টোরির ভিত্তিতে সিদ্ধান্তের কারণ লিখুন...', 'State the findings based on manager logs and message history...')}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 focus:bg-white focus:outline-hidden"
                 />
               </div>
@@ -619,14 +630,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   onClick={() => setResolvingOrder(null)}
                   className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
                 >
-                  Cancel
+                  {t('বাতিল', 'Cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={submittingResolution}
                   className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition disabled:opacity-50 cursor-pointer shadow-xs"
                 >
-                  {submittingResolution ? 'Executing...' : 'Enact Formal Ruling'}
+                  {submittingResolution ? t('কার্যকর হচ্ছে...', 'Executing...') : t('সিদ্ধান্ত কার্যকর করুন', 'Enact Formal Ruling')}
                 </button>
               </div>
             </form>

@@ -40,35 +40,35 @@ interface HomeViewProps {
 }
 
 const getPlatforms = (t: (bn: string, en: string) => string) => [
-  { id: 'all', label: t('সকল প্ল্যাটফর্ম (All)', 'All Platforms'), icon: '🌟', desc: t('সব প্ল্যাটফর্মের ভেরিফাইড একাউন্ট', 'Verified accounts across all platforms'), badgeColor: 'border-slate-300 bg-white text-slate-900' },
-  { id: 'youtube', label: t('🔴 YouTube (ইউটিউব)', '🔴 YouTube Channels'), icon: '🔴', desc: t('মনিটাইজড ও ক্যাশ কাউ চ্যানেল', 'Monetized & cash cow channels'), badgeColor: 'border-red-300 bg-red-50 text-red-700' },
-  { id: 'facebook', label: t('🔵 Facebook (ফেসবুক)', '🔵 Facebook Pages'), icon: '🔵', desc: t('ইনস্ট্রিম অ্যাড ও গ্রিন পেজ', 'In-Stream Ads & Green pages'), badgeColor: 'border-blue-300 bg-blue-50 text-blue-700' },
-  { id: 'tiktok', label: t('🎵 TikTok (টিকটক)', '🎵 TikTok Accounts'), icon: '🎵', desc: t('ক্রিয়েটর রিওয়ার্ডস ও শপ আইডি', 'Creator Rewards & Shop IDs'), badgeColor: 'border-cyan-300 bg-cyan-50 text-cyan-800' },
-  { id: 'instagram', label: t('📸 Instagram (ইনস্টাগ্রাম)', '📸 Instagram Pages'), icon: '📸', desc: t('থিম পেজ ও ইনফ্লুয়েন্সার অ্যাকাউন্ট', 'Theme pages & influencers'), badgeColor: 'border-rose-300 bg-rose-50 text-rose-700' },
-  { id: 'telegram', label: t('✈️ Telegram (টেলিগ্রাম)', '✈️ Telegram Channels'), icon: '✈️', desc: t('মেম্বার ও সিগন্যাল চ্যানেল', 'Signal & member channels'), badgeColor: 'border-sky-300 bg-sky-50 text-sky-700' },
-  { id: 'twitter', label: t('🐦 X / Twitter (টুইটার)', '🐦 X / Twitter Handles'), icon: '🐦', desc: t('ব্লু ব্যাজ ও এডস রেভিনিউ একাউন্ট', 'Blue badge verified handles'), badgeColor: 'border-slate-300 bg-slate-100 text-slate-800' },
+  { id: 'all', label: t('সকল প্ল্যাটফর্ম', 'All Platforms'), icon: '🌟', desc: t('সব প্ল্যাটফর্মের ভেরিফাইড একাউন্ট', 'Verified accounts across all platforms'), badgeColor: 'border-slate-300 bg-white text-slate-900' },
+  { id: 'youtube', label: t('🔴 ইউটিউব চ্যানেল', '🔴 YouTube Channels'), icon: '🔴', desc: t('মনিটাইজড ও ক্যাশ কাউ চ্যানেল', 'Monetized & cash cow channels'), badgeColor: 'border-red-300 bg-red-50 text-red-700' },
+  { id: 'facebook', label: t('🔵 ফেসবুক পেজ', '🔵 Facebook Pages'), icon: '🔵', desc: t('ইনস্ট্রিম বিজ্ঞাপন ও গ্রিন পেজ', 'In-Stream Ads & Green pages'), badgeColor: 'border-blue-300 bg-blue-50 text-blue-700' },
+  { id: 'tiktok', label: t('🎵 টিকটক অ্যাকাউন্ট', '🎵 TikTok Accounts'), icon: '🎵', desc: t('ক্রিয়েটর রিওয়ার্ডস ও শপ আইডি', 'Creator Rewards & Shop IDs'), badgeColor: 'border-cyan-300 bg-cyan-50 text-cyan-800' },
+  { id: 'instagram', label: t('📸 ইনস্টাগ্রাম পেজ', '📸 Instagram Pages'), icon: '📸', desc: t('থিম পেজ ও ইনফ্লুয়েন্সার অ্যাকাউন্ট', 'Theme pages & influencers'), badgeColor: 'border-rose-300 bg-rose-50 text-rose-700' },
+  { id: 'telegram', label: t('✈️ টেলিগ্রাম চ্যানেল', '✈️ Telegram Channels'), icon: '✈️', desc: t('মেম্বার ও সিগন্যাল চ্যানেল', 'Signal & member channels'), badgeColor: 'border-sky-300 bg-sky-50 text-sky-700' },
+  { id: 'twitter', label: t('🐦 এক্স / টুইটার', '🐦 X / Twitter Handles'), icon: '🐦', desc: t('ব্লু ব্যাজ ও বিজ্ঞাপন আয় একাউন্ট', 'Blue badge verified handles'), badgeColor: 'border-slate-300 bg-slate-100 text-slate-800' },
 ];
 
 const getAccountTypes = (t: (bn: string, en: string) => string) => [
-  { id: 'all', label: t('সকল ক্যাটাগরি (All Types)', 'All Categories'), icon: '🌟' },
-  { id: 'facebook_page', label: t('ফেসবুক পেজ ও গ্রুপ (Facebook Page)', 'Facebook Pages & Groups'), icon: '🔵' },
-  { id: 'tiktok_viral', label: t('টিকটক ভাইরাল আইডি (TikTok Rewards)', 'TikTok Viral Accounts (Rewards)'), icon: '🎵' },
-  { id: 'instagram_theme', label: t('ইনস্টাগ্রাম থিম পেজ (Instagram)', 'Instagram Theme Pages'), icon: '📸' },
-  { id: 'cooking_lifestyle', label: t('আন্টির রান্না ও কিচেন (Cooking)', 'Cooking & Lifestyle'), icon: '👩‍🍳' },
-  { id: 'faceless_cash_cow', label: t('ফেসলেস ক্যাশ কাউ (Cash Cow)', 'Faceless Cash Cow'), icon: '🤖' },
-  { id: 'shorts_creator', label: t('ভাইরাল শর্টস চ্যানেল (Shorts)', 'Viral Shorts Creators'), icon: '⚡' },
-  { id: 'gaming_stream', label: t('গেমিং ও টেক চ্যানেল (Gaming)', 'Gaming & Tech Stream'), icon: '🎮' },
-  { id: 'vintage_aged', label: t('ভিন্টেজ পুরানো একাউন্ট (Vintage 2012-2018)', 'Vintage Accounts (2012-2018)'), icon: '🏛️' },
-  { id: 'high_cpm_finance', label: t('হাই CPM ফিন্যান্স ও বিজনেস', 'High CPM Finance & Business'), icon: '💰' }
+  { id: 'all', label: t('সকল ক্যাটাগরি', 'All Categories'), icon: '🌟' },
+  { id: 'facebook_page', label: t('ফেসবুক পেজ ও গ্রুপ', 'Facebook Pages & Groups'), icon: '🔵' },
+  { id: 'tiktok_viral', label: t('টিকটক ভাইরাল অ্যাকাউন্ট', 'TikTok Viral Accounts'), icon: '🎵' },
+  { id: 'instagram_theme', label: t('ইনস্টাগ্রাম থিম পেজ', 'Instagram Theme Pages'), icon: '📸' },
+  { id: 'cooking_lifestyle', label: t('রান্না ও রেসিপি', 'Cooking & Lifestyle'), icon: '👩‍🍳' },
+  { id: 'faceless_cash_cow', label: t('ফেসলেস ক্যাশ কাউ', 'Faceless Cash Cow'), icon: '🤖' },
+  { id: 'shorts_creator', label: t('ভাইরাল শর্টস চ্যানেল', 'Viral Shorts Creators'), icon: '⚡' },
+  { id: 'gaming_stream', label: t('গেমিং ও টেক চ্যানেল', 'Gaming & Tech Stream'), icon: '🎮' },
+  { id: 'vintage_aged', label: t('পুরানো ভিন্টেজ অ্যাকাউন্ট', 'Aged Vintage Accounts'), icon: '🏛️' },
+  { id: 'high_cpm_finance', label: t('উচ্চ আয় ফিন্যান্স ও বিজনেস', 'High CPM Finance & Business'), icon: '💰' }
 ];
 
 const getBudgetPresets = (t: (bn: string, en: string) => string) => [
-  { id: 'all', label: t('সকল বাজেট (All Budgets)', 'All Budgets'), bdt: t('যেকোনো দাম', 'Any Price') },
-  { id: 'under_1k', label: t('Under $1,000 (কম বাজেট)', 'Under $1,000 (Starter)'), bdt: t('৳১,২২,০০০ এর নিচে', 'Under ৳122,000') },
-  { id: '1k_3k', label: t('$1,000 – $3,000 (সাশ্রয়ী)', '$1,000 – $3,000 (Budget)'), bdt: t('৳১.২ লাখ – ৳৩.৬ লাখ', '৳1.2L – ৳3.6L') },
-  { id: '3k_8k', label: t('$3,000 – $8,000 (মিড রেঞ্জ)', '$3,000 – $8,000 (Mid-Range)'), bdt: t('৳৩.৬ লাখ – ৳৯.৭ লাখ', '৳3.6L – ৳9.7L') },
-  { id: '8k_15k', label: t('$8,000 – $15,000 (হাই রেভিনিউ)', '$8,000 – $15,000 (High Revenue)'), bdt: t('৳৯.৭ লাখ – ৳১৮ লাখ', '৳9.7L – ৳18L') },
-  { id: '15k_plus', label: t('$15,000+ (১০০K+ সিলভার)', '$15,000+ (100K+ Silver)'), bdt: t('৳১৮ লাখের উপরে', 'Above ৳18 Lakh') }
+  { id: 'all', label: t('সকল বাজেট', 'All Budgets'), bdt: t('যেকোনো দাম', 'Any Price') },
+  { id: 'under_1k', label: t('১,০০০ ডলারের নিচে (কম বাজেট)', 'Under $1,000 (Starter)'), bdt: t('৳১,২২,০০০ এর নিচে', 'Under ৳122,000') },
+  { id: '1k_3k', label: t('১,০০০ – ৩,০০০ ডলার (সাশ্রয়ী)', '$1,000 – $3,000 (Budget)'), bdt: t('৳১.২ লাখ – ৳৩.৬ লাখ', '৳1.2L – ৳3.6L') },
+  { id: '3k_8k', label: t('৩,০০০ – ৮,০০০ ডলার (মিড রেঞ্জ)', '$3,000 – $8,000 (Mid-Range)'), bdt: t('৳৩.৬ লাখ – ৳৯.৭ লাখ', '৳3.6L – ৳9.7L') },
+  { id: '8k_15k', label: t('৮,০০০ – ১৫,০০০ ডলার (উচ্চ আয়)', '$8,000 – $15,000 (High Revenue)'), bdt: t('৳৯.৭ লাখ – ৳১৮ লাখ', '৳9.7L – ৳18L') },
+  { id: '15k_plus', label: t('১৫,০০০ ডলারের বেশি (সিলভার)', '$15,000+ (100K+ Silver)'), bdt: t('৳১৮ লাখের উপরে', 'Above ৳18 Lakh') }
 ];
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -430,7 +430,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div className="max-w-3xl mx-auto text-center space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-700 shadow-xs">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>{t("Multi-Platform Escrow • নিরাপদ অ্যাকাউন্ট ও চ্যানেল ট্রান্সফার", "Multi-Platform Escrow • Safe Social Asset Transfers")}</span>
+              <span>{t("মাল্টি-প্ল্যাটফর্ম এস্ক্রো • নিরাপদ অ্যাকাউন্ট ও চ্যানেল ট্রান্সফার", "Multi-Platform Escrow • Safe Social Asset Transfers")}</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
@@ -442,7 +442,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl mx-auto">
               {t(
-                "ফেসবুক ইনস্ট্রিম অ্যাড পেজ, ইউটিউব চ্যানেল, টিকটক ক্রিয়েটর রিওয়ার্ডস, ইনস্টাগ্রাম থিম পেজ, টেলিগ্রাম সিগন্যাল ও এক্স (Twitter) অ্যাকাউন্ট—১০০% নিরাপদ এস্ক্রো সিস্টেমে যাচাইকৃত অ্যাকাউন্ট কিনুন ও বিক্রি করুন।",
+                "ফেসবুক ইনস্ট্রিম অ্যাড পেজ, ইউটিউব চ্যানেল, টিকটক ক্রিয়েটর রিওয়ার্ডস, ইনস্টাগ্রাম থিম পেজ, টেলিগ্রাম সিগন্যাল ও এক্স অ্যাকাউন্ট—১০০% নিরাপদ এস্ক্রো সিস্টেমে যাচাইকৃত অ্যাকাউন্ট কিনুন ও বিক্রি করুন।",
                 "Acquire or sell Facebook in-stream pages, monetized YouTube channels, TikTok Creator Rewards accounts, Instagram theme hubs, and Telegram signal communities with 100% verified custody escrow."
               )}
             </p>
@@ -511,7 +511,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <span className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <span>{t("প্ল্যাটফর্ম নির্বাচন করুন", "Select Platform")}</span>
                   <span className="hidden sm:inline text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200">
-                    Facebook • YouTube • TikTok • Instagram • Telegram • X
+                    {t("ফেসবুক • ইউটিউব • টিকটক • ইনস্টাগ্রাম • টেলিগ্রাম • এক্স", "Facebook • YouTube • TikTok • Instagram • Telegram • X")}
                   </span>
                 </span>
               </div>
@@ -520,7 +520,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   onClick={() => setSelectedPlatform('all')}
                   className="text-xs text-red-600 hover:text-red-700 font-semibold flex items-center gap-1 transition cursor-pointer"
                 >
-                  <span>{t("সবগুলো দেখুন (All)", "View All")}</span>
+                  <span>{t("সবগুলো দেখুন", "View All")}</span>
                   <RotateCcw className="w-3 h-3" />
                 </button>
               )}

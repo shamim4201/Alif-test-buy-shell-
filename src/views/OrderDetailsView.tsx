@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { ReviewModal } from '../components/ReviewModal';
+import { getLocalizedChannelTitle, getLocalizedOrderStep } from '../translations/translations';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -32,7 +33,7 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
   onOpenLegal
 }) => {
   const { user, showToast } = useAuth();
-  const { currency, formatPrice, formatUsd, formatBdt, t } = useCurrency();
+  const { currency, formatPrice, formatUsd, formatBdt, language, t } = useCurrency();
   const [order, setOrder] = useState<Order | null>(null);
   const [channel, setChannel] = useState<ChannelListing | null>(null);
   const [seller, setSeller] = useState<User | null>(null);
@@ -289,7 +290,7 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
               {t("অ্যাকাউন্ট ক্রয় এস্ক্রো চুক্তি", "Account Acquisition Escrow")}
             </span>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              {order.channelTitle}
+              {getLocalizedChannelTitle(channel || { title: order.channelTitle }, language)}
             </h1>
             <p className="text-xs text-slate-500 font-mono">
               {order.channelHandle} •{' '}
@@ -444,44 +445,46 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
 
           {/* Stepper list */}
           <div className="space-y-4">
-            {order.transferSteps.map((step) => (
-              <div
-                key={step.step}
-                className={`p-4 rounded-2xl border transition ${
-                  step.completed
-                    ? 'bg-emerald-50/70 border-emerald-200'
-                    : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 ${
-                        step.completed
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      {step.completed ? '✓' : step.step}
-                    </div>
-                    <div>
-                      <h3
-                        className={`text-sm font-bold ${
-                          step.completed ? 'text-emerald-900' : 'text-slate-900'
+            {order.transferSteps.map((step) => {
+              const localizedStep = getLocalizedOrderStep(step, language);
+              return (
+                <div
+                  key={step.step}
+                  className={`p-4 rounded-2xl border transition ${
+                    step.completed
+                      ? 'bg-emerald-50/70 border-emerald-200'
+                      : 'bg-slate-50 border-slate-200'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 ${
+                          step.completed
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-slate-200 text-slate-600'
                         }`}
                       >
-                        {t(`ধাপ ${step.step}: `, `Step ${step.step}: `)}{step.title}
-                      </h3>
-                      <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
-                        {step.description}
-                      </p>
-                      {step.completedAt && (
-                        <span className="text-[10px] text-emerald-700 mt-1 block font-medium">
-                          {t("সম্পন্ন হয়েছে: ", "Completed on ")}{new Date(step.completedAt).toLocaleString()}
-                        </span>
-                      )}
+                        {step.completed ? '✓' : step.step}
+                      </div>
+                      <div>
+                        <h3
+                          className={`text-sm font-bold ${
+                            step.completed ? 'text-emerald-900' : 'text-slate-900'
+                          }`}
+                        >
+                          {t(`ধাপ ${step.step}: `, `Step ${step.step}: `)}{localizedStep.title}
+                        </h3>
+                        <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                          {localizedStep.description}
+                        </p>
+                        {step.completedAt && (
+                          <span className="text-[10px] text-emerald-700 mt-1 block font-medium">
+                            {t("সম্পন্ন হয়েছে: ", "Completed on ")}{new Date(step.completedAt).toLocaleString(language === 'BN' ? 'bn-BD' : 'en-US')}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
                   {/* Actions to complete milestone */}
                   {!step.completed && order.status !== 'completed' && order.status !== 'cancelled' && (
@@ -694,7 +697,7 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
         isOpen={reviewModalOpen}
         onClose={() => setReviewModalOpen(false)}
         orderId={order.id}
-        channelTitle={order.channelTitle}
+        channelTitle={getLocalizedChannelTitle(channel || { title: order.channelTitle }, language)}
         sellerName={order.sellerName}
         onSuccess={() => {
           loadOrderData();

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, FileText, Lock, AlertTriangle, Scale } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface LegalModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
   onClose,
   initialTab = 'tos'
 }) => {
+  const { language, t } = useCurrency();
   const [activeTab, setActiveTab] = useState<'tos' | 'privacy' | 'refund' | 'safety'>(initialTab);
 
   if (!isOpen) return null;
@@ -24,7 +26,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           <div className="flex items-center gap-2.5">
             <Scale className="w-5 h-5 text-red-600" />
             <h2 className="text-base font-bold text-slate-900">
-              ChannelTrust Legal &amp; Compliance Center
+              {t('আলিফ ট্রাস্ট লিগ্যাল ও পলিসি সেন্টার', 'Alif Trust Legal & Compliance Center')}
             </h2>
           </div>
           <button
@@ -46,7 +48,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
-            Brand Account Safety Standard
+            {t('নিরাপদ ওনারশিপ প্রটোকল', 'Safe Ownership Protocol')}
           </button>
           <button
             onClick={() => setActiveTab('tos')}
@@ -57,7 +59,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             }`}
           >
             <FileText className="w-4 h-4" />
-            Terms of Service
+            {t('টার্মস অফ সার্ভিস ও সেলার ওয়ারেন্টি', 'Terms of Service & Warranty')}
           </button>
           <button
             onClick={() => setActiveTab('privacy')}
@@ -68,7 +70,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             }`}
           >
             <Lock className="w-4 h-4" />
-            Privacy &amp; Redaction Policy
+            {t('প্রাইভেসি পলিসি ও তথ্য সুরক্ষা', 'Privacy & Protection Policy')}
           </button>
           <button
             onClick={() => setActiveTab('refund')}
@@ -79,7 +81,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             }`}
           >
             <AlertTriangle className="w-4 h-4" />
-            Refund &amp; Dispute Arbitration
+            {t('রিফান্ড ও বিরোধ নিষ্পত্তি পলিসি', 'Refund & Dispute Arbitration')}
           </button>
         </div>
 
@@ -91,100 +93,176 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-bold text-emerald-900 text-sm">
-                    Core Security Directive: Zero Password Sharing
+                    {t('মূল নিরাপত্তা নির্দেশিকা: নো-পাসওয়ার্ড পলিসি', 'Core Security Directive: Zero Password Sharing')}
                   </h4>
                   <p className="text-xs text-emerald-800 mt-1">
-                    ChannelTrust strictly forbids sellers and buyers from requesting, exchanging, or transferring Google/Gmail account passwords. Transfers must ONLY occur through Google Brand Account Primary Ownership reassignment.
+                    {t(
+                      'আলিফ ট্রাস্ট বায়ার ও সেলারদের কোনো অবস্থাতেই গুগল/ফেসবুক ব্যক্তিগত পাসওয়ার্ড বিনিময় করার অনুমতি দেয় না। ওনারশিপ সম্পূর্ণ অফিসিয়াল ব্র্যান্ড একাউন্ট পারমিশন বা পেজ রোল হস্তান্তরের মাধ্যমে সম্পন্ন হতে হবে।',
+                      'Alif Trust strictly forbids exchanging account passwords. Ownership transfers must occur purely through official platform permission invitations.'
+                    )}
                   </p>
                 </div>
               </div>
 
-              <h3 className="text-base font-bold text-slate-900">The 5-Stage Safe Brand Account Protocol</h3>
+              <h3 className="text-base font-bold text-slate-900">
+                {t('নিরাপদ অ্যাকাউন্ট হ্যান্ডওভারের ৫টি ধাপ', 'The 5-Stage Safe Account Handover Protocol')}
+              </h3>
               <ol className="list-decimal pl-5 space-y-3">
                 <li>
-                  <strong>Brand Account Conversion:</strong> If the channel is not already linked to a Brand Account, the seller creates a Brand Account in YouTube Studio and links the channel prior to listing.
+                  <strong>{t('অফিসিয়াল রোল ইনভাইটেশন: ', 'Official Permission Invite: ')}</strong>
+                  {t(
+                    'বায়ারের পেমেন্ট প্ল্যাটফর্ম এস্ক্রো কাস্টডিতে নিশ্চিত হলে সেলার বায়ারের ইমেইলে ম্যানেজার হিসেবে আমন্ত্রণ পাঠান।',
+                    'Once buyer payment is confirmed in escrow custody, seller sends an official Manager role invitation.'
+                  )}
                 </li>
                 <li>
-                  <strong>Manager Invitation:</strong> Once buyer payment is server-verified in platform custody, the seller navigates to <em>YouTube Studio &gt; Settings &gt; Permissions</em> and invites the buyer’s clean Google Account email as <strong>Manager</strong>.
+                  <strong>{t('গুগল/প্ল্যাটফর্ম ৭ দিনের সিকিউরিটি কুলডাউন: ', 'Mandatory Security Cooldown: ')}</strong>
+                  {t(
+                    'অফিসিয়াল পলিসি অনুযায়ী নতুন ব্যবহারকারীকে প্রাইমারি ওনারশিপ হস্তান্তরের আগে বাধ্যতামূলক ৭ দিন অতিবাহিত হতে হয়।',
+                    'Per security rules, a newly added administrator must elapse the required safety period before elevation.'
+                  )}
                 </li>
                 <li>
-                  <strong>Mandatory 7-Day Google Cooldown:</strong> Per Google security architecture, a newly added user must remain a Manager for 7 consecutive days before being eligible for promotion to Primary Owner.
+                  <strong>{t('প্রাইমারি ওনারশিপ হস্তান্তর: ', 'Primary Ownership Elevation: ')}</strong>
+                  {t(
+                    'নির্ধারিত সময় শেষে সেলার বায়ারকে একমাত্র প্রাইমারি ওনার করেন এবং নিজের অ্যাডমিন অ্যাক্সেস রিমুভ করেন।',
+                    'On maturity, the seller elevates the buyer to sole Primary Owner and revokes their own access.'
+                  )}
                 </li>
                 <li>
-                  <strong>Primary Ownership Elevation:</strong> On Day 7, the seller elevates the buyer to <strong>Primary Owner</strong>. The seller then removes their own administrative role.
+                  <strong>{t('অ্যাডসেন্স ও পেমেন্ট লিঙ্ক: ', 'AdSense & Revenue Linking: ')}</strong>
+                  {t(
+                    'বায়ার নিজের অনুমোদিত অ্যাডসেন্স বা পেআউট মেথড লিঙ্ক করে পূর্ণ নিয়ন্ত্রণ নিশ্চিত করেন।',
+                    'Buyer links their own AdSense or payout profile and audits complete administrative rights.'
+                  )}
                 </li>
                 <li>
-                  <strong>AdSense Relinking &amp; Fund Release:</strong> The buyer links their own approved Google AdSense property, verifies sole administrative access, and authorizes platform fund release to the seller.
+                  <strong>{t('ফান্ড রিলিজ অনুমোদন: ', 'Escrow Fund Release: ')}</strong>
+                  {t(
+                    'বায়ার সম্পূর্ণভাবে সন্তুষ্ট হয়ে প্ল্যাটফর্মে রিলিজ অনুমোদন করলে সেলারের টাকা ছাড় করা হয়।',
+                    'Buyer confirms complete satisfaction and authorizes platform payout to the seller.'
+                  )}
                 </li>
               </ol>
 
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs">
-                <strong>Anti-Fraud Warning:</strong> Any attempt to transact off-platform, send wires outside the platform verification workflow, or solicit personal login credentials will result in immediate permanent account termination and forfeiture of marketplace guarantees.
+                <strong>{t('প্রতারণা বিরোধী সতর্কবার্তা: ', 'Anti-Fraud Warning: ')}</strong>
+                {t(
+                  'প্ল্যাটফর্মের বাইরে কোনো লেনদেন বা ব্যক্তিগত লগইন তথ্য আদান-প্রদান করার চেষ্টা করলে অ্যাকাউন্ট অবিলম্বে স্থায়ীভাবে বন্ধ করা হবে এবং এস্ক্রো নিরাপত্তা সুবিধা বাতিল হবে।',
+                  'Any attempt to transact off-platform or solicit personal login credentials will result in immediate permanent account termination.'
+                )}
               </div>
             </div>
           )}
 
           {activeTab === 'tos' && (
             <div className="space-y-4">
-              <h3 className="text-base font-bold text-slate-900">Terms of Service &amp; Seller Representations</h3>
+              <h3 className="text-base font-bold text-slate-900">
+                {t('টার্মস অফ সার্ভিস ও সেলার ওয়ারেন্টি', 'Terms of Service & Seller Representations')}
+              </h3>
               <p>
-                Welcome to ChannelTrust. By creating an account or submitting an offer, you enter into a legally binding covenant regarding digital asset transfers.
+                {t(
+                  'আলিফ ট্রাস্ট প্ল্যাটফর্মে স্বাগতম। একাউন্ট তৈরি বা কোনো অর্ডারে অংশগ্রহণের মাধ্যমে আপনি ডিজিটাল মিডিয়া সম্পদ হস্তান্তরের এই আইনি শর্তাবলীতে সম্মতি প্রদান করছেন।',
+                  'Welcome to Alif Trust. By creating an account or placing an order, you agree to these legally binding digital asset transfer terms.'
+                )}
               </p>
 
-              <h4 className="font-bold text-slate-900 text-sm">1. Seller Warranties &amp; Clean Title</h4>
+              <h4 className="font-bold text-slate-900 text-sm">
+                {t('১. সেলারের বৈধ ওনারশিপ ওয়ারেন্টি', '1. Seller Warranties & Clean Title')}
+              </h4>
               <p>
-                Every seller warrants that they are the sole lawful creator or rightful owner of the YouTube channel listed. The seller guarantees that the channel has zero undisclosed copyright strikes, zero active Community Guideline strikes, no pending strikes, and no fraudulent artificially inflated view metrics (botting).
+                {t(
+                  'প্রত্যেক সেলার নিশ্চয়তা দেন যে তিনি তালিকাভুক্ত চ্যানেলের একমাত্র বৈধ স্রষ্টা ও স্বত্বাধিকারী। কোনো অপ্রকাশিত কপিরাইট স্ট্রাইক, কমিউনিটি গাইডলাইন লঙ্ঘন বা নকল কৃত্রিম ভিউজ নেই।',
+                  'Every seller warrants that they are the sole lawful owner of the social media account listed with zero undisclosed copyright strikes or bot activity.'
+                )}
               </p>
 
-              <h4 className="font-bold text-slate-900 text-sm">2. Non-Circumvention</h4>
+              <h4 className="font-bold text-slate-900 text-sm">
+                {t('২. প্ল্যাটফর্ম বাইপাস নিষেধাজ্ঞা', '2. Non-Circumvention Policy')}
+              </h4>
               <p>
-                Buyers and sellers agree not to bypass ChannelTrust to execute transactions directly. Platform security guarantees and arbitration rights only apply to orders logged and verified inside ChannelTrust.
+                {t(
+                  'ক্রেতা ও বিক্রেতা আলিফ ট্রাস্টকে বাইপাস করে সরাসরি যোগাযোগ বা লেনদেন করবেন না। প্ল্যাটফর্মের গ্যারান্টি শুধুমাত্র সিস্টেমের ভেতরের লেনদেনের জন্যই প্রযোজ্য।',
+                  'Buyers and sellers agree not to bypass Alif Trust to transact directly. Safety guarantees only apply to internal orders.'
+                )}
               </p>
 
-              <h4 className="font-bold text-slate-900 text-sm">3. Custody &amp; Server-Side Payment Verification</h4>
+              <h4 className="font-bold text-slate-900 text-sm">
+                {t('৩. কাস্টডি ও সার্ভার-ভেরিফাইড পেমেন্ট', '3. Custody & Escrow Payment Verification')}
+              </h4>
               <p>
-                All funds paid by buyers are verified server-side and recorded in the custody ledger. Funds remain secured until the buyer explicitly approves release upon receiving verified Primary Owner status, or until an arbitration ruling is enacted by ChannelTrust compliance officers.
+                {t(
+                  'বায়ারের সকল পেমেন্ট প্ল্যাটফর্ম কাস্টডিতে সুরক্ষিত থাকে। বায়ার নিজে ওনারশিপ গ্রহণ নিশ্চিত না করা পর্যন্ত টাকা সুরক্ষিত অবস্থায় রাখা হয়।',
+                  'All buyer funds are held in secure server-verified custody until the buyer explicitly approves release upon receiving primary ownership.'
+                )}
               </p>
             </div>
           )}
 
           {activeTab === 'privacy' && (
             <div className="space-y-4">
-              <h3 className="text-base font-bold text-slate-900">Privacy Policy &amp; Data Protection</h3>
+              <h3 className="text-base font-bold text-slate-900">
+                {t('প্রাইভেসি পলিসি ও তথ্য সুরক্ষা', 'Privacy Policy & Data Protection')}
+              </h3>
               <p>
-                ChannelTrust collects only the minimum necessary data to verify channel provenance and facilitate the ownership transition.
+                {t(
+                  'আলিফ ট্রাস্ট ওনারশিপ হস্তান্তর ও যাচাইকরণের জন্য শুধুমাত্র প্রয়োজনীয় ন্যূনতম তথ্য সংগ্রহ করে।',
+                  'Alif Trust collects only the necessary information to verify asset provenance and facilitate secure transfer.'
+                )}
               </p>
 
-              <h4 className="font-bold text-slate-900 text-sm">Analytics Redaction</h4>
+              <h4 className="font-bold text-slate-900 text-sm">
+                {t('অ্যানালিটিক্স ও সংবেদনশীল তথ্য গোপন রাখা', 'Analytics Redaction')}
+              </h4>
               <p>
-                When sellers upload YouTube Studio screenshots, sensitive financial identifiers (such as bank routing numbers or personal AdSense publisher IDs) must be redacted. Public listing cards display aggregate analytics (subscribers, views, niche, geographic split) to preserve seller anonymity until a binding purchase offer is initiated.
+                {t(
+                  'স্ক্রিনশটে সংবেদনশীল আর্থিক তথ্য (যেমন ব্যক্তিগত অ্যাডসেন্স আইডি বা ব্যাংক তথ্য) স্বয়ংক্রিয়ভাবে গোপন রাখা হয়।',
+                  'Sensitive personal and banking identifiers are redacted from public audit analytics screenshots.'
+                )}
               </p>
 
-              <h4 className="font-bold text-slate-900 text-sm">Communication Privacy</h4>
+              <h4 className="font-bold text-slate-900 text-sm">
+                {t('যোগাযোগের গোপনীয়তা', 'Communication Safety')}
+              </h4>
               <p>
-                Channel messages are encrypted in transit and inspected via automated safety filters solely to prevent credential fraud, scam URLs, and off-platform solicitation.
+                {t(
+                  'প্ল্যাটফর্ম মেসেজিং সিস্টেম শুধুমাত্র প্রতারণা ও স্ক্যাম রোধের উদ্দেশ্যে স্বয়ংক্রিয় সুরক্ষা ফিল্টারের মাধ্যমে পর্যবেক্ষণে থাকে।',
+                  'Internal messages are safely filtered solely to prevent credential fraud, unauthorized URLs, and scam solicitations.'
+                )}
               </p>
             </div>
           )}
 
           {activeTab === 'refund' && (
             <div className="space-y-4">
-              <h3 className="text-base font-bold text-slate-900">Refund, Dispute &amp; Arbitration Policy</h3>
+              <h3 className="text-base font-bold text-slate-900">
+                {t('রিফান্ড, বিরোধ ও পরিদর্শন নীতি', 'Refund, Dispute & Arbitration Policy')}
+              </h3>
               <p>
-                Because digital media ownership is a sensitive asset class, ChannelTrust operates a clear 48-hour post-handover inspection guarantee.
+                {t(
+                  'ডিজিটাল মিডিয়া ওনারশিপ একটি স্পর্শকাতর বিষয় হওয়ায় আলিফ ট্রাস্ট হস্তান্তরের পরবর্তী ৪৮ ঘণ্টার পূর্ণ পরিদর্শন গ্যারান্টি প্রদান করে।',
+                  'Because digital media transfers are sensitive, Alif Trust enforces a strict 48-hour post-handover inspection guarantee.'
+                )}
               </p>
 
-              <h4 className="font-bold text-slate-900 text-sm">Eligible Grounds for Full Buyer Refund:</h4>
+              <h4 className="font-bold text-slate-900 text-sm">
+                {t('যেসব কারণে বায়ার পূর্ণ রিফান্ড পাবেন:', 'Eligible Grounds for Full Buyer Refund:')}
+              </h4>
               <ul className="list-disc pl-5 space-y-1.5">
-                <li>Seller fails to send Google Brand Account Manager invite within 72 hours of payment confirmation.</li>
-                <li>Undisclosed active copyright strikes, Community Guideline strikes, or monetization demonetization occurred prior to transfer.</li>
-                <li>Metrics differ by more than 25% from verified listing proof screenshots.</li>
-                <li>Seller attempts to reclaim channel via Google account recovery mechanisms.</li>
+                <li>{t('পেমেন্ট নিশ্চিতের ৭২ ঘণ্টার মধ্যে সেলার অফিসিয়াল রোল ইনভাইটেশন পাঠাতে ব্যর্থ হলে।', 'Seller fails to send official role invite within 72 hours of payment confirmation.')}</li>
+                <li>{t('পূর্বের কোনো অপ্রকাশিত কপিরাইট স্ট্রাইক বা মনিটাইজেশন সমস্যা বিদ্যমান থাকলে।', 'Undisclosed copyright strikes or demonetization occurred prior to transfer.')}</li>
+                <li>{t('বাস্তব অ্যানালিটিক্স লিস্টিংয়ের তথ্যের তুলনায় ২৫% এর বেশি কম হলে।', 'Key metrics differ by more than 25% from verified listing proof screenshots.')}</li>
+                <li>{t('হস্তান্তরের পর সেলার চ্যানেল ফিরিয়ে নেওয়ার চেষ্টা করলে।', 'Seller attempts to reclaim account via recovery mechanisms.')}</li>
               </ul>
 
-              <h4 className="font-bold text-slate-900 text-sm">Arbitration Procedure</h4>
+              <h4 className="font-bold text-slate-900 text-sm">
+                {t('বিরোধ নিষ্পত্তি পদ্ধতি', 'Arbitration Procedure')}
+              </h4>
               <p>
-                If a dispute is triggered by either party, funds are instantly frozen. A ChannelTrust arbitrator will inspect YouTube Studio audit logs, timestamped transfer messages, and screenshot records. Admin arbitration rulings are final.
+                {t(
+                  'কোনো বিরোধ তৈরি হলে তাৎক্ষণিকভাবে ফান্ড ফ্রিজ করা হয়। আলিফ ট্রাস্টের কমপ্লায়েন্স টিম অডিট লগ যাচাই করে চূড়ান্ত সিদ্ধান্ত গ্রহণ করে।',
+                  'If a dispute is triggered, funds are immediately frozen. Alif Trust compliance officers audit proof and issue a binding resolution.'
+                )}
               </p>
             </div>
           )}
@@ -193,13 +271,13 @@ export const LegalModal: React.FC<LegalModalProps> = ({
         {/* Footer */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
           <span className="text-xs text-slate-500">
-            Last revised: October 2026 • ChannelTrust Compliance
+            {t('সর্বশেষ পরিমার্জন: অক্টোবর ২০২৬ • আলিফ ট্রাস্ট কমপ্লায়েন্স', 'Last revised: October 2026 • Alif Trust Compliance')}
           </span>
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition cursor-pointer"
           >
-            I Understand &amp; Agree
+            {t('আমি বুঝতে পেরেছি ও সম্মত', 'I Understand & Agree')}
           </button>
         </div>
       </div>
