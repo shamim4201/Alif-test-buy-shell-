@@ -14,6 +14,10 @@ interface CurrencyContextType {
   formatBdt: (usdAmount: number) => string;
   getBdtValue: (usdAmount: number) => number;
   conversionRate: number; // 1 USD = 122 BDT
+  currencyModalOpen: boolean;
+  setCurrencyModalOpen: (open: boolean) => void;
+  openCurrencyModal: () => void;
+  closeCurrencyModal: () => void;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -85,6 +89,11 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return currency === 'USD' ? formatUsd(amount) : formatBdt(amount);
   };
 
+  const [currencyModalOpen, setCurrencyModalOpen] = useState(false);
+
+  const openCurrencyModal = () => setCurrencyModalOpen(true);
+  const closeCurrencyModal = () => setCurrencyModalOpen(false);
+
   return (
     <CurrencyContext.Provider
       value={{
@@ -98,6 +107,10 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         formatBdt,
         getBdtValue,
         conversionRate: BDT_RATE,
+        currencyModalOpen,
+        setCurrencyModalOpen,
+        openCurrencyModal,
+        closeCurrencyModal,
       }}
     >
       {children}

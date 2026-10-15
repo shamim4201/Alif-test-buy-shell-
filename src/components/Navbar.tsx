@@ -52,13 +52,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectPlatform
 }) => {
   const { user, logout, openAuthModal, quickSwitch } = useAuth();
-  const { currency, setCurrency, language, setLanguage, t } = useCurrency();
+  const { currency, setCurrency, language, setLanguage, t, currencyModalOpen, setCurrencyModalOpen, openCurrencyModal } = useCurrency();
   const [localSearch, setLocalSearch] = useState(searchTerm);
   const [activeCategory, setActiveCategory] = useState(selectedPlatform || 'all');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const [currencyModalOpen, setCurrencyModalOpen] = useState(false);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
@@ -186,8 +185,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* =========================================================
           TIER 1: AMAZON TOP MAIN HEADER (#131921)
          ========================================================= */}
-      <header className="sticky top-0 z-40 bg-[#131921] text-white select-none w-full max-w-full overflow-hidden">
-        <div className="max-w-[1550px] mx-auto px-2 sm:px-4 py-1 sm:py-1.5 flex items-center justify-between gap-1 sm:gap-2 w-full">
+      <header className="sticky top-0 z-40 bg-[#131921] text-white select-none w-full max-w-full">
+        <div className="max-w-[1550px] mx-auto px-1.5 sm:px-4 py-1 sm:py-1.5 flex items-center justify-between gap-1 sm:gap-2 w-full">
           {/* 1. BRAND LOGO: Alif Trust buy&shell (alif sheen group) */}
           <div
             onClick={() => {
@@ -218,28 +217,33 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </button>
 
-          {/* 3. CURRENCY & LANGUAGE SELECTOR ($ USD / ৳ BDT & বাংলা / EN) - Hidden on mobile as requested */}
-          <div className="relative shrink-0 mx-0.5 sm:mx-3 z-30 hidden sm:block" ref={currencyDropdownRef}>
+          {/* 3. CURRENCY & LANGUAGE SELECTOR ($ USD / ৳ BDT & বাংলা / EN) - Visible & responsive on both mobile and desktop */}
+          <div className="relative shrink-0 mx-0.5 sm:mx-2 z-50" ref={currencyDropdownRef}>
             <button
               type="button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setCurrencyDropdownOpen((prev) => !prev);
+                // On mobile or smaller screens, open the centered modal which never clips
+                if (window.innerWidth < 640) {
+                  openCurrencyModal();
+                } else {
+                  setCurrencyDropdownOpen((prev) => !prev);
+                }
               }}
-              className="h-8 sm:h-10 bg-[#e6e6e6] hover:bg-[#dadada] text-slate-900 text-xs font-bold px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1 sm:gap-1.5 rounded-md border border-[#cdcdcd] transition cursor-pointer select-none whitespace-nowrap active:bg-[#ccc] shadow-xs"
+              className="h-7 sm:h-9 bg-[#232f3e] sm:bg-[#e6e6e6] hover:bg-[#2c3b4e] sm:hover:bg-[#dadada] text-white sm:text-slate-900 text-[11px] sm:text-xs font-bold px-1.5 sm:px-2.5 py-0.5 sm:py-1 flex items-center gap-1 rounded-md border border-[#3d4f66] sm:border-[#cdcdcd] transition cursor-pointer select-none whitespace-nowrap active:bg-[#1a2430] sm:active:bg-[#ccc] shadow-xs"
               title={t("ওয়েবসাইটের কারেন্সি ও ভাষা পরিবর্তন করুন", "Change website currency & language")}
             >
-              <span className="text-xs sm:text-sm font-black text-amber-700">
+              <span className="text-xs sm:text-sm font-black text-amber-400 sm:text-amber-700">
                 {currency === 'USD' ? '$' : '৳'}
               </span>
-              <span className="font-black text-slate-900 tracking-tight text-xs sm:text-sm">
+              <span className="font-extrabold tracking-tight text-[11px] sm:text-xs">
                 {currency}
               </span>
-              <span className="text-[11px] font-semibold text-slate-600 hidden sm:inline">
-                • {language === 'BN' ? 'বাংলা' : 'EN'}
+              <span className="text-[10px] sm:text-[11px] font-semibold text-slate-300 sm:text-slate-600">
+                • {language === 'BN' ? 'বাং' : 'EN'}
               </span>
-              <ChevronDown className={`w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-600 shrink-0 transition-transform ${currencyDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-300 sm:text-slate-600 shrink-0 transition-transform ${currencyDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* CURRENCY & LANGUAGE DROPDOWN POPUP */}
@@ -1141,12 +1145,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           CURRENCY & LANGUAGE MODAL (For mobile/touch & quick switch)
          ========================================================= */}
       {currencyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-xs"
             onClick={() => setCurrencyModalOpen(false)}
           />
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-5 sm:p-6 text-slate-800 z-50 animate-fade-in border border-slate-200">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-5 sm:p-6 text-slate-800 z-[9999] animate-fade-in border border-slate-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>

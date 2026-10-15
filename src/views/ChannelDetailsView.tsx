@@ -32,6 +32,7 @@ import {
   getLocalizedChannelLanguage,
   getLocalizedChannelNiche
 } from '../translations/translations';
+import { PlatformLogo, CategoryLogo } from '../components/CategoryIcons';
 
 interface ChannelDetailsViewProps {
   channelId: string;
@@ -141,31 +142,31 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
 
   const getPlatformLabel = () => {
     switch (channel.platform) {
-      case 'facebook': return t('🔵 ফেসবুক পেজ', '🔵 Facebook Page');
-      case 'tiktok': return t('🎵 টিকটক একাউন্ট', '🎵 TikTok Account');
-      case 'instagram': return t('📸 ইনস্টাগ্রাম পেজ', '📸 Instagram Page');
-      case 'telegram': return t('✈️ টেলিগ্রাম চ্যানেল', '✈️ Telegram Channel');
-      case 'twitter': return t('🐦 এক্স / টুইটার', '🐦 X / Twitter');
-      default: return t('🔴 ইউটিউব চ্যানেল', '🔴 YouTube Channel');
+      case 'facebook': return t('ফেসবুক পেজ', 'Facebook Page');
+      case 'tiktok': return t('টিকটক একাউন্ট', 'TikTok Account');
+      case 'instagram': return t('ইনস্টাগ্রাম পেজ', 'Instagram Page');
+      case 'telegram': return t('টেলিগ্রাম চ্যানেল', 'Telegram Channel');
+      case 'twitter': return t('এক্স বা টুইটার', 'X / Twitter');
+      default: return t('ইউটিউব চ্যানেল', 'YouTube Channel');
     }
   };
 
   const getAccountTypeBadge = () => {
     switch (channel.accountType) {
       case 'cooking_lifestyle':
-        return t('👩‍🍳 আন্টির রান্না ও রেসিপি', '👩‍🍳 Cooking & Lifestyle');
+        return t('আন্টির রান্না ও রেসিপি', 'Cooking & Lifestyle');
       case 'facebook_page':
-        return t('📄 ইনস্ট্রিম অ্যাড মনিটাইজড পেজ', '📄 In-Stream Ads Monetized');
+        return t('ইনস্ট্রিম অ্যাড মনিটাইজড পেজ', 'In-Stream Ads Monetized');
       case 'tiktok_viral':
-        return t('⚡ ক্রিয়েটর রিওয়ার্ডস ও শপ', '⚡ Creator Rewards & Shop');
+        return t('ক্রিয়েটর রিওয়ার্ডস ও শপ', 'Creator Rewards & Shop');
       case 'instagram_theme':
-        return t('🎨 থিম পেজ ও ব্র্যান্ড শাউটআউট', '🎨 Theme Page & Shoutouts');
+        return t('থিম পেজ ও ব্র্যান্ড শাউটআউট', 'Theme Page & Shoutouts');
       case 'faceless_cash_cow':
-        return t('🤖 ফেসলেস ক্যাশ কাউ', '🤖 Faceless Cash Cow');
+        return t('ফেসলেস ক্যাশ কাউ', 'Faceless Cash Cow');
       case 'shorts_creator':
-        return t('⚡ ভাইরাল শর্টস ক্রিয়েটর', '⚡ Viral Shorts Creator');
+        return t('ভাইরাল শর্টস ক্রিয়েটর', 'Viral Shorts Creator');
       case 'vintage_aged':
-        return t(`🏛️ ভিন্টেজ ${channel.creationYear} এর পুরাতন একাউন্ট`, `🏛️ Vintage ${channel.creationYear} Aged Account`);
+        return t(`ভিন্টেজ ${channel.creationYear} এর পুরাতন একাউন্ট`, `Vintage ${channel.creationYear} Aged Account`);
       default:
         return getLocalizedChannelNiche(channel.niche, language);
     }
@@ -229,7 +230,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs">
               <div className="flex flex-wrap items-center gap-2">
                 {/* Platform Badge */}
-                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs ${
                   channel.platform === 'facebook'
                     ? 'bg-blue-50 text-blue-700 border-blue-200'
                     : channel.platform === 'tiktok'
@@ -242,11 +243,13 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                     ? 'bg-slate-100 text-slate-800 border-slate-300'
                     : 'bg-red-50 text-red-700 border-red-200'
                 }`}>
-                  {getPlatformLabel()}
+                  <PlatformLogo platform={channel.platform || 'youtube'} className="w-3.5 h-3.5 shrink-0" />
+                  <span>{getPlatformLabel()}</span>
                 </span>
 
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300">
-                  {getAccountTypeBadge()}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300 shadow-2xs">
+                  <CategoryLogo categoryId={channel.accountType || ''} className="w-3.5 h-3.5 shrink-0" />
+                  <span>{getAccountTypeBadge()}</span>
                 </span>
 
                 {channel.pageQuality === 'green' && (

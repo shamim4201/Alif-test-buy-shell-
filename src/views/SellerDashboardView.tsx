@@ -3,6 +3,7 @@ import { ChannelListing, Order, User, PlatformType } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { PlatformLogo } from '../components/CategoryIcons';
 import {
   PlusCircle,
   List,
@@ -415,12 +416,12 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                   {[
-                    { id: 'facebook', label: '🔵 Facebook', color: 'border-blue-300 bg-blue-50 text-blue-700' },
-                    { id: 'youtube', label: '🔴 YouTube', color: 'border-red-300 bg-red-50 text-red-700' },
-                    { id: 'tiktok', label: '🎵 TikTok', color: 'border-cyan-300 bg-cyan-50 text-cyan-800' },
-                    { id: 'instagram', label: '📸 Instagram', color: 'border-rose-300 bg-rose-50 text-rose-700' },
-                    { id: 'telegram', label: '✈️ Telegram', color: 'border-sky-300 bg-sky-50 text-sky-700' },
-                    { id: 'twitter', label: '🐦 X / Twitter', color: 'border-slate-300 bg-slate-100 text-slate-800' },
+                    { id: 'facebook', label: 'Facebook', color: 'border-blue-300 bg-blue-50 text-blue-700' },
+                    { id: 'youtube', label: 'YouTube', color: 'border-red-300 bg-red-50 text-red-700' },
+                    { id: 'tiktok', label: 'TikTok', color: 'border-cyan-300 bg-cyan-50 text-cyan-800' },
+                    { id: 'instagram', label: 'Instagram', color: 'border-rose-300 bg-rose-50 text-rose-700' },
+                    { id: 'telegram', label: 'Telegram', color: 'border-sky-300 bg-sky-50 text-sky-700' },
+                    { id: 'twitter', label: 'X / Twitter', color: 'border-slate-300 bg-slate-100 text-slate-800' },
                   ].map((p) => (
                     <button
                       key={p.id}
@@ -434,13 +435,14 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
                         else if (p.id === 'twitter') setAccountType('twitter_crypto');
                         else setAccountType('cooking_lifestyle');
                       }}
-                      className={`p-2.5 rounded-xl border text-xs font-bold text-center transition cursor-pointer ${
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
                         platform === p.id
                           ? `${p.color} ring-2 ring-red-500 shadow-sm`
                           : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                       }`}
                     >
-                      {p.label}
+                      <PlatformLogo platform={p.id} className="w-4 h-4 shrink-0" />
+                      <span>{p.label}</span>
                     </button>
                   ))}
                 </div>

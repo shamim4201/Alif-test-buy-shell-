@@ -28,6 +28,17 @@ import {
   Layers,
   RotateCcw
 } from 'lucide-react';
+import {
+  PlatformLogo,
+  CategoryLogo,
+  FacebookLogo,
+  YouTubeLogo,
+  TikTokLogo,
+  InstagramLogo,
+  TelegramLogo,
+  XLogo,
+  AllPlatformsLogo
+} from '../components/CategoryIcons';
 
 interface HomeViewProps {
   onSelectChannel: (channelId: string) => void;
@@ -40,26 +51,26 @@ interface HomeViewProps {
 }
 
 const getPlatforms = (t: (bn: string, en: string) => string) => [
-  { id: 'all', label: t('সকল প্ল্যাটফর্ম', 'All Platforms'), icon: '🌟', desc: t('সব প্ল্যাটফর্মের ভেরিফাইড একাউন্ট', 'Verified accounts across all platforms'), badgeColor: 'border-slate-300 bg-white text-slate-900' },
-  { id: 'youtube', label: t('🔴 ইউটিউব চ্যানেল', '🔴 YouTube Channels'), icon: '🔴', desc: t('মনিটাইজড ও ক্যাশ কাউ চ্যানেল', 'Monetized & cash cow channels'), badgeColor: 'border-red-300 bg-red-50 text-red-700' },
-  { id: 'facebook', label: t('🔵 ফেসবুক পেজ', '🔵 Facebook Pages'), icon: '🔵', desc: t('ইনস্ট্রিম বিজ্ঞাপন ও গ্রিন পেজ', 'In-Stream Ads & Green pages'), badgeColor: 'border-blue-300 bg-blue-50 text-blue-700' },
-  { id: 'tiktok', label: t('🎵 টিকটক অ্যাকাউন্ট', '🎵 TikTok Accounts'), icon: '🎵', desc: t('ক্রিয়েটর রিওয়ার্ডস ও শপ আইডি', 'Creator Rewards & Shop IDs'), badgeColor: 'border-cyan-300 bg-cyan-50 text-cyan-800' },
-  { id: 'instagram', label: t('📸 ইনস্টাগ্রাম পেজ', '📸 Instagram Pages'), icon: '📸', desc: t('থিম পেজ ও ইনফ্লুয়েন্সার অ্যাকাউন্ট', 'Theme pages & influencers'), badgeColor: 'border-rose-300 bg-rose-50 text-rose-700' },
-  { id: 'telegram', label: t('✈️ টেলিগ্রাম চ্যানেল', '✈️ Telegram Channels'), icon: '✈️', desc: t('মেম্বার ও সিগন্যাল চ্যানেল', 'Signal & member channels'), badgeColor: 'border-sky-300 bg-sky-50 text-sky-700' },
-  { id: 'twitter', label: t('🐦 এক্স / টুইটার', '🐦 X / Twitter Handles'), icon: '🐦', desc: t('ব্লু ব্যাজ ও বিজ্ঞাপন আয় একাউন্ট', 'Blue badge verified handles'), badgeColor: 'border-slate-300 bg-slate-100 text-slate-800' },
+  { id: 'all', label: t('সকল প্ল্যাটফর্ম', 'All Platforms'), desc: t('সব প্ল্যাটফর্মের ভেরিফাইড একাউন্ট', 'Verified accounts across all platforms'), badgeColor: 'border-slate-300 bg-white text-slate-900' },
+  { id: 'youtube', label: t('ইউটিউব চ্যানেল', 'YouTube Channels'), desc: t('মনিটাইজড ও ক্যাশ কাউ চ্যানেল', 'Monetized & cash cow channels'), badgeColor: 'border-red-300 bg-red-50 text-red-700' },
+  { id: 'facebook', label: t('ফেসবুক পেজ', 'Facebook Pages'), desc: t('ইনস্ট্রিম বিজ্ঞাপন ও গ্রিন পেজ', 'In-Stream Ads & Green pages'), badgeColor: 'border-blue-300 bg-blue-50 text-blue-700' },
+  { id: 'tiktok', label: t('টিকটক অ্যাকাউন্ট', 'TikTok Accounts'), desc: t('ক্রিয়েটর রিওয়ার্ডস ও শপ আইডি', 'Creator Rewards & Shop IDs'), badgeColor: 'border-cyan-300 bg-cyan-50 text-cyan-800' },
+  { id: 'instagram', label: t('ইনস্টাগ্রাম পেজ', 'Instagram Pages'), desc: t('থিম পেজ ও ইনফ্লুয়েন্সার অ্যাকাউন্ট', 'Theme pages & influencers'), badgeColor: 'border-rose-300 bg-rose-50 text-rose-700' },
+  { id: 'telegram', label: t('টেলিগ্রাম চ্যানেল', 'Telegram Channels'), desc: t('মেম্বার ও সিগন্যাল চ্যানেল', 'Signal & member channels'), badgeColor: 'border-sky-300 bg-sky-50 text-sky-700' },
+  { id: 'twitter', label: t('এক্স / টুইটার', 'X / Twitter Handles'), desc: t('ব্লু ব্যাজ ও বিজ্ঞাপন আয় একাউন্ট', 'Blue badge verified handles'), badgeColor: 'border-slate-300 bg-slate-100 text-slate-800' },
 ];
 
 const getAccountTypes = (t: (bn: string, en: string) => string) => [
-  { id: 'all', label: t('সকল ক্যাটাগরি', 'All Categories'), icon: '🌟' },
-  { id: 'facebook_page', label: t('ফেসবুক পেজ ও গ্রুপ', 'Facebook Pages & Groups'), icon: '🔵' },
-  { id: 'tiktok_viral', label: t('টিকটক ভাইরাল অ্যাকাউন্ট', 'TikTok Viral Accounts'), icon: '🎵' },
-  { id: 'instagram_theme', label: t('ইনস্টাগ্রাম থিম পেজ', 'Instagram Theme Pages'), icon: '📸' },
-  { id: 'cooking_lifestyle', label: t('রান্না ও রেসিপি', 'Cooking & Lifestyle'), icon: '👩‍🍳' },
-  { id: 'faceless_cash_cow', label: t('ফেসলেস ক্যাশ কাউ', 'Faceless Cash Cow'), icon: '🤖' },
-  { id: 'shorts_creator', label: t('ভাইরাল শর্টস চ্যানেল', 'Viral Shorts Creators'), icon: '⚡' },
-  { id: 'gaming_stream', label: t('গেমিং ও টেক চ্যানেল', 'Gaming & Tech Stream'), icon: '🎮' },
-  { id: 'vintage_aged', label: t('পুরানো ভিন্টেজ অ্যাকাউন্ট', 'Aged Vintage Accounts'), icon: '🏛️' },
-  { id: 'high_cpm_finance', label: t('উচ্চ আয় ফিন্যান্স ও বিজনেস', 'High CPM Finance & Business'), icon: '💰' }
+  { id: 'all', label: t('সকল ক্যাটাগরি', 'All Categories') },
+  { id: 'facebook_page', label: t('ফেসবুক পেজ ও গ্রুপ', 'Facebook Pages & Groups') },
+  { id: 'tiktok_viral', label: t('টিকটক ভাইরাল অ্যাকাউন্ট', 'TikTok Viral Accounts') },
+  { id: 'instagram_theme', label: t('ইনস্টাগ্রাম থিম পেজ', 'Instagram Theme Pages') },
+  { id: 'cooking_lifestyle', label: t('রান্না ও রেসিপি', 'Cooking & Lifestyle') },
+  { id: 'faceless_cash_cow', label: t('ফেসলেস ক্যাশ কাউ', 'Faceless Cash Cow') },
+  { id: 'shorts_creator', label: t('ভাইরাল শর্টস চ্যানেল', 'Viral Shorts Creators') },
+  { id: 'gaming_stream', label: t('গেমিং ও টেক চ্যানেল', 'Gaming & Tech Stream') },
+  { id: 'vintage_aged', label: t('পুরানো ভিন্টেজ অ্যাকাউন্ট', 'Aged Vintage Accounts') },
+  { id: 'high_cpm_finance', label: t('উচ্চ আয় ফিন্যান্স ও বিজনেস', 'High CPM Finance & Business') }
 ];
 
 const getBudgetPresets = (t: (bn: string, en: string) => string) => [
@@ -81,7 +92,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onSelectPlatform
 }) => {
   const { showToast } = useAuth();
-  const { currency, setCurrency, formatPrice, formatUsd, formatBdt, language, t } = useCurrency();
+  const { currency, setCurrency, formatPrice, formatUsd, formatBdt, language, t, openCurrencyModal } = useCurrency();
   const [channels, setChannels] = useState<ChannelListing[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -280,7 +291,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               }`}
             >
               <span className="flex items-center gap-2 truncate">
-                <span>{p.icon}</span>
+                <PlatformLogo platform={p.id} className="w-4 h-4 shrink-0" />
                 <span className="truncate">{p.label}</span>
               </span>
               {selectedPlatform === p.id && (
@@ -308,7 +319,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               }`}
             >
               <span className="flex items-center gap-2 truncate">
-                <span>{type.icon}</span>
+                <CategoryLogo categoryId={type.id} className="w-4 h-4 shrink-0" />
                 <span className="truncate">{type.label}</span>
               </span>
               {selectedAccountType === type.id && (
@@ -456,7 +467,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 }}
                 className="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
               >
-                <span>🔵 {t("ফেসবুক পেজ", "Facebook Pages")}</span>
+                <FacebookLogo className="w-4 h-4" />
+                <span>{t("ফেসবুক পেজ", "Facebook Pages")}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
@@ -467,7 +479,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 }}
                 className="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
               >
-                <span>🔴 {t("ইউটিউব চ্যানেল", "YouTube Channels")}</span>
+                <YouTubeLogo className="w-4 h-4" />
+                <span>{t("ইউটিউব চ্যানেল", "YouTube Channels")}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
@@ -478,7 +491,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 }}
                 className="px-3.5 py-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 text-cyan-800 text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
               >
-                <span>🎵 {t("টিকটক অ্যাকাউন্ট", "TikTok Accounts")}</span>
+                <TikTokLogo className="w-4 h-4" />
+                <span>{t("টিকটক অ্যাকাউন্ট", "TikTok Accounts")}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
@@ -491,10 +505,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </button>
 
               <button
-                onClick={() => setCurrency(currency === 'USD' ? 'BDT' : 'USD')}
-                className="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                onClick={() => openCurrencyModal()}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                title={t("কারেন্সি ও ভাষা সেটিংস খুলুন", "Open Currency & Language Settings")}
               >
-                <span>{t("কারেন্সি: ", "Currency: ") + (currency === 'USD' ? '$ USD' : '৳ BDT')}</span>
+                <span>🌐 {t("কারেন্সি ও ভাষা: ", "Currency & Language: ") + (currency === 'USD' ? '$ USD' : '৳ BDT') + ' • ' + (language === 'BN' ? 'বাংলা' : 'EN')}</span>
               </button>
             </div>
           </div>
@@ -539,17 +554,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 hover:bg-slate-50 shadow-xs'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xl sm:text-2xl">{p.icon}</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <PlatformLogo platform={p.id} className="w-7 h-7 sm:w-8 sm:h-8" />
                       {isSelected && (
                         <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs"></span>
                       )}
                     </div>
                     <div>
                       <div className="text-xs sm:text-sm font-bold truncate leading-tight text-slate-900">
-                        {p.label.split(' ')[0] === '🔴' || p.label.split(' ')[0] === '🔵' || p.label.split(' ')[0] === '🎵' || p.label.split(' ')[0] === '📸' || p.label.split(' ')[0] === '✈️' || p.label.split(' ')[0] === '🐦' || p.label.split(' ')[0] === '🌟'
-                          ? p.label.slice(2)
-                          : p.label}
+                        {p.label}
                       </div>
                       <div className="text-[10px] text-slate-500 truncate mt-0.5">
                         {p.desc}
@@ -643,7 +656,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 >
                   {ACCOUNT_TYPES.map((type) => (
                     <option key={type.id} value={type.id} className="text-slate-800 py-1">
-                      {type.icon} {type.label}
+                      {type.label}
                     </option>
                   ))}
                 </select>
@@ -688,7 +701,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 shadow-xs'
                 }`}
               >
-                <span>{type.icon}</span>
+                <CategoryLogo categoryId={type.id} className="w-4 h-4 shrink-0" />
                 <span>{type.label}</span>
               </button>
             ))}

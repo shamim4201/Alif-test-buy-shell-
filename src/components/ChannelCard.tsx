@@ -20,6 +20,16 @@ import {
   getLocalizedChannelLanguage,
   getLocalizedChannelNiche
 } from '../translations/translations';
+import {
+  PlatformLogo,
+  CategoryLogo,
+  FacebookLogo,
+  YouTubeLogo,
+  TikTokLogo,
+  InstagramLogo,
+  TelegramLogo,
+  XLogo
+} from './CategoryIcons';
 
 interface ChannelCardProps {
   channel: ChannelListing;
@@ -41,45 +51,45 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect }) =
     switch (p) {
       case 'facebook':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-600 text-white shadow-md">
-            <span className="w-2 h-2 rounded-full bg-white"></span>
-            🔵 {t('ফেসবুক', 'Facebook')}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#1877F2] text-white shadow-md">
+            <FacebookLogo className="w-3.5 h-3.5" />
+            <span>{t('ফেসবুক', 'Facebook')}</span>
           </span>
         );
       case 'tiktok':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-900 text-cyan-300 border border-cyan-400/80 shadow-md">
-            <span className="w-2 h-2 rounded-full bg-rose-400"></span>
-            🎵 {t('টিকটক', 'TikTok')}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-900 text-cyan-300 border border-cyan-400/80 shadow-md">
+            <TikTokLogo className="w-3.5 h-3.5" />
+            <span>{t('টিকটক', 'TikTok')}</span>
           </span>
         );
       case 'instagram':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-md">
-            <span className="w-2 h-2 rounded-full bg-white"></span>
-            📸 {t('ইনস্টাগ্রাম', 'Instagram')}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-md">
+            <InstagramLogo className="w-3.5 h-3.5" />
+            <span>{t('ইনস্টাগ্রাম', 'Instagram')}</span>
           </span>
         );
       case 'telegram':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-600 text-white shadow-md">
-            <span className="w-2 h-2 rounded-full bg-white"></span>
-            ✈️ {t('টেলিগ্রাম', 'Telegram')}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#229ED9] text-white shadow-md">
+            <TelegramLogo className="w-3.5 h-3.5" />
+            <span>{t('টেলিগ্রাম', 'Telegram')}</span>
           </span>
         );
       case 'twitter':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-zinc-900 text-white shadow-md">
-            <span className="w-2 h-2 rounded-full bg-white"></span>
-            🐦 {t('এক্স / টুইটার', 'X / Twitter')}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-zinc-900 text-white shadow-md">
+            <XLogo className="w-3.5 h-3.5" />
+            <span>{t('এক্স / টুইটার', 'X / Twitter')}</span>
           </span>
         );
       case 'youtube':
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-600 text-white shadow-md">
-            <span className="w-2 h-2 rounded-full bg-white"></span>
-            🔴 {t('ইউটিউব', 'YouTube')}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FF0000] text-white shadow-md">
+            <YouTubeLogo className="w-3.5 h-3.5" />
+            <span>{t('ইউটিউব', 'YouTube')}</span>
           </span>
         );
     }
@@ -90,67 +100,78 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect }) =
       case 'facebook_page':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
-            {t('📄 ফেসবুক পেজ', '📄 Facebook Page')}
+            <FacebookLogo className="w-3 h-3" />
+            <span>{t('ফেসবুক পেজ', 'Facebook Page')}</span>
           </span>
         );
       case 'tiktok_viral':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-800 border border-cyan-300">
-            {t('⚡ ক্রিয়েটর রিওয়ার্ডস', '⚡ Creator Rewards')}
+            <TikTokLogo className="w-3 h-3" />
+            <span>{t('ক্রিয়েটর রিওয়ার্ডস', 'Creator Rewards')}</span>
           </span>
         );
       case 'instagram_theme':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
-            {t('🎨 থিম পেজ', '🎨 Theme Page')}
+            <InstagramLogo className="w-3 h-3" />
+            <span>{t('থিম পেজ', 'Theme Page')}</span>
           </span>
         );
       case 'telegram_signal':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 border border-sky-300">
-            {t('📡 সিগন্যাল / মেম্বার', '📡 Signal / Members')}
+            <TelegramLogo className="w-3 h-3" />
+            <span>{t('সিগন্যাল / মেম্বার', 'Signal / Members')}</span>
           </span>
         );
       case 'twitter_crypto':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-300">
-            {t('💎 ব্লু ভেরিফাইড', '💎 Blue Verified')}
+            <XLogo className="w-3 h-3" />
+            <span>{t('ব্লু ভেরিফাইড', 'Blue Verified')}</span>
           </span>
         );
       case 'cooking_lifestyle':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-            {t('👩‍🍳 আন্টির রান্না ও কিচেন', '👩‍🍳 Cooking & Food')}
+            <CategoryLogo categoryId="cooking_lifestyle" className="w-3 h-3" />
+            <span>{t('রান্না ও কিচেন', 'Cooking & Food')}</span>
           </span>
         );
       case 'faceless_cash_cow':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-            {t('🤖 ফেসলেস ক্যাশ কাউ', '🤖 Faceless Cash Cow')}
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-300">
+            <CategoryLogo categoryId="faceless_cash_cow" className="w-3 h-3" />
+            <span>{t('ফেসলেস ক্যাশ কাউ', 'Faceless Cash Cow')}</span>
           </span>
         );
       case 'shorts_creator':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 border border-red-300">
-            {t('⚡ ভাইরাল শর্টস', '⚡ Viral Shorts')}
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+            <CategoryLogo categoryId="shorts_creator" className="w-3 h-3" />
+            <span>{t('ভাইরাল শর্টস', 'Viral Shorts')}</span>
           </span>
         );
       case 'gaming_stream':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-300">
-            {t('🎮 গেমিং চ্যানেল', '🎮 Gaming Channel')}
+            <CategoryLogo categoryId="gaming_stream" className="w-3 h-3" />
+            <span>{t('গেমিং চ্যানেল', 'Gaming Channel')}</span>
           </span>
         );
       case 'vintage_aged':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-            {t('🏛️ ভিন্টেজ ', '🏛️ Vintage ') + channel.creationYear}
+            <CategoryLogo categoryId="vintage_aged" className="w-3 h-3" />
+            <span>{t('ভিন্টেজ ', 'Vintage ') + channel.creationYear}</span>
           </span>
         );
       case 'high_cpm_finance':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-            {t('💰 হাই CPM ফিন্যান্স', '💰 High CPM Finance')}
+            <CategoryLogo categoryId="high_cpm_finance" className="w-3 h-3" />
+            <span>{t('হাই CPM ফিন্যান্স', 'High CPM Finance')}</span>
           </span>
         );
       default:
