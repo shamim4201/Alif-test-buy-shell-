@@ -920,20 +920,20 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <form onSubmit={handleSubmitCustomRequest} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {t("কোন প্ল্যাটফর্মের অ্যাকাউন্ট লাগবে? (Select Platform)", "Which Platform Account Do You Need?")}
+                  {t("কোন প্ল্যাটফর্মের অ্যাকাউন্ট লাগবে?", "Which Platform Account Do You Need?")}
                 </label>
                 <select
                   value={reqPlatform}
                   onChange={(e) => setReqPlatform(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-hidden"
                 >
-                  <option value="all">{t("যেকোনো প্ল্যাটফর্ম (Any Platform)", "Any Platform")}</option>
-                  <option value="facebook">🔵 {t("ফেসবুক পেজ বা গ্রুপ (Facebook)", "Facebook Page / Group")}</option>
-                  <option value="youtube">🔴 {t("ইউটিউব চ্যানেল (YouTube)", "YouTube Channel")}</option>
-                  <option value="tiktok">🎵 {t("টিকটক অ্যাকাউন্ট (TikTok)", "TikTok Account")}</option>
-                  <option value="instagram">📸 {t("ইনস্টাগ্রাম পেজ (Instagram)", "Instagram Page")}</option>
-                  <option value="telegram">✈️ {t("টেলিগ্রাম চ্যানেল (Telegram)", "Telegram Channel")}</option>
-                  <option value="twitter">🐦 {t("এক্স / টুইটার (Twitter / X)", "X / Twitter Account")}</option>
+                  <option value="all">{t("যেকোনো প্ল্যাটফর্ম", "Any Platform")}</option>
+                  <option value="facebook">🔵 {t("ফেসবুক পেজ বা গ্রুপ", "Facebook Page / Group")}</option>
+                  <option value="youtube">🔴 {t("ইউটিউব চ্যানেল", "YouTube Channel")}</option>
+                  <option value="tiktok">🎵 {t("টিকটক অ্যাকাউন্ট", "TikTok Account")}</option>
+                  <option value="instagram">📸 {t("ইনস্টাগ্রাম পেজ", "Instagram Page")}</option>
+                  <option value="telegram">✈️ {t("টেলিগ্রাম চ্যানেল", "Telegram Channel")}</option>
+                  <option value="twitter">🐦 {t("এক্স বা টুইটার অ্যাকাউন্ট", "X / Twitter Account")}</option>
                 </select>
               </div>
 
@@ -946,7 +946,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   onChange={(e) => setReqBudget(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-hidden"
                 >
-                  <option value="Under $1,000">{t("১,০০০ ডলারের নিচে (Under $1,000 / ৳১,২২,০০০)", "Under $1,000 / ৳122,000")}</option>
+                  <option value="Under $1,000">{t("১,০০০ ডলারের নিচে (৳১,২২,০০০)", "Under $1,000 (৳122,000)")}</option>
                   <option value="$1,000 - $3,000">{t("$১,০০০ – $৩,০০০ (৳১.২ লাখ – ৳৩.৬ লাখ)", "$1,000 – $3,000 (৳120K – ৳360K)")}</option>
                   <option value="$3,000 - $8,000">{t("$৩,০০০ – $৮,০০০ (৳৩.৬ লাখ – ৳৯.৭ লাখ)", "$3,000 – $8,000 (৳360K – ৳970K)")}</option>
                   <option value="$8,000 - $15,000">{t("$৮,০০০ – $১৫,০০০ (৳৯.৭ লাখ – ৳১৮ লাখ)", "$8,000 – $15,000 (৳970K – ৳1.8M)")}</option>
@@ -956,22 +956,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {t("ক্যাটাগরি বা ধরন (Account Type / Niche)", "Category or Niche")}
+                  {t("ক্যাটাগরি বা ধরন", "Category or Niche")}
                 </label>
                 <select
                   value={reqType}
                   onChange={(e) => setReqType(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-hidden"
                 >
-                  <option value="facebook_page">{t("📄 ফেসবুক মনিটাইজড পেজ (In-Stream Ads)", "📄 Facebook Monetized Page (In-Stream Ads)")}</option>
-                  <option value="tiktok_viral">{t("⚡ টিকটক ক্রিয়েটর রিওয়ার্ডস ও শপ (TikTok)", "⚡ TikTok Creator Rewards & Shop")}</option>
+                  <option value="facebook_page">{t("📄 ফেসবুক মনিটাইজড পেজ", "📄 Facebook Monetized Page (In-Stream Ads)")}</option>
+                  <option value="tiktok_viral">{t("⚡ টিকটক ক্রিয়েটর রিওয়ার্ডস ও শপ", "⚡ TikTok Creator Rewards & Shop")}</option>
                   <option value="instagram_theme">{t("🎨 ইনস্টাগ্রাম থিম ও ইনফ্লুয়েন্সার পেজ", "🎨 Instagram Theme & Influencer Page")}</option>
-                  <option value="cooking_lifestyle">{t("👩‍🍳 আন্টির রান্না ও কিচেন রেসিপি (Cooking)", "👩‍🍳 Cooking & Recipe Channel")}</option>
-                  <option value="faceless_cash_cow">{t("🤖 ফেসলেস ক্যাশ কাউ চ্যানেল (Cash Cow)", "🤖 Faceless Cash Cow Channel")}</option>
+                  <option value="cooking_lifestyle">{t("👩‍🍳 আন্টির রান্না ও কিচেন রেসিপি", "👩‍🍳 Cooking & Recipe Channel")}</option>
+                  <option value="faceless_cash_cow">{t("🤖 ফেসলেস ক্যাশ কাউ চ্যানেল", "🤖 Faceless Cash Cow Channel")}</option>
                   <option value="shorts_creator">{t("⚡ ভাইরাল শর্টস বা রিলস একাউন্ট", "⚡ Viral Shorts / Reels Account")}</option>
-                  <option value="gaming_stream">{t("🎮 গেমিং ও টেক চ্যানেল (Gaming & Tech)", "🎮 Gaming & Tech Channel")}</option>
-                  <option value="vintage_aged">{t("🏛️ পুরানো ভিন্টেজ একাউন্ট (Aged 2014-2020)", "🏛️ Vintage Aged Account (2014-2020)")}</option>
-                  <option value="high_cpm_finance">{t("💰 হাই CPM ফিন্যান্স, ক্রিপ্টো ও ট্রেডিং", "💰 High CPM Finance & Crypto")}</option>
+                  <option value="gaming_stream">{t("🎮 গেমিং ও টেক চ্যানেল", "🎮 Gaming & Tech Channel")}</option>
+                  <option value="vintage_aged">{t("🏛️ পুরানো ভিন্টেজ একাউন্ট (২০১৪-২০২০)", "🏛️ Vintage Aged Account (2014-2020)")}</option>
+                  <option value="high_cpm_finance">{t("💰 হাই CPM ফিন্যান্স ও ক্রিপ্টো", "💰 High CPM Finance & Crypto")}</option>
                 </select>
               </div>
 

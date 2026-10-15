@@ -218,8 +218,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </button>
 
-          {/* 3. CURRENCY & LANGUAGE SELECTOR ($ USD / ৳ BDT & বাংলা / EN) */}
-          <div className="relative shrink-0 mx-0.5 sm:mx-3 z-30" ref={currencyDropdownRef}>
+          {/* 3. CURRENCY & LANGUAGE SELECTOR ($ USD / ৳ BDT & বাংলা / EN) - Hidden on mobile as requested */}
+          <div className="relative shrink-0 mx-0.5 sm:mx-3 z-30 hidden sm:block" ref={currencyDropdownRef}>
             <button
               type="button"
               onClick={(e) => {
@@ -1170,7 +1170,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="mt-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                  {t("১. কারেন্সি নির্বাচন (Select Currency)", "1. Select Currency")}
+                  {t("১. কারেন্সি নির্বাচন", "1. Select Currency")}
                 </span>
                 <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                   1 USD = ৳122
@@ -1232,7 +1232,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="mt-5 pt-4 border-t border-slate-200 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                  {t("২. আপনি কি লেখা দেখতে চান? (Website Language)", "2. Choose Display Language")}
+                  {t("২. প্রদর্শনের ভাষা নির্বাচন", "2. Choose Display Language")}
                 </span>
                 <span className="text-[11px] text-amber-600 font-bold">
                   {t("ভাষা", "Language")}

@@ -563,7 +563,8 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                   )}
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
 
           {/* Final Release Callout if all transfer steps done */}

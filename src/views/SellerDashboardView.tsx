@@ -411,7 +411,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
               {/* Platform Selection */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-2">
-                  {t('প্ল্যাটফর্ম নির্বাচন করুন (Select Platform) *', 'Select Platform *')}
+                  {t('প্ল্যাটফর্ম নির্বাচন করুন *', 'Select Platform *')}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                   {[
