@@ -7,6 +7,8 @@ import {
   Gamepad2,
   Landmark,
   TrendingUp,
+  GraduationCap,
+  Video,
   LayoutGrid
 } from 'lucide-react';
 
@@ -86,7 +88,7 @@ export const InstagramLogo: React.FC<IconProps> = ({ className = 'w-5 h-5' }) =>
     aria-hidden="true"
   >
     <defs>
-      <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <linearGradient id="ig-grad-cat" x1="0%" y1="100%" x2="100%" y2="0%">
         <stop offset="0%" stopColor="#f09433" />
         <stop offset="25%" stopColor="#e6683c" />
         <stop offset="50%" stopColor="#dc2743" />
@@ -94,7 +96,7 @@ export const InstagramLogo: React.FC<IconProps> = ({ className = 'w-5 h-5' }) =>
         <stop offset="100%" stopColor="#bc1888" />
       </linearGradient>
     </defs>
-    <rect width="24" height="24" rx="6" fill="url(#ig-grad)" />
+    <rect width="24" height="24" rx="6" fill="url(#ig-grad-cat)" />
     <rect x="5.5" y="5.5" width="13" height="13" rx="3.5" stroke="#FFFFFF" strokeWidth="1.8" />
     <circle cx="12" cy="12" r="3.2" stroke="#FFFFFF" strokeWidth="1.8" />
     <circle cx="15.8" cy="8.2" r="0.9" fill="#FFFFFF" />
@@ -178,53 +180,77 @@ export const CategoryLogo: React.FC<{
   const id = (categoryId || '').toLowerCase();
   switch (id) {
     case 'facebook_page':
+    case 'facebook':
       return <FacebookLogo className={className} />;
     case 'tiktok_viral':
+    case 'tiktok':
       return <TikTokLogo className={className} />;
     case 'instagram_theme':
+    case 'instagram':
       return <InstagramLogo className={className} />;
+    case 'telegram_signal':
+    case 'telegram':
+      return <TelegramLogo className={className} />;
+    case 'twitter_crypto':
+    case 'twitter':
+    case 'x':
+      return <XLogo className={className} />;
+    case 'youtube':
+      return <YouTubeLogo className={className} />;
     case 'cooking_lifestyle':
       return (
-        <div className={`rounded-md bg-amber-500/15 p-0.5 text-amber-600 flex items-center justify-center shrink-0 ${className}`}>
-          <ChefHat className="w-full h-full" />
-        </div>
+        <span className={`inline-flex items-center justify-center rounded-md bg-amber-500 text-white shrink-0 shadow-2xs ${className}`}>
+          <ChefHat className="w-[75%] h-[75%] stroke-[2.2]" />
+        </span>
       );
     case 'faceless_cash_cow':
       return (
-        <div className={`rounded-md bg-purple-500/15 p-0.5 text-purple-600 flex items-center justify-center shrink-0 ${className}`}>
-          <Bot className="w-full h-full" />
-        </div>
+        <span className={`inline-flex items-center justify-center rounded-md bg-purple-600 text-white shrink-0 shadow-2xs ${className}`}>
+          <Bot className="w-[75%] h-[75%] stroke-[2.2]" />
+        </span>
       );
     case 'shorts_creator':
       return (
-        <div className={`rounded-md bg-rose-500/15 p-0.5 text-rose-600 flex items-center justify-center shrink-0 ${className}`}>
-          <Zap className="w-full h-full fill-rose-600/30" />
-        </div>
+        <span className={`inline-flex items-center justify-center rounded-md bg-rose-600 text-white shrink-0 shadow-2xs ${className}`}>
+          <Zap className="w-[75%] h-[75%] fill-white stroke-[1.8]" />
+        </span>
       );
     case 'gaming_stream':
       return (
-        <div className={`rounded-md bg-indigo-500/15 p-0.5 text-indigo-600 flex items-center justify-center shrink-0 ${className}`}>
-          <Gamepad2 className="w-full h-full" />
-        </div>
+        <span className={`inline-flex items-center justify-center rounded-md bg-indigo-600 text-white shrink-0 shadow-2xs ${className}`}>
+          <Gamepad2 className="w-[75%] h-[75%] stroke-[2.2]" />
+        </span>
       );
     case 'vintage_aged':
       return (
-        <div className={`rounded-md bg-amber-700/15 p-0.5 text-amber-800 flex items-center justify-center shrink-0 ${className}`}>
-          <Landmark className="w-full h-full" />
-        </div>
+        <span className={`inline-flex items-center justify-center rounded-md bg-amber-700 text-white shrink-0 shadow-2xs ${className}`}>
+          <Landmark className="w-[75%] h-[75%] stroke-[2.2]" />
+        </span>
       );
     case 'high_cpm_finance':
       return (
-        <div className={`rounded-md bg-emerald-500/15 p-0.5 text-emerald-600 flex items-center justify-center shrink-0 ${className}`}>
-          <TrendingUp className="w-full h-full" />
-        </div>
+        <span className={`inline-flex items-center justify-center rounded-md bg-emerald-600 text-white shrink-0 shadow-2xs ${className}`}>
+          <TrendingUp className="w-[75%] h-[75%] stroke-[2.2]" />
+        </span>
+      );
+    case 'education_tech':
+      return (
+        <span className={`inline-flex items-center justify-center rounded-md bg-cyan-600 text-white shrink-0 shadow-2xs ${className}`}>
+          <GraduationCap className="w-[75%] h-[75%] stroke-[2.2]" />
+        </span>
+      );
+    case 'vlog_personal':
+      return (
+        <span className={`inline-flex items-center justify-center rounded-md bg-pink-600 text-white shrink-0 shadow-2xs ${className}`}>
+          <Video className="w-[75%] h-[75%] stroke-[2.2]" />
+        </span>
       );
     case 'all':
     default:
       return (
-        <div className={`rounded-md bg-slate-900/10 p-0.5 text-slate-800 flex items-center justify-center shrink-0 ${className}`}>
-          <LayoutGrid className="w-full h-full" />
-        </div>
+        <span className={`inline-flex items-center justify-center rounded-md bg-slate-800 text-white shrink-0 shadow-2xs ${className}`}>
+          <LayoutGrid className="w-[75%] h-[75%] stroke-[2.2]" />
+        </span>
       );
   }
 };

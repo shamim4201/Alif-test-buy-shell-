@@ -9,7 +9,15 @@ import {
   Review,
   UserRole,
   ChannelVerificationStatus,
-  OrderStatus
+  OrderStatus,
+  AdminAuditLog,
+  SupportTicket,
+  SupportTicketMessage,
+  Coupon,
+  Transaction,
+  FraudAlert,
+  WebsiteSettings,
+  NotificationItem
 } from './types';
 
 interface DatabaseSchema {
@@ -18,6 +26,13 @@ interface DatabaseSchema {
   orders: Order[];
   messages: Message[];
   reviews: Review[];
+  tickets?: SupportTicket[];
+  coupons?: Coupon[];
+  transactions?: Transaction[];
+  fraudAlerts?: FraudAlert[];
+  settings?: WebsiteSettings;
+  notifications?: NotificationItem[];
+  auditLogs?: AdminAuditLog[];
 }
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
@@ -67,6 +82,7 @@ class Database {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         this.data = JSON.parse(raw);
         this.ensureEnrichedChannels();
+        this.ensureEnrichedAdminData();
         return;
       } catch (e) {
         console.error('Failed to parse database.json, re-initializing seed data', e);
@@ -75,6 +91,7 @@ class Database {
 
     this.seed();
     this.ensureEnrichedChannels();
+    this.ensureEnrichedAdminData();
     this.save();
   }
 
@@ -1374,6 +1391,512 @@ class Database {
 
     this.save();
     return review;
+  }
+
+  // --- Admin Settings ---
+  public getSettings(): WebsiteSettings {
+    if (!this.data.settings) this.ensureEnrichedAdminData();
+    return this.data.settings!;
+  }
+
+  public updateSettings(updates: Partial<WebsiteSettings>): WebsiteSettings {
+    if (!this.data.settings) this.ensureEnrichedAdminData();
+    this.data.settings = { ...this.data.settings!, ...updates };
+    this.save();
+    return this.data.settings;
+  }
+
+  // --- Admin Audit Logs ---
+  public getAuditLogs(): AdminAuditLog[] {
+    if (!this.data.auditLogs) this.ensureEnrichedAdminData();
+    return this.data.auditLogs || [];
+  }
+
+  public createAuditLog(log: Omit<AdminAuditLog, 'id' | 'createdAt'>): AdminAuditLog {
+    if (!this.data.auditLogs) this.data.auditLogs = [];
+    const item: AdminAuditLog = {
+      ...log,
+      id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      createdAt: new Date().toISOString()
+    };
+    this.data.auditLogs.unshift(item);
+    this.save();
+    return item;
+  }
+
+  // --- Transactions ---
+  public getTransactions(): Transaction[] {
+    if (!this.data.transactions) this.ensureEnrichedAdminData();
+    return this.data.transactions || [];
+  }
+
+  public createTransaction(tx: Omit<Transaction, 'id' | 'createdAt'>): Transaction {
+    if (!this.data.transactions) this.data.transactions = [];
+    const item: Transaction = {
+      ...tx,
+      id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      createdAt: new Date().toISOString()
+    };
+    this.data.transactions.unshift(item);
+    this.save();
+    return item;
+  }
+
+  // --- Support Tickets ---
+  public getTickets(): SupportTicket[] {
+    if (!this.data.tickets) this.ensureEnrichedAdminData();
+    return this.data.tickets || [];
+  }
+
+  public getTicketById(id: string): SupportTicket | undefined {
+    if (!this.data.tickets) this.ensureEnrichedAdminData();
+    return this.data.tickets?.find(t => t.id === id);
+  }
+
+  public createTicketMessage(ticketId: string, msg: Omit<SupportTicketMessage, 'id' | 'createdAt'>): SupportTicket | null {
+    if (!this.data.tickets) this.ensureEnrichedAdminData();
+    const ticket = this.data.tickets?.find(t => t.id === ticketId);
+    if (!ticket) return null;
+
+    const newMsg: SupportTicketMessage = {
+      ...msg,
+      id: `tmsg_${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    ticket.messages.push(newMsg);
+    ticket.updatedAt = new Date().toISOString();
+    this.save();
+    return ticket;
+  }
+
+  public updateTicketStatus(ticketId: string, status: SupportTicket['status']): SupportTicket | null {
+    if (!this.data.tickets) this.ensureEnrichedAdminData();
+    const ticket = this.data.tickets?.find(t => t.id === ticketId);
+    if (!ticket) return null;
+    ticket.status = status;
+    ticket.updatedAt = new Date().toISOString();
+    this.save();
+    return ticket;
+  }
+
+  // --- Coupons ---
+  public getCoupons(): Coupon[] {
+    if (!this.data.coupons) this.ensureEnrichedAdminData();
+    return this.data.coupons || [];
+  }
+
+  public createCoupon(coupon: Omit<Coupon, 'id' | 'createdAt' | 'usageCount'>): Coupon {
+    if (!this.data.coupons) this.data.coupons = [];
+    const item: Coupon = {
+      ...coupon,
+      id: `cpn_${Date.now()}`,
+      usageCount: 0,
+      createdAt: new Date().toISOString()
+    };
+    this.data.coupons.unshift(item);
+    this.save();
+    return item;
+  }
+
+  public deleteCoupon(id: string): boolean {
+    if (!this.data.coupons) return false;
+    const initialLen = this.data.coupons.length;
+    this.data.coupons = this.data.coupons.filter(c => c.id !== id);
+    if (this.data.coupons.length !== initialLen) {
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  // --- Fraud Alerts ---
+  public getFraudAlerts(): FraudAlert[] {
+    if (!this.data.fraudAlerts) this.ensureEnrichedAdminData();
+    return this.data.fraudAlerts || [];
+  }
+
+  public resolveFraudAlert(id: string, adminName: string): FraudAlert | null {
+    if (!this.data.fraudAlerts) this.ensureEnrichedAdminData();
+    const alert = this.data.fraudAlerts?.find(a => a.id === id);
+    if (!alert) return null;
+    alert.resolved = true;
+    alert.resolvedAt = new Date().toISOString();
+    alert.resolvedBy = adminName;
+    this.save();
+    return alert;
+  }
+
+  // --- Notifications ---
+  public getNotifications(): NotificationItem[] {
+    if (!this.data.notifications) this.ensureEnrichedAdminData();
+    return this.data.notifications || [];
+  }
+
+  public createNotification(item: Omit<NotificationItem, 'id' | 'createdAt'>): NotificationItem {
+    if (!this.data.notifications) this.data.notifications = [];
+    const notif: NotificationItem = {
+      ...item,
+      id: `notif_${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    this.data.notifications.unshift(notif);
+    this.save();
+    return notif;
+  }
+
+  public deleteNotification(id: string): boolean {
+    if (!this.data.notifications) return false;
+    const initialLen = this.data.notifications.length;
+    this.data.notifications = this.data.notifications.filter(n => n.id !== id);
+    if (this.data.notifications.length !== initialLen) {
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  public deleteChannel(id: string): boolean {
+    const idx = this.data.channels.findIndex(c => c.id === id);
+    if (idx === -1) return false;
+    this.data.channels.splice(idx, 1);
+    this.save();
+    return true;
+  }
+
+  public exportBackup(): any {
+    return JSON.parse(JSON.stringify(this.data));
+  }
+
+  public restoreBackup(payload: any): boolean {
+    if (payload && Array.isArray(payload.users) && Array.isArray(payload.channels)) {
+      this.data = payload;
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  private ensureEnrichedAdminData() {
+    if (!this.data.settings) {
+      this.data.settings = {
+        siteName: 'Alif Trust Escrow & Marketplace',
+        siteTagline: 'নিরাপদ ইউটিউব ও সোশ্যাল মিডিয়া চ্যানেল কেনাবেচার বিশ্বস্ত মাধ্যম',
+        logoUrl: '',
+        primaryColor: '#e11d48',
+        commissionRate: 5,
+        minimumListingPrice: 50,
+        featuredListingFee: 25,
+        maintenanceMode: false,
+        contactEmail: 'support@aliftrust.com',
+        contactPhone: '+8801700000000',
+        whatsappSupport: '+8801700000000',
+        bkashMerchantNumber: '01712345678',
+        nagadMerchantNumber: '01812345678',
+        bankDetails: 'City Bank Ltd, Account: 120349817201, Branch: Gulshan 2, Dhaka',
+        enable2FA: true,
+        termsOfService: 'আলিফ ট্রাস্ট এসক্রো প্ল্যাটফর্মে সকল লেনদেন ডিজিটাল এসক্রো চুক্তির অধীন। বায়ার কর্তৃক পুরো পেমেন্ট জমার পর সেলার ৭ দিনের মধ্যে প্রাইমারি ওনারশিপ হস্তান্তর করবে।',
+        privacyPolicy: 'ব্যবহারকারীদের সমস্ত ব্যক্তিগত তথ্য, এনআইডি ও পেমেন্ট ক্রেডেনশিয়াল কঠোর এনক্রিপশনে সংরক্ষিত থাকে।',
+        refundPolicy: 'সেলার ব্যর্থ হলে বা চ্যানেলে ভুল তথ্য থাকলে বায়ার শতভাগ মানিব্যাক রিফান্ড পাবে।',
+        safetyProtocol: '১. ৭ দিনের ওনারশিপ ট্রায়াল ২. টু-ফ্যাক্টর অথেনটিকেশন ৩. এসক্রো ভল্ট ডিপোজিট।'
+      };
+    }
+
+    if (!this.data.coupons || this.data.coupons.length === 0) {
+      this.data.coupons = [
+        {
+          id: 'cpn_alif2026',
+          code: 'ALIF2026',
+          discountType: 'percentage',
+          discountValue: 10,
+          minOrderAmount: 500,
+          maxDiscount: 50,
+          validUntil: '2026-12-31T23:59:59.000Z',
+          usageCount: 14,
+          usageLimit: 100,
+          isActive: true,
+          createdAt: '2026-01-01T00:00:00.000Z'
+        },
+        {
+          id: 'cpn_eid50',
+          code: 'EIDBONUS',
+          discountType: 'fixed',
+          discountValue: 25,
+          minOrderAmount: 300,
+          validUntil: '2026-11-30T23:59:59.000Z',
+          usageCount: 28,
+          usageLimit: 50,
+          isActive: true,
+          createdAt: '2026-02-01T00:00:00.000Z'
+        },
+        {
+          id: 'cpn_vipbuyer',
+          code: 'VIPBUYER',
+          discountType: 'percentage',
+          discountValue: 15,
+          minOrderAmount: 2000,
+          maxDiscount: 150,
+          validUntil: '2026-12-31T23:59:59.000Z',
+          usageCount: 6,
+          usageLimit: 20,
+          isActive: true,
+          createdAt: '2026-03-01T00:00:00.000Z'
+        }
+      ];
+    }
+
+    if (!this.data.transactions || this.data.transactions.length === 0) {
+      this.data.transactions = [
+        {
+          id: 'tx_escrow_101',
+          orderId: 'ord_1',
+          userId: 'usr_buyer_1',
+          userName: 'Alex Chen',
+          userRole: 'buyer',
+          type: 'escrow_lock',
+          amount: 2500,
+          currency: 'USD',
+          fee: 125,
+          paymentMethod: 'bkash',
+          paymentProvider: 'bKash Merchant Pay',
+          transactionRef: 'BKS-992148201',
+          status: 'success',
+          notes: 'Order #ord_1 full escrow lock confirmed',
+          createdAt: '2026-10-10T14:32:00.000Z'
+        },
+        {
+          id: 'tx_escrow_102',
+          orderId: 'ord_1',
+          userId: 'usr_seller_1',
+          userName: 'Marcus Vance',
+          userRole: 'seller',
+          type: 'payout',
+          amount: 2375,
+          currency: 'USD',
+          fee: 0,
+          paymentMethod: 'bank_transfer',
+          paymentProvider: 'City Bank Bangladesh',
+          transactionRef: 'CB-8831920',
+          status: 'success',
+          notes: 'Net seller payout released after primary ownership confirmed',
+          createdAt: '2026-10-14T09:15:00.000Z'
+        },
+        {
+          id: 'tx_escrow_103',
+          orderId: 'ord_2',
+          userId: 'usr_buyer_2',
+          userName: 'Sarah Jenkins',
+          userRole: 'buyer',
+          type: 'deposit',
+          amount: 14500,
+          currency: 'USD',
+          fee: 725,
+          paymentMethod: 'crypto',
+          paymentProvider: 'Binance USDT (TRC20)',
+          transactionRef: 'TX-USDT-9941031',
+          status: 'success',
+          notes: 'High-value channel escrow deposit in safe vault',
+          createdAt: '2026-10-12T16:20:00.000Z'
+        },
+        {
+          id: 'tx_escrow_104',
+          orderId: 'ord_3',
+          userId: 'usr_buyer_1',
+          userName: 'Alex Chen',
+          userRole: 'buyer',
+          type: 'escrow_lock',
+          amount: 3200,
+          currency: 'USD',
+          fee: 160,
+          paymentMethod: 'nagad',
+          paymentProvider: 'Nagad Online Merchant',
+          transactionRef: 'NGD-5501829',
+          status: 'pending',
+          notes: 'Disputed escrow held awaiting ownership resolution',
+          createdAt: '2026-10-13T11:45:00.000Z'
+        }
+      ];
+    }
+
+    if (!this.data.fraudAlerts || this.data.fraudAlerts.length === 0) {
+      this.data.fraudAlerts = [
+        {
+          id: 'frd_101',
+          userId: 'usr_seller_2',
+          userName: 'Elena Rostova',
+          userEmail: 'elena@rostovamedia.com',
+          riskScore: 82,
+          riskLevel: 'high',
+          triggerReason: 'Duplicate Channel Listing Attempt',
+          details: 'User tried to list @SnapFactsViral which is already owned by verified seller usr_seller_1.',
+          targetId: 'chn_viral_shorts',
+          targetType: 'channel',
+          resolved: false,
+          createdAt: '2026-10-14T10:15:00.000Z'
+        },
+        {
+          id: 'frd_102',
+          userId: 'usr_buyer_1',
+          userName: 'Alex Chen',
+          userEmail: 'buyer@channeltrust.com',
+          riskScore: 45,
+          riskLevel: 'medium',
+          triggerReason: 'Multiple VPN logins within 15 minutes',
+          details: 'IP switched from Dhaka, Bangladesh (AS45888) to Frankfurt, Germany in 12 minutes.',
+          targetId: 'usr_buyer_1',
+          targetType: 'login',
+          resolved: true,
+          resolvedAt: '2026-10-14T12:00:00.000Z',
+          resolvedBy: 'System Admin',
+          createdAt: '2026-10-14T11:20:00.000Z'
+        },
+        {
+          id: 'frd_103',
+          userId: 'usr_seller_1',
+          userName: 'Marcus Vance',
+          userEmail: 'seller@channeltrust.com',
+          riskScore: 35,
+          riskLevel: 'low',
+          triggerReason: 'Rapid asking price adjustment (+40%)',
+          details: 'Channel price modified from $2,500 to $3,500 within 2 hours of listing approval.',
+          targetId: 'chn_tech_central',
+          targetType: 'channel',
+          resolved: true,
+          resolvedAt: '2026-10-13T16:00:00.000Z',
+          resolvedBy: 'System Admin',
+          createdAt: '2026-10-13T15:00:00.000Z'
+        }
+      ];
+    }
+
+    if (!this.data.tickets || this.data.tickets.length === 0) {
+      this.data.tickets = [
+        {
+          id: 'tkt_101',
+          ticketNumber: 'TK-9021',
+          userId: 'usr_buyer_1',
+          userName: 'Alex Chen',
+          userEmail: 'buyer@channeltrust.com',
+          subject: 'ইউটিউব ব্র্যান্ড একাউন্ট প্রাইমারি ওনার ইনভাইটেশন সম্পর্কিত সহায়তা',
+          category: 'transfer',
+          priority: 'urgent',
+          status: 'in_progress',
+          messages: [
+            {
+              id: 'tmsg_1',
+              senderId: 'usr_buyer_1',
+              senderName: 'Alex Chen',
+              senderRole: 'buyer',
+              text: 'সেলার ইনভাইটেশন পাঠিয়েছেন, কিন্তু ৭ দিন পর প্রাইমারি ওনার ট্রান্সফার বাটন ক্লিক করার নিয়মটি বুঝতে পারছি না। দয়া করে এসক্রো টিম কনফার্ম করবেন?',
+              createdAt: '2026-10-14T12:00:00.000Z'
+            },
+            {
+              id: 'tmsg_2',
+              senderId: 'usr_admin_1',
+              senderName: 'System Admin',
+              senderRole: 'admin',
+              text: 'হ্যালো অ্যালেক্স, ইউটিউবের অফিশিয়াল পলিসি অনুযায়ী ম্যানেজার হিসেবে ৭ দিন অতিবাহিত হওয়ার পরেই প্রাইমারি ওনার হিসেবে প্রমোট করা সম্ভব। এসক্রো সিকিউরিটি লক চালু আছে, চিন্তার কারণ নেই।',
+              createdAt: '2026-10-14T12:45:00.000Z'
+            }
+          ],
+          createdAt: '2026-10-14T12:00:00.000Z',
+          updatedAt: '2026-10-14T12:45:00.000Z'
+        },
+        {
+          id: 'tkt_102',
+          ticketNumber: 'TK-8842',
+          userId: 'usr_seller_2',
+          userName: 'Elena Rostova',
+          userEmail: 'elena@rostovamedia.com',
+          subject: 'বিকাশ ও ব্যাংক পেআউট সেটআপ ভেরিফিকেশন',
+          category: 'payment',
+          priority: 'medium',
+          status: 'resolved',
+          messages: [
+            {
+              id: 'tmsg_3',
+              senderId: 'usr_seller_2',
+              senderName: 'Elena Rostova',
+              senderRole: 'seller',
+              text: 'আমার বিক্রয়মূল্যের টাকা বিকাশে নাকি সরাসরি সিটি ব্যাংক অ্যাকাউন্টে আসবে?',
+              createdAt: '2026-10-13T09:00:00.000Z'
+            },
+            {
+              id: 'tmsg_4',
+              senderId: 'usr_admin_1',
+              senderName: 'System Admin',
+              senderRole: 'admin',
+              text: 'আপনার প্রোফাইলে সেলার সেটিংসে যে ব্যাংক একাউন্ট দেওয়া আছে, তাতে সরাসরি বিডিটি সমমূল্যে পেআউট চলে যাবে।',
+              createdAt: '2026-10-13T09:30:00.000Z'
+            }
+          ],
+          createdAt: '2026-10-13T09:00:00.000Z',
+          updatedAt: '2026-10-13T09:30:00.000Z'
+        }
+      ];
+    }
+
+    if (!this.data.notifications || this.data.notifications.length === 0) {
+      this.data.notifications = [
+        {
+          id: 'notif_1',
+          title: '🛡️ ১০০% সুরক্ষিত এসক্রো গ্যারান্টি',
+          message: 'আলিফ ট্রাস্টে প্রতিটি লেনদেন ৭ দিনের ওনারশিপ ট্রায়াল এবং মনিটাইজেশন রি-ভেরিফিকেশন সম্পন্ন হওয়ার পর রিলিজ হয়।',
+          targetAudience: 'all',
+          type: 'info',
+          isActive: true,
+          createdAt: '2026-10-01T00:00:00.000Z'
+        },
+        {
+          id: 'notif_2',
+          title: '🎉 মেগা অফার: প্ল্যাটফর্ম ফি-তে ৫০% ছাড়!',
+          message: 'কুপন কোড EIDBONUS ব্যবহার করে মাত্র ২.৫% ফিতে চ্যানেল বিক্রি বা কিনুন।',
+          targetAudience: 'all',
+          type: 'promo',
+          isActive: true,
+          createdAt: '2026-10-10T00:00:00.000Z'
+        }
+      ];
+    }
+
+    if (!this.data.auditLogs || this.data.auditLogs.length === 0) {
+      this.data.auditLogs = [
+        {
+          id: 'log_1',
+          adminId: 'usr_admin_1',
+          adminName: 'System Admin',
+          action: 'Channel Approved',
+          targetType: 'channel',
+          targetId: 'chn_auntie_kitchen',
+          details: 'Approved verified cooking channel after AdSense proof review.',
+          ipAddress: '103.114.98.22',
+          createdAt: '2026-10-14T08:30:00.000Z'
+        },
+        {
+          id: 'log_2',
+          adminId: 'usr_admin_1',
+          adminName: 'System Admin',
+          action: 'Seller Badge Granted',
+          targetType: 'user',
+          targetId: 'usr_seller_1',
+          details: 'Verified seller badge enabled after NID and video KYC completion.',
+          ipAddress: '103.114.98.22',
+          createdAt: '2026-10-13T11:00:00.000Z'
+        },
+        {
+          id: 'log_3',
+          adminId: 'usr_admin_1',
+          adminName: 'System Admin',
+          action: 'Escrow Dispute Freeze',
+          targetType: 'dispute',
+          targetId: 'ord_3',
+          details: 'Escrow payment put on temporary freeze for 7-day manager audit.',
+          ipAddress: '103.114.98.22',
+          createdAt: '2026-10-14T14:00:00.000Z'
+        }
+      ];
+    }
+
+    this.save();
   }
 }
 

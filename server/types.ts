@@ -158,3 +158,122 @@ export interface Review {
   transferSpeedRating: number;
   createdAt: string;
 }
+
+export interface AdminAuditLog {
+  id: string;
+  adminId: string;
+  adminName: string;
+  action: string;
+  targetType: 'channel' | 'user' | 'order' | 'dispute' | 'settings' | 'coupon' | 'ticket' | 'payment';
+  targetId: string;
+  details: string;
+  ipAddress?: string;
+  createdAt: string;
+}
+
+export interface SupportTicketMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderRole: 'buyer' | 'seller' | 'admin';
+  text: string;
+  attachmentUrl?: string;
+  createdAt: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  ticketNumber: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  subject: string;
+  category: 'account' | 'payment' | 'transfer' | 'listing' | 'dispute' | 'general';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  messages: SupportTicketMessage[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderAmount?: number;
+  maxDiscount?: number;
+  validUntil: string;
+  usageCount: number;
+  usageLimit: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface Transaction {
+  id: string;
+  orderId?: string;
+  userId: string;
+  userName: string;
+  userRole: 'buyer' | 'seller';
+  type: 'deposit' | 'escrow_lock' | 'payout' | 'refund' | 'commission';
+  amount: number;
+  currency: 'USD' | 'BDT';
+  fee: number;
+  paymentMethod: 'bkash' | 'nagad' | 'bank_transfer' | 'card' | 'crypto' | 'internal_wallet';
+  paymentProvider?: string;
+  transactionRef: string;
+  status: 'success' | 'pending' | 'failed';
+  notes?: string;
+  createdAt: string;
+}
+
+export interface FraudAlert {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  riskScore: number;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  triggerReason: string;
+  details: string;
+  targetId?: string;
+  targetType?: 'channel' | 'order' | 'payout' | 'login';
+  resolved: boolean;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  createdAt: string;
+}
+
+export interface WebsiteSettings {
+  siteName: string;
+  siteTagline: string;
+  logoUrl?: string;
+  primaryColor: string;
+  commissionRate: number;
+  minimumListingPrice: number;
+  featuredListingFee: number;
+  maintenanceMode: boolean;
+  contactEmail: string;
+  contactPhone: string;
+  whatsappSupport: string;
+  bkashMerchantNumber: string;
+  nagadMerchantNumber: string;
+  bankDetails: string;
+  enable2FA: boolean;
+  termsOfService: string;
+  privacyPolicy: string;
+  refundPolicy: string;
+  safetyProtocol: string;
+}
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  targetAudience: 'all' | 'buyers' | 'sellers';
+  type: 'info' | 'warning' | 'urgent' | 'promo';
+  isActive: boolean;
+  createdAt: string;
+}
+

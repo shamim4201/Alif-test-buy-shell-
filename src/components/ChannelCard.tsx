@@ -174,6 +174,20 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, onSelect }) =
             <span>{t('হাই CPM ফিন্যান্স', 'High CPM Finance')}</span>
           </span>
         );
+      case 'education_tech':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-800 border border-cyan-300">
+            <CategoryLogo categoryId="education_tech" className="w-3 h-3" />
+            <span>{t('এডুকেশন ও টেক', 'Education & Tech')}</span>
+          </span>
+        );
+      case 'vlog_personal':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-pink-800 border border-pink-300">
+            <CategoryLogo categoryId="vlog_personal" className="w-3 h-3" />
+            <span>{t('পার্সোনাল ভ্লগ', 'Personal Vlog')}</span>
+          </span>
+        );
       default:
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 border border-slate-300 text-slate-700">

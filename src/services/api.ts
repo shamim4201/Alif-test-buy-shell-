@@ -259,5 +259,123 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ resolutionAction, notes })
     });
+  },
+
+  async toggleChannelFeatured(channelId: string): Promise<{ channel: ChannelListing }> {
+    return fetchWithAuth(`/api/admin/channels/${channelId}/toggle-featured`, {
+      method: 'POST'
+    });
+  },
+
+  async toggleChannelStatus(channelId: string): Promise<{ channel: ChannelListing }> {
+    return fetchWithAuth(`/api/admin/channels/${channelId}/toggle-status`, {
+      method: 'POST'
+    });
+  },
+
+  async deleteAdminChannel(channelId: string): Promise<{ success: boolean; message: string }> {
+    return fetchWithAuth(`/api/admin/channels/${channelId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async updateUserRole(userId: string, role: 'buyer' | 'seller' | 'admin'): Promise<{ user: User; message: string }> {
+    return fetchWithAuth(`/api/admin/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role })
+    });
+  },
+
+  async getAdminTransactions(): Promise<{ transactions: any[] }> {
+    return fetchWithAuth('/api/admin/transactions');
+  },
+
+  async getWebsiteSettings(): Promise<{ settings: any }> {
+    return fetchWithAuth('/api/admin/settings');
+  },
+
+  async updateWebsiteSettings(updates: any): Promise<{ settings: any; message: string }> {
+    return fetchWithAuth('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  },
+
+  async getAdminAuditLogs(): Promise<{ logs: any[] }> {
+    return fetchWithAuth('/api/admin/audit-logs');
+  },
+
+  async getAdminTickets(): Promise<{ tickets: any[] }> {
+    return fetchWithAuth('/api/admin/tickets');
+  },
+
+  async replyAdminTicket(ticketId: string, text: string): Promise<{ ticket: any }> {
+    return fetchWithAuth(`/api/admin/tickets/${ticketId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ text })
+    });
+  },
+
+  async updateTicketStatus(ticketId: string, status: string): Promise<{ ticket: any }> {
+    return fetchWithAuth(`/api/admin/tickets/${ticketId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
+    });
+  },
+
+  async getAdminCoupons(): Promise<{ coupons: any[] }> {
+    return fetchWithAuth('/api/admin/coupons');
+  },
+
+  async createAdminCoupon(payload: any): Promise<{ coupon: any }> {
+    return fetchWithAuth('/api/admin/coupons', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async deleteAdminCoupon(id: string): Promise<{ success: boolean }> {
+    return fetchWithAuth(`/api/admin/coupons/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async getAdminFraudAlerts(): Promise<{ alerts: any[] }> {
+    return fetchWithAuth('/api/admin/fraud-alerts');
+  },
+
+  async resolveAdminFraudAlert(id: string): Promise<{ alert: any }> {
+    return fetchWithAuth(`/api/admin/fraud-alerts/${id}/resolve`, {
+      method: 'POST'
+    });
+  },
+
+  async getAdminNotifications(): Promise<{ notifications: any[] }> {
+    return fetchWithAuth('/api/admin/notifications');
+  },
+
+  async createAdminNotification(payload: any): Promise<{ notification: any }> {
+    return fetchWithAuth('/api/admin/notifications', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async deleteAdminNotification(id: string): Promise<{ success: boolean }> {
+    return fetchWithAuth(`/api/admin/notifications/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async exportAdminBackup(): Promise<any> {
+    return fetchWithAuth('/api/admin/backup/export');
+  },
+
+  async restoreAdminBackup(payload: any): Promise<{ success: boolean; message: string }> {
+    return fetchWithAuth('/api/admin/backup/restore', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   }
 };
+
