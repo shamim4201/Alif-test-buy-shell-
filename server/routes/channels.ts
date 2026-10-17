@@ -187,7 +187,7 @@ channelsRouter.get('/:id', (req: Request, res: Response) => {
   });
 });
 
-channelsRouter.post('/', authenticate, requireRole(['seller', 'admin']), (req: Request, res: Response) => {
+channelsRouter.post('/', authenticate, requireRole(['seller', 'admin', 'buyer']), (req: Request, res: Response) => {
   const user = (req as any).user as User;
   const {
     title,

@@ -115,7 +115,7 @@ authRouter.post('/quick-switch', (req: Request, res: Response) => {
   let targetUser: User | undefined;
 
   if (role === 'admin') {
-    targetUser = db.getUserByEmail('admin@channeltrust.com');
+    return res.status(403).json({ error: 'Admin quick switch disabled. Please log in with alifsheenshopping@gmail.com' });
   } else if (role === 'seller') {
     targetUser = db.getUserByEmail('apex.creators@gmail.com');
   } else {

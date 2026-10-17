@@ -19,7 +19,8 @@ import {
   Lock,
   Flame,
   Check,
-  Globe
+  Globe,
+  LogIn
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -476,171 +477,194 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* 5. HELLO, USER / ACCOUNT & LISTS */}
+          {/* 5. HELLO, USER / MY ACCOUNT (মাই একাউন্ট) */}
           <div className="relative shrink-0" ref={accountDropdownRef}>
             <button
               onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
               className="flex items-center sm:flex-col text-left px-1 sm:px-2 py-1 sm:py-1.5 rounded-xs border border-transparent hover:border-white cursor-pointer transition gap-1 sm:gap-0"
+              title={t("মাই একাউন্ট", "My Account")}
             >
-              <span className="hidden sm:inline text-[11px] text-[#ccc] leading-none truncate max-w-[110px]">
-                {t("হ্যালো, ", "Hello, ") + displayName}
+              <span className="hidden sm:inline text-[11px] text-[#ccc] leading-none truncate max-w-[120px]">
+                {user ? `${t("হ্যালো, ", "Hello, ")}${displayName}` : t("হ্যালো, সাইন ইন", "Hello, Sign In")}
               </span>
               <span className="hidden sm:flex text-[13px] font-bold text-white items-center gap-0.5 leading-tight">
-                {t("অ্যাকাউন্ট ও তালিকা", "Account & Lists")}
+                {t("মাই একাউন্ট", "My Account")}
                 <ChevronDown className="w-3 h-3 text-[#aaa] shrink-0" />
               </span>
 
-              {/* Mobile View: Compact user pill */}
+              {/* Mobile View: Compact user pill with "মাই একাউন্ট" */}
               <div className="flex sm:hidden items-center gap-1">
                 <UserIcon className="w-4 h-4 text-[#febd69] shrink-0" />
-                <span className="text-[11px] font-bold text-white max-w-[55px] truncate">
-                  {displayName}
+                <span className="text-[11px] font-bold text-white max-w-[70px] truncate">
+                  {t("মাই একাউন্ট", "My Account")}
                 </span>
                 <ChevronDown className="w-2.5 h-2.5 text-slate-400 shrink-0" />
               </div>
             </button>
 
             {accountDropdownOpen && (
-              <div className="absolute right-0 top-12 w-72 bg-white border border-slate-300 rounded-lg shadow-2xl p-4 text-xs text-slate-800 z-50 animate-fade-in">
+              <div className="absolute right-0 top-12 w-72 bg-white border border-slate-300 rounded-2xl shadow-2xl p-4 text-xs text-slate-800 z-50 animate-fade-in">
                 {/* User Status / Sign In Button */}
                 {!user ? (
-                  <div className="text-center pb-3 border-b border-slate-200">
+                  <div className="text-center py-2 space-y-3">
+                    <div className="text-xs font-black text-slate-900 flex items-center justify-center gap-1.5">
+                      <UserIcon className="w-4 h-4 text-amber-500" />
+                      <span>{t("মাই একাউন্ট", "My Account")}</span>
+                    </div>
+
+                    {/* Upgraded Premium Sign In Button */}
                     <button
                       onClick={() => {
                         setAccountDropdownOpen(false);
                         openAuthModal('login');
                       }}
-                      className="w-full py-2 bg-gradient-to-b from-[#f7dfa5] to-[#f0c14b] hover:from-[#f5d78e] hover:to-[#eeb933] border border-[#a88734] rounded-md text-xs font-bold text-slate-900 shadow-xs cursor-pointer"
+                      className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 font-black text-xs rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border border-amber-600/30 flex items-center justify-center gap-2 active:scale-95 group"
                     >
-                      {t("সাইন ইন", "Sign In")}
+                      <LogIn className="w-4 h-4 text-slate-950 transition-transform group-hover:translate-x-0.5" />
+                      <span>{t("সাইন ইন করুন", "Sign In")}</span>
                     </button>
-                    <p className="text-[11px] text-slate-500 mt-2">
-                      {t("নতুন বায়ার বা সেলার?", "New customer?")}{' '}
+
+                    <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+                      {t("নতুন অ্যাকাউন্ট খুলতে চান?", "New to Alif Trust?")}{' '}
                       <button
                         onClick={() => {
                           setAccountDropdownOpen(false);
                           openAuthModal('register');
                         }}
-                        className="text-blue-700 hover:underline font-semibold cursor-pointer"
+                        className="text-amber-600 hover:text-amber-700 hover:underline font-bold cursor-pointer"
                       >
-                        {t("এখান থেকে শুরু করুন।", "Start here.")}
+                        {t("রেজিস্ট্রেশন করুন", "Register")}
                       </button>
-                    </p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="pb-3 border-b border-slate-200">
-                    <p className="text-xs font-bold text-slate-900">{user.name}</p>
-                    <p className="text-[11px] text-slate-500">{user.email}</p>
-                    <span className="inline-block mt-1 px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded text-[10px] font-bold uppercase">
-                      {t("রোল: ", "Role: ")}{user.role}
-                    </span>
+                  <div>
+                    {/* Logged in User Card */}
+                    <div className="pb-3 border-b border-slate-200">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">
+                          {t("মাই একাউন্ট", "My Account")}
+                        </span>
+                        {user.email.toLowerCase() === 'alifsheenshopping@gmail.com' ? (
+                          <span className="px-2 py-0.5 bg-rose-100 border border-rose-300 text-rose-700 rounded text-[10px] font-black uppercase">
+                            {t("সুপার অ্যাডমিন", "Super Admin")}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded text-[10px] font-bold uppercase">
+                            {t("রোল: ", "Role: ")}{user.role}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
+                      <p className="text-[11px] text-slate-500 font-mono truncate">{user.email}</p>
+                    </div>
+
+                    {/* Special Admin Option - ONLY visible if logged in with alifsheenshopping@gmail.com */}
+                    {user?.email?.toLowerCase() === 'alifsheenshopping@gmail.com' && (
+                      <div className="py-2.5 border-b border-rose-200 bg-rose-50/70 -mx-4 px-4 my-1">
+                        <button
+                          onClick={() => {
+                            setAccountDropdownOpen(false);
+                            onNavigate('admin-dashboard');
+                          }}
+                          className="w-full text-left py-2 px-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white rounded-lg flex items-center justify-between cursor-pointer font-extrabold shadow-sm transition"
+                        >
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-white" />
+                            <span>{t("অ্যাডমিন প্যানেল", "Admin Panel")}</span>
+                          </div>
+                          <span className="text-[10px] bg-white text-rose-700 font-black px-1.5 py-0.5 rounded uppercase">
+                            Admin
+                          </span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Dual Action Hubs: Buyer & Seller Buttons (দোনোটাই করতে পারবে একাউন্ট দিয়ে) */}
+                    <div className="pt-2.5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                          {t("অ্যাকাউন্ট মোড ও হাব", "Account Mode & Hub")}
+                        </span>
+                        <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">
+                          {t("সব সুবিধাসমূহ", "All Access")}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* 1. BUYER BUTTON */}
+                        <button
+                          onClick={() => {
+                            setAccountDropdownOpen(false);
+                            onNavigate('buyer-dashboard');
+                          }}
+                          className="p-2.5 rounded-xl border-2 border-blue-200 bg-blue-50/70 hover:bg-blue-100 hover:border-blue-400 text-left transition-all cursor-pointer flex flex-col justify-between group shadow-xs active:scale-[0.98]"
+                          title={t("বায়ার ড্যাশবোর্ড: অর্ডার ও কেনাকাটা", "Buyer Dashboard: Orders & Purchases")}
+                        >
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                              <ShoppingCart className="w-4 h-4" />
+                            </div>
+                            <span className="text-[9px] bg-blue-100 text-blue-800 font-extrabold px-1.5 py-0.5 rounded uppercase">
+                              {t("কিনুন", "Buy")}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xs font-black text-slate-900 block group-hover:text-blue-700 transition-colors">
+                              {t("বায়ার হাব", "Buyer Hub")}
+                            </span>
+                            <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
+                              {t("অর্ডার ও কেনাকাটা", "Orders & Deals")}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* 2. SELLER BUTTON */}
+                        <button
+                          onClick={() => {
+                            setAccountDropdownOpen(false);
+                            onNavigate('seller-dashboard');
+                          }}
+                          className="p-2.5 rounded-xl border-2 border-amber-200 bg-amber-50/70 hover:bg-amber-100 hover:border-amber-400 text-left transition-all cursor-pointer flex flex-col justify-between group shadow-xs active:scale-[0.98]"
+                          title={t("সেলার ড্যাশবোর্ড: চ্যানেল বিক্রি ও ম্যানেজমেন্ট", "Seller Dashboard: Sell & Manage Listings")}
+                        >
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                              <Sparkles className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] bg-amber-100 text-amber-800 font-extrabold px-1.5 py-0.5 rounded uppercase">
+                              {t("বিক্রি", "Sell")}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xs font-black text-slate-900 block group-hover:text-amber-700 transition-colors">
+                              {t("সেলার হাব", "Seller Hub")}
+                            </span>
+                            <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
+                              {t("চ্যানেল বিক্রি করুন", "Sell Channels")}
+                            </span>
+                          </div>
+                        </button>
+                      </div>
+
+                      <p className="text-[10px] text-slate-500 italic text-center px-1 pt-0.5">
+                        {t("* এই একটি অ্যাকাউন্ট দিয়েই আপনি একই সাথে কেনাকাটা ও বিক্রি করতে পারবেন।", "* You can buy and sell accounts seamlessly with this single account.")}
+                      </p>
+
+                      {/* Sign Out Button */}
+                      <button
+                        onClick={() => {
+                          setAccountDropdownOpen(false);
+                          logout();
+                        }}
+                        className="w-full text-center py-2 px-3 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl font-bold text-xs pt-2.5 border-t border-slate-100 flex items-center justify-center gap-1.5 cursor-pointer mt-2 transition"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>{t("সাইন আউট করুন", "Sign Out")}</span>
+                      </button>
+                    </div>
                   </div>
                 )}
-
-                {/* Instant Role Switcher for seamless demo testing */}
-                <div className="py-2.5 border-b border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                    {t("রোল দ্রুত পরিবর্তন করুন (Instant Switch)", "Quick Role Switch (Demo)")}
-                  </span>
-                  <div className="grid grid-cols-3 gap-1">
-                    <button
-                      onClick={() => {
-                        quickSwitch('buyer');
-                        setAccountDropdownOpen(false);
-                      }}
-                      className={`py-1 text-center rounded border text-[11px] font-semibold cursor-pointer transition ${
-                        user?.role === 'buyer'
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {t("বায়ার", "Buyer")}
-                    </button>
-                    <button
-                      onClick={() => {
-                        quickSwitch('seller');
-                        setAccountDropdownOpen(false);
-                      }}
-                      className={`py-1 text-center rounded border text-[11px] font-semibold cursor-pointer transition ${
-                        user?.role === 'seller'
-                          ? 'bg-amber-600 text-white border-amber-600'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {t("সেলার", "Seller")}
-                    </button>
-                    <button
-                      onClick={() => {
-                        quickSwitch('admin');
-                        setAccountDropdownOpen(false);
-                      }}
-                      className={`py-1 text-center rounded border text-[11px] font-semibold cursor-pointer transition ${
-                        user?.role === 'admin'
-                          ? 'bg-rose-600 text-white border-rose-600'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {t("অ্যাডমিন", "Admin")}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Your Lists & Links */}
-                <div className="pt-2.5 space-y-2">
-                  <button
-                    onClick={() => {
-                      setAccountDropdownOpen(false);
-                      onNavigate('buyer-dashboard');
-                    }}
-                    className="w-full text-left py-1 hover:text-[#ff9900] flex items-center justify-between cursor-pointer"
-                  >
-                    <span>{t("আপনার অর্ডারসমূহ", "Your Orders")}</span>
-                    <span className="text-[10px] text-slate-400">{t("এস্ক্রো", "Escrow")}</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAccountDropdownOpen(false);
-                      onNavigate('seller-dashboard');
-                    }}
-                    className="w-full text-left py-1 hover:text-[#ff9900] flex items-center justify-between cursor-pointer"
-                  >
-                    <span>{t("সেলার ড্যাশবোর্ড", "Seller Dashboard")}</span>
-                    <span className="text-[10px] text-amber-600 font-bold">{t("বিক্রি করুন", "Sell")}</span>
-                  </button>
-                  {user?.role === 'admin' && (
-                    <button
-                      onClick={() => {
-                        setAccountDropdownOpen(false);
-                        onNavigate('admin-dashboard');
-                      }}
-                      className="w-full text-left py-1 hover:text-[#ff9900] flex items-center justify-between cursor-pointer font-bold text-rose-600"
-                    >
-                      <span>{t("অ্যাডমিন কন্ট্রোল সেন্টার", "Admin Control Center")}</span>
-                      <span className="text-[10px] bg-rose-100 text-rose-800 px-1 rounded">Admin</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setAccountDropdownOpen(false);
-                      onOpenLegal('safety');
-                    }}
-                    className="w-full text-left py-1 hover:text-[#ff9900] cursor-pointer"
-                  >
-                    {t("নিরাপদ ওনারশিপ প্রটোকল", "Safe Ownership Protocol")}
-                  </button>
-                  {user && (
-                    <button
-                      onClick={() => {
-                        setAccountDropdownOpen(false);
-                        logout();
-                      }}
-                      className="w-full text-left py-1 text-red-600 hover:underline pt-2 border-t border-slate-100 flex items-center gap-1 cursor-pointer"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      {t("সাইন আউট", "Sign Out")}
-                    </button>
-                  )}
-                </div>
               </div>
             )}
           </div>
@@ -990,6 +1014,28 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </li>
                 </ul>
               </div>
+
+              {/* Super Admin Section - ONLY visible for alifsheenshopping@gmail.com */}
+              {user?.email?.toLowerCase() === 'alifsheenshopping@gmail.com' && (
+                <div className="space-y-2 border-b border-rose-200 bg-rose-50/60 p-3 rounded-xl">
+                  <h4 className="font-black text-xs text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-rose-600" />
+                    {t("সুপার অ্যাডমিন নিয়ন্ত্রণ", "Super Admin Controls")}
+                  </h4>
+                  <button
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      onNavigate('admin-dashboard');
+                    }}
+                    className="w-full text-left py-2 px-3 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-between shadow-xs cursor-pointer transition"
+                  >
+                    <span>{t("অ্যাডমিন প্যানেল ড্যাশবোর্ড", "Admin Panel Dashboard")}</span>
+                    <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded uppercase font-black">
+                      Admin
+                    </span>
+                  </button>
+                </div>
+              )}
 
               {/* Category Section 3: Help & Settings */}
               <div className="space-y-2">

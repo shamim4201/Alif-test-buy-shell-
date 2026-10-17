@@ -130,17 +130,37 @@ function MainApp() {
         )}
 
         {currentView === 'admin-dashboard' && (
-          <AdminDashboardView
-            onSelectOrder={(orderId) => handleNavigate('order-details', { id: orderId })}
-            onSelectChannel={(channelId) => handleNavigate('channel-details', { id: channelId })}
-          />
+          user?.email?.toLowerCase() === 'alifsheenshopping@gmail.com' ? (
+            <AdminDashboardView
+              onSelectOrder={(orderId) => handleNavigate('order-details', { id: orderId })}
+              onSelectChannel={(channelId) => handleNavigate('channel-details', { id: channelId })}
+            />
+          ) : (
+            <div className="max-w-lg mx-auto my-20 p-8 bg-white border border-rose-200 rounded-3xl shadow-2xl text-center space-y-4">
+              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-3xl font-black shadow-inner">
+                🔒
+              </div>
+              <h3 className="text-xl font-black text-slate-900">
+                অননুমোদিত প্রবেশাধিকার (Access Denied)
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                অ্যাডমিন প্যানেল শুধুমাত্র অফিশিয়াল সুপার এডমিন <span className="font-mono font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">alifsheenshopping@gmail.com</span> এর জন্য সংরক্ষিত। অন্য কোনো জিমেইল বা অ্যাকাউন্ট দিয়ে অ্যাডমিন এক্সেস গ্রহণযোগ্য নয়।
+              </p>
+              <button
+                onClick={() => handleNavigate('home')}
+                className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs cursor-pointer shadow-md transition"
+              >
+                হোম পেজে ফিরে যান
+              </button>
+            </div>
+          )
         )}
       </main>
 
       <Footer onOpenLegal={handleOpenLegal} onNavigate={handleNavigate} />
 
       {/* Global Modals */}
-      <AuthModal />
+      <AuthModal onLoginSuccess={(targetView) => handleNavigate(targetView)} />
       <LegalModal
         isOpen={legalModalOpen}
         onClose={() => setLegalModalOpen(false)}

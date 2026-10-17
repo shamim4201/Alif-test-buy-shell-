@@ -4,8 +4,14 @@ import { authenticate, requireRole } from './auth';
 
 export const adminRouter = express.Router();
 
-// Admin-only middleware for all routes here
-adminRouter.use(authenticate, requireRole(['admin']));
+// Admin-only middleware for all routes here: ONLY alifsheenshopping@gmail.com
+adminRouter.use(authenticate, requireRole(['admin']), (req: Request, res: Response, next: express.NextFunction) => {
+  const user = (req as any).user;
+  if (!user || user.email?.toLowerCase() !== 'alifsheenshopping@gmail.com') {
+    return res.status(403).json({ error: 'Access denied: Super Admin authorization required' });
+  }
+  next();
+});
 
 // 1. Dashboard Overview Stats
 adminRouter.get('/stats', (req: Request, res: Response) => {

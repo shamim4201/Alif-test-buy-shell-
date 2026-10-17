@@ -5,8 +5,8 @@ import { api, getStoredToken, setStoredToken } from '../services/api';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<void>;
-  register: (payload: { name: string; email: string; password: string; role: 'buyer' | 'seller'; bio?: string }) => Promise<void>;
+  login: (email: string, pass: string) => Promise<User>;
+  register: (payload: { name: string; email: string; password: string; role: 'buyer' | 'seller'; bio?: string }) => Promise<User>;
   logout: () => void;
   quickSwitch: (role: 'admin' | 'seller' | 'buyer') => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -56,33 +56,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Check if token exists, otherwise auto-login as demo buyer so user can immediately experience the app
+    // Check if token exists, otherwise remain logged out
     const token = getStoredToken();
     if (token) {
       refreshUser();
     } else {
-      // Default initial login as buyer for frictionless first load
-      api.quickSwitch('buyer')
-        .then((res) => {
-          setUser(res.user);
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false));
+      setUser(null);
+      setLoading(false);
     }
   }, []);
 
-  const login = async (email: string, pass: string) => {
+  const login = async (email: string, pass: string): Promise<User> => {
     const res = await api.login(email, pass);
     setUser(res.user);
     setAuthModal({ isOpen: false, mode: 'login' });
-    showToast(`Welcome back, ${res.user.name}!`, 'success');
+    showToast(`স্বাগতম, ${res.user.name}!`, 'success');
+    return res.user;
   };
 
-  const register = async (payload: { name: string; email: string; password: string; role: 'buyer' | 'seller'; bio?: string }) => {
+  const register = async (payload: { name: string; email: string; password: string; role: 'buyer' | 'seller'; bio?: string }): Promise<User> => {
     const res = await api.register(payload);
     setUser(res.user);
     setAuthModal({ isOpen: false, mode: 'login' });
-    showToast(`Account created successfully! Welcome to ChannelTrust.`, 'success');
+    showToast(`অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে! স্বাগতম Alif Trust-এ।`, 'success');
+    return res.user;
   };
 
   const logout = () => {
@@ -92,6 +89,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const quickSwitch = async (role: 'admin' | 'seller' | 'buyer') => {
+    if (role === 'admin') {
+      showToast('অ্যাডমিন হিসেবে প্রবেশ করতে alifsheenshopping@gmail.com দিয়ে লগইন করুন', 'error');
+      openAuthModal('login');
+      return;
+    }
     try {
       const res = await api.quickSwitch(role);
       setUser(res.user);

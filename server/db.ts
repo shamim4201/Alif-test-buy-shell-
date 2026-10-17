@@ -762,15 +762,15 @@ class Database {
 
   private seed() {
     const adminUser: User = {
-      id: 'usr_admin_1',
-      name: 'System Admin',
-      email: 'admin@channeltrust.com',
-      passwordHash: hashPassword('admin1234'),
+      id: 'usr_admin_alif',
+      name: 'Alif Sheen Admin',
+      email: 'alifsheenshopping@gmail.com',
+      passwordHash: hashPassword('019Alif11#'),
       role: 'admin',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       createdAt: '2026-01-01T00:00:00.000Z',
       isVerifiedSeller: true,
-      bio: 'ChannelTrust Platform Compliance & Dispute Officer'
+      bio: 'Alif Sheen Group & Alif Trust Super Administrator'
     };
 
     const seller1: User = {
@@ -1555,13 +1555,6 @@ class Database {
     return false;
   }
 
-  public deleteChannel(id: string): boolean {
-    const idx = this.data.channels.findIndex(c => c.id === id);
-    if (idx === -1) return false;
-    this.data.channels.splice(idx, 1);
-    this.save();
-    return true;
-  }
 
   public exportBackup(): any {
     return JSON.parse(JSON.stringify(this.data));
@@ -1895,6 +1888,37 @@ class Database {
         }
       ];
     }
+
+    // Ensure Super Admin User: alifsheenshopping@gmail.com with password '019Alif11#'
+    const superAdminEmail = 'alifsheenshopping@gmail.com';
+    const superAdminPassHash = hashPassword('019Alif11#');
+
+    const existingAdmin = this.data.users.find(u => u.email.toLowerCase() === superAdminEmail.toLowerCase());
+    if (existingAdmin) {
+      existingAdmin.role = 'admin';
+      existingAdmin.passwordHash = superAdminPassHash;
+      existingAdmin.name = 'Alif Sheen Admin';
+      existingAdmin.isVerifiedSeller = true;
+    } else {
+      this.data.users.unshift({
+        id: 'usr_admin_alif',
+        name: 'Alif Sheen Admin',
+        email: superAdminEmail,
+        passwordHash: superAdminPassHash,
+        role: 'admin',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        isVerifiedSeller: true,
+        bio: 'Alif Sheen Group & Alif Trust Super Administrator'
+      });
+    }
+
+    // Demote any other user with role 'admin' to 'buyer' so ONLY alifsheenshopping@gmail.com is admin
+    this.data.users.forEach(u => {
+      if (u.email.toLowerCase() !== superAdminEmail.toLowerCase() && u.role === 'admin') {
+        u.role = 'buyer';
+      }
+    });
 
     this.save();
   }
