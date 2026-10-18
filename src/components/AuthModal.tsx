@@ -35,12 +35,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLoginSuccess }) => {
     setError(null);
     setLoading(true);
 
+    const cleanEmail = email.trim();
+    const cleanPass = password.trim();
+
     try {
       let loggedInUser: User;
       if (isLogin) {
-        loggedInUser = await login(email.trim(), password);
+        loggedInUser = await login(cleanEmail, cleanPass);
       } else {
-        loggedInUser = await register({ name: name.trim(), email: email.trim(), password, role, bio });
+        loggedInUser = await register({ name: name.trim(), email: cleanEmail, password: cleanPass, role, bio });
       }
 
       // Automatically redirect based on user role
@@ -229,14 +232,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLoginSuccess }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:via-orange-400 hover:to-amber-500 text-slate-950 font-black text-sm tracking-wide shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 border border-amber-300/60 transition-all duration-200 disabled:opacity-50 cursor-pointer active:scale-[0.98] mt-3 flex items-center justify-center gap-2 group"
+            className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:via-rose-500 hover:to-amber-500 text-white font-extrabold text-sm tracking-wide shadow-lg shadow-rose-600/30 hover:shadow-xl hover:shadow-rose-600/40 border border-white/20 transition-all duration-200 disabled:opacity-50 cursor-pointer active:scale-[0.98] mt-3 flex items-center justify-center gap-2.5 group"
           >
-            <LogIn className="w-4 h-4 text-slate-950 transition-transform group-hover:translate-x-0.5" />
+            <LogIn className="w-4 h-4 text-white transition-transform group-hover:translate-x-0.5" />
             <span>
               {loading
                 ? t('যাচাই করা হচ্ছে...', 'Verifying...')
                 : isLogin
-                ? t('লগইন করুন', 'Sign In')
+                ? t('সাইন ইন করুন', 'Sign In')
                 : t('অ্যাকাউন্ট তৈরি সম্পন্ন করুন', 'Complete Registration')}
             </span>
           </button>

@@ -18,6 +18,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { getLocalizedChannelTitle, ORDER_STATUS_TRANSLATIONS, ROLE_TRANSLATIONS } from '../translations/translations';
 import { EvidenceModal } from '../components/EvidenceModal';
 import { CategoryLogo, PlatformLogo } from '../components/CategoryIcons';
+import { AdminTabViews } from '../components/AdminTabViews';
 import {
   LayoutDashboard,
   Tv,
@@ -961,460 +962,148 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* ============================================================== */}
-            {/* 4. MAIN DATA TABLE WITH SOLID SKY-BLUE HEADER BANNER */}
-            {/* (Matches the "Vehicle List" style in the user's screenshot) */}
-            {/* ============================================================== */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm">
-              {/* Sky-Blue Table Accent Header Banner */}
-              <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="font-black text-sm tracking-wide">
-                    {activeTab === 'users'
-                      ? t('ব্যবহারকারী তালিকা (User Management Ledger)', 'User Management Ledger')
-                      : activeTab === 'orders'
-                      ? t('অর্ডার ও এসক্রো ট্র্যাকিং (Order Escrow Ledger)', 'Order Escrow Ledger')
-                      : activeTab === 'payments'
-                      ? t('পেমেন্ট ও ট্রানজ্যাকশন হিস্ট্রি (Payment & Payout Ledger)', 'Payment & Payout Ledger')
-                      : activeTab === 'disputes'
-                      ? t('বিরোধ আরবিট্রেশন তালিকা (Dispute Arbitration Queue)', 'Dispute Arbitration Queue')
-                      : t('চ্যানেল লিস্টিং ও যাচাইকরণ (Channel Listing & Verification Ledger)', 'Channel Listing & Verification Ledger')}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold">
-                    {activeTab === 'users'
-                      ? filteredUsers.length
-                      : activeTab === 'orders'
-                      ? filteredOrders.length
-                      : activeTab === 'payments'
-                      ? filteredTransactions.length
-                      : filteredChannels.length}{' '}
-                    {t('আইটেম', 'records')}
-                  </span>
-                </div>
-
-                {/* Table Filter Controls */}
-                <div className="flex items-center gap-2">
-                  {activeTab === 'channels' && (
-                    <div className="flex items-center gap-1 text-[11px]">
-                      {(['all', 'pending', 'approved', 'rejected'] as const).map((st) => (
-                        <button
-                          key={st}
-                          onClick={() => setChannelStatusFilter(st)}
-                          className={`px-2.5 py-1 rounded-lg font-bold capitalize transition cursor-pointer ${
-                            channelStatusFilter === st
-                              ? 'bg-white text-sky-700 shadow-xs'
-                              : 'text-white/80 hover:bg-white/10'
-                          }`}
-                        >
-                          {st}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {activeTab === 'users' && (
-                    <div className="flex items-center gap-1 text-[11px]">
-                      {(['all', 'seller', 'buyer', 'admin', 'banned'] as const).map((role) => (
-                        <button
-                          key={role}
-                          onClick={() => setUserRoleFilter(role)}
-                          className={`px-2.5 py-1 rounded-lg font-bold capitalize transition cursor-pointer ${
-                            userRoleFilter === role
-                              ? 'bg-white text-sky-700 shadow-xs'
-                              : 'text-white/80 hover:bg-white/10'
-                          }`}
-                        >
-                          {role}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Table Body Container */}
-              <div className="overflow-x-auto">
-                {activeTab === 'users' ? (
-                  /* USERS TABLE */
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
-                      <tr>
-                        <th className="px-5 py-3.5">{t('ব্যবহারকারী / প্রোফাইল', 'User ID & Profile')}</th>
-                        <th className="px-4 py-3.5">{t('রোল ও অধিকার', 'Role')}</th>
-                        <th className="px-4 py-3.5">{t('KYC ভেরিফিকেশন', 'KYC Status')}</th>
-                        <th className="px-4 py-3.5">{t('রেটিং ও ডিল', 'Rating / Deals')}</th>
-                        <th className="px-4 py-3.5">{t('নিবন্ধন তারিখ', 'Joined Date')}</th>
-                        <th className="px-5 py-3.5 text-right">{t('অ্যাকশন', 'Actions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium">
-                      {filteredUsers.map((u) => (
-                        <tr key={u.id} className="hover:bg-slate-50/80 transition">
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`}
-                                alt={u.name}
-                                className="w-9 h-9 rounded-full object-cover bg-slate-100 border border-slate-200 shrink-0"
-                              />
-                              <div className="min-w-0">
-                                <span className="font-bold text-slate-900 block truncate flex items-center gap-1.5">
-                                  {u.name}
-                                  {u.isVerifiedSeller && (
-                                    <BadgeCheck className="w-4 h-4 text-blue-600 shrink-0" />
-                                  )}
-                                </span>
-                                <span className="text-[11px] text-slate-400 block truncate font-mono">{u.email}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <select
-                              value={u.role}
-                              onChange={(e) => handleUpdateRole(u.id, e.target.value as any)}
-                              className="text-xs font-bold rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-slate-700 focus:outline-none focus:border-sky-500"
-                            >
-                              <option value="buyer">Buyer</option>
-                              <option value="seller">Seller</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                          </td>
-                          <td className="px-4 py-3.5">
-                            {u.isVerifiedSeller ? (
-                              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-bold">
-                                Verified
-                              </span>
-                            ) : (
-                              <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">
-                                Standard
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <span className="font-bold text-slate-800">★ {u.rating || 5.0}</span>
-                            <span className="text-[11px] text-slate-400 block">{u.dealsCount || 0} deals</span>
-                          </td>
-                          <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
-                            {new Date(u.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-5 py-3.5 text-right space-x-1.5 whitespace-nowrap">
-                            <button
-                              onClick={() => handleToggleVerified(u.id)}
-                              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-                              title={t('ভেরিফাইড ব্যাজ টগল', 'Toggle Verified')}
-                            >
-                              <BadgeCheck className="w-3.5 h-3.5 text-blue-600" />
-                            </button>
-                            <button
-                              onClick={() => handleToggleBan(u.id)}
-                              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
-                              title={t('ব্যান / আনব্যান', 'Ban/Unban')}
-                            >
-                              <Ban className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setSelectedUserDetail(u)}
-                              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-                              title={t('প্রোফাইল অডিট', 'Audit')}
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : activeTab === 'orders' ? (
-                  /* ORDERS TABLE */
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
-                      <tr>
-                        <th className="px-5 py-3.5">{t('অর্ডার আইডি ও চ্যানেল', 'Order ID & Channel')}</th>
-                        <th className="px-4 py-3.5">{t('ক্রেতা ও বিক্রেতা', 'Buyer / Seller')}</th>
-                        <th className="px-4 py-3.5">{t('মূল্য ও ফি', 'Deal Price')}</th>
-                        <th className="px-4 py-3.5">{t('এসক্রো স্ট্যাটাস', 'Escrow Status')}</th>
-                        <th className="px-4 py-3.5">{t('হস্তান্তর ধাপ (Step)', 'Step Progress')}</th>
-                        <th className="px-5 py-3.5 text-right">{t('অ্যাকশন', 'Actions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium">
-                      {filteredOrders.map((ord) => {
-                        const completedSteps = ord.transferSteps?.filter(s => s.completed).length || 0;
-                        const totalSteps = ord.transferSteps?.length || 5;
-
-                        return (
-                          <tr key={ord.id} className="hover:bg-slate-50/80 transition">
-                            <td className="px-5 py-3.5">
-                              <span className="font-bold text-slate-900 block truncate max-w-xs">{ord.channelTitle}</span>
-                              <span className="text-[11px] font-mono text-slate-400">#{ord.id}</span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span className="font-bold text-slate-800 block">{ord.buyerName}</span>
-                              <span className="text-[11px] text-slate-500 font-medium">To: {ord.sellerName}</span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span className="font-black text-slate-900 block">${ord.amount.toLocaleString()}</span>
-                              <span className="text-[10px] text-emerald-600 font-bold block">+${ord.platformFee} Fee</span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                ord.status === 'completed'
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : ord.status === 'disputed'
-                                  ? 'bg-red-50 text-red-700 border border-red-200 animate-pulse'
-                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
-                              }`}>
-                                {ORDER_STATUS_TRANSLATIONS[ord.status]?.[language] || ord.status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 h-2 rounded-full bg-slate-200 overflow-hidden">
-                                  <div
-                                    className="h-full bg-sky-500 rounded-full"
-                                    style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
-                                  />
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-600">
-                                  {completedSteps}/{totalSteps}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-5 py-3.5 text-right">
-                              <button
-                                onClick={() => onSelectOrder(ord.id)}
-                                className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition cursor-pointer shadow-xs"
-                              >
-                                {t('অর্ডার বিস্তারিত', 'Inspect')}
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                ) : (
-                  /* CHANNELS TABLE (DEFAULT - Exact match to screenshot layout!) */
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
-                      <tr>
-                        <th className="px-5 py-3.5">{t('চ্যানেল আইডি ও নাম', 'Item ID & Title')}</th>
-                        <th className="px-4 py-3.5">{t('প্ল্যাটফর্ম ও ক্যাটাগরি', 'Type / Platform')}</th>
-                        <th className="px-4 py-3.5">{t('স্ট্যাটাস', 'Status')}</th>
-                        <th className="px-4 py-3.5">{t('সাবস্ক্রাইবার ও অডিয়েন্স', 'Metrics / Followers')}</th>
-                        <th className="px-4 py-3.5">{t('বিক্রয়মূল্য ও আয়', 'Price & Revenue')}</th>
-                        <th className="px-4 py-3.5">{t('নিবন্ধিত সেলার', 'Seller Assigned')}</th>
-                        <th className="px-5 py-3.5 text-right">{t('অ্যাকশন ও রিভিউ', 'Actions & Audit')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium">
-                      {filteredChannels.map((channel) => (
-                        <tr key={channel.id} className="hover:bg-slate-50/80 transition">
-                          <td className="px-5 py-3.5">
-                            <span className="font-bold text-slate-900 block truncate max-w-xs">{channel.title}</span>
-                            <a
-                              href={channel.channelUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[11px] text-sky-600 hover:underline flex items-center gap-1 font-mono mt-0.5"
-                            >
-                              <span>{channel.handle}</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </td>
-
-                          <td className="px-4 py-3.5">
-                            <div className="flex items-center gap-1.5">
-                              <PlatformLogo platform={channel.platform || 'youtube'} className="w-4 h-4" />
-                              <span className="font-bold text-slate-700 capitalize">
-                                {channel.platform || 'YouTube'}
-                              </span>
-                              <CategoryLogo categoryId={channel.accountType || ''} className="w-3.5 h-3.5" />
-                            </div>
-                            <span className="text-[10px] text-slate-400 block mt-0.5">{channel.niche}</span>
-                          </td>
-
-                          <td className="px-4 py-3.5">
-                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              channel.verificationStatus === 'approved'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : channel.verificationStatus === 'rejected'
-                                ? 'bg-red-50 text-red-700 border border-red-200'
-                                : 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse'
-                            }`}>
-                              {channel.verificationStatus}
-                            </span>
-                          </td>
-
-                          <td className="px-4 py-3.5">
-                            <span className="font-bold text-slate-900 block">
-                              {channel.subscribers >= 1000 ? (channel.subscribers / 1000).toFixed(1) + 'K' : channel.subscribers}
-                            </span>
-                            <span className="text-[10px] text-slate-400 block">{channel.creationYear} • {channel.monetizationStatus}</span>
-                          </td>
-
-                          <td className="px-4 py-3.5">
-                            <span className="font-black text-slate-900 block">${channel.askingPrice.toLocaleString()}</span>
-                            <span className="text-[10px] text-emerald-600 font-bold block">${channel.monthlyRevenue}/mo</span>
-                          </td>
-
-                          <td className="px-4 py-3.5">
-                            <div className="flex items-center gap-2">
-                              <img
-                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${channel.sellerId}`}
-                                alt="Seller"
-                                className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200"
-                              />
-                              <span className="font-semibold text-slate-800 truncate max-w-[120px]">{channel.sellerName}</span>
-                            </div>
-                          </td>
-
-                          <td className="px-5 py-3.5 text-right space-x-1.5 whitespace-nowrap">
-                            <button
-                              onClick={() => {
-                                setSelectedProof({
-                                  screenshots: channel.analyticsScreenshots || [],
-                                  title: channel.title
-                                });
-                                setEvidenceModalOpen(true);
-                              }}
-                              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-                              title={t('প্রমাণপত্র অডিট', 'Inspect Proof')}
-                            >
-                              <Eye className="w-3.5 h-3.5 text-sky-600" />
-                            </button>
-
-                            {channel.verificationStatus === 'pending' ? (
-                              <>
-                                <button
-                                  onClick={() => handleReviewListing(channel.id, 'approved')}
-                                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer shadow-xs"
-                                >
-                                  {t('অনুমোদন', 'Approve')}
-                                </button>
-                                <button
-                                  onClick={() => handleReviewListing(channel.id, 'rejected')}
-                                  className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition cursor-pointer shadow-xs"
-                                >
-                                  {t('বাতিল', 'Reject')}
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => handleToggleFeatured(channel.id)}
-                                  className={`p-1.5 rounded-lg border transition cursor-pointer ${
-                                    channel.isFeatured ? 'bg-amber-50 border-amber-300 text-amber-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
-                                  }`}
-                                  title={channel.isFeatured ? 'Unfeature' : 'Feature'}
-                                >
-                                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                                </button>
-
-                                <button
-                                  onClick={() => handleDeleteChannel(channel.id, channel.title)}
-                                  className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition cursor-pointer"
-                                  title={t('লিস্টিং মুছুন', 'Delete')}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
+            {/* Dedicated View Component for All 13 Tabs */}
+            <AdminTabViews
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              stats={stats}
+              channels={channels}
+              filteredChannels={filteredChannels}
+              pendingApprovals={pendingApprovals}
+              orders={orders}
+              filteredOrders={filteredOrders}
+              disputedOrders={disputedOrders}
+              usersList={usersList}
+              filteredUsers={filteredUsers}
+              transactions={transactions}
+              filteredTransactions={filteredTransactions}
+              auditLogs={auditLogs}
+              coupons={coupons}
+              notifications={notifications}
+              tickets={tickets}
+              fraudAlerts={fraudAlerts}
+              settingsData={settingsData}
+              setSettingsData={setSettingsData}
+              savingSettings={savingSettings}
+              language={language}
+              t={t}
+              channelStatusFilter={channelStatusFilter}
+              setChannelStatusFilter={setChannelStatusFilter}
+              userRoleFilter={userRoleFilter}
+              setUserRoleFilter={setUserRoleFilter}
+              orderStatusFilter={orderStatusFilter}
+              setOrderStatusFilter={setOrderStatusFilter}
+              paymentFilter={paymentFilter}
+              setPaymentFilter={setPaymentFilter}
+              onSelectOrder={onSelectOrder}
+              setSelectedProof={setSelectedProof}
+              setEvidenceModalOpen={setEvidenceModalOpen}
+              handleReviewListing={handleReviewListing}
+              handleToggleFeatured={handleToggleFeatured}
+              handleDeleteChannel={handleDeleteChannel}
+              setSelectedUserDetail={setSelectedUserDetail}
+              handleToggleVerified={handleToggleVerified}
+              handleToggleBan={handleToggleBan}
+              setResolvingOrder={setResolvingOrder}
+              setResolutionAction={setResolutionAction}
+              handleSaveSettings={handleSaveSettings}
+              handleExportBackup={handleExportBackup}
+              setCouponModalOpen={setCouponModalOpen}
+              handleDeleteCoupon={handleDeleteCoupon}
+              setBroadcastModalOpen={setBroadcastModalOpen}
+              handleDeleteNotification={handleDeleteNotification}
+              setSelectedTicket={setSelectedTicket}
+              handleResolveFraudAlert={handleResolveFraudAlert}
+            />
 
             {/* ============================================================== */}
-            {/* 5. BOTTOM 3-COLUMN ANALYTICS SECTION (Exact Match from Image) */}
+            {/* 5. BOTTOM 3-COLUMN ANALYTICS SECTION (Visible on Overview) */}
             {/* ============================================================== */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              {/* Widget 1: Multi-Color Segmented Status Progress Bar */}
-              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                <span className="text-xs font-bold text-slate-900 block mb-3">
-                  {t('চ্যানেল স্ট্যাটাস বণ্টন (Status Distribution)', 'Channel Status Distribution')}
-                </span>
+            {activeTab === 'overview' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
-                {/* Segmented Multi-Color Bar */}
-                <div className="w-full h-3 rounded-full flex overflow-hidden mb-3 shadow-inner">
-                  <div className="bg-emerald-500 h-full w-[65%]" title="Approved: 65%" />
-                  <div className="bg-sky-500 h-full w-[20%]" title="In Escrow: 20%" />
-                  <div className="bg-amber-500 h-full w-[10%]" title="Pending: 10%" />
-                  <div className="bg-rose-500 h-full w-[5%]" title="Disputed: 5%" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-[11px] font-semibold text-slate-600">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <span>{t('অনুমোদিত (Approved): 65%', 'Approved: 65%')}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
-                    <span>{t('হস্তান্তর চলছে (Escrow): 20%', 'In Escrow: 20%')}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                    <span>{t('অপেক্ষমাণ (Pending): 10%', 'Pending: 10%')}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    <span>{t('বিরোধপূর্ণ (Disputed): 5%', 'Disputed: 5%')}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Widget 2: Platform Distribution by Country/Network */}
-              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                <span className="text-xs font-bold text-slate-900 block mb-3">
-                  {t('প্ল্যাটফর্ম ও অডিয়েন্স হিসেব', 'Network & Platform Breakdown')}
-                </span>
-
-                <div className="space-y-2 text-xs">
-                  {[
-                    { name: 'YouTube (USA & Global)', pct: '48%', color: 'bg-red-500' },
-                    { name: 'Facebook Pages (BD/India)', pct: '30%', color: 'bg-blue-600' },
-                    { name: 'TikTok Accounts (Viral)', pct: '14%', color: 'bg-black' },
-                    { name: 'Instagram Themes', pct: '8%', color: 'bg-pink-500' }
-                  ].map((item) => (
-                    <div key={item.name} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${item.color}`} />
-                        <span className="text-slate-700 font-medium">{item.name}</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{item.pct}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Widget 3: Escrow SLA & Average Handover Time */}
-              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between">
-                <div>
-                  <span className="text-xs font-bold text-slate-900 block mb-1">
-                    {t('এসক্রো রিলিজ সময়সীমা (SLA)', 'Average Handover Time')}
+                {/* Widget 1: Multi-Color Segmented Status Progress Bar */}
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <span className="text-xs font-bold text-slate-900 block mb-3">
+                    {t('চ্যানেল স্ট্যাটাস বণ্টন (Status Distribution)', 'Channel Status Distribution')}
                   </span>
-                  <p className="text-[11px] text-slate-500">
-                    {t('৭ দিনের ইউটিউব প্রাইমারি ওনারশিপ ট্রায়াল সমাপ্তির গড় সময়', 'YouTube 7-day primary owner audit timeline')}
-                  </p>
+                  
+                  {/* Segmented Multi-Color Bar */}
+                  <div className="w-full h-3 rounded-full flex overflow-hidden mb-3 shadow-inner">
+                    <div className="bg-emerald-500 h-full w-[65%]" title="Approved: 65%" />
+                    <div className="bg-sky-500 h-full w-[20%]" title="In Escrow: 20%" />
+                    <div className="bg-amber-500 h-full w-[10%]" title="Pending: 10%" />
+                    <div className="bg-rose-500 h-full w-[5%]" title="Disputed: 5%" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11px] font-semibold text-slate-600">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      <span>{t('অনুমোদিত (Approved): 65%', 'Approved: 65%')}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
+                      <span>{t('হস্তান্তর চলছে (Escrow): 20%', 'In Escrow: 20%')}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                      <span>{t('অপেক্ষমাণ (Pending): 10%', 'Pending: 10%')}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                      <span>{t('বিরোধপূর্ণ (Disputed): 5%', 'Disputed: 5%')}</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-baseline gap-2 my-2">
-                  <span className="text-3xl font-black text-sky-600 tracking-tight">7.2</span>
-                  <span className="text-xs font-bold text-slate-500">{t('দিন (Days)', 'Days Average')}</span>
-                  <span className="text-[11px] font-bold text-emerald-600 ml-auto">99.4% {t('সাফল্য', 'Success')}</span>
+                {/* Widget 2: Platform Distribution by Country/Network */}
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <span className="text-xs font-bold text-slate-900 block mb-3">
+                    {t('প্ল্যাটফর্ম ও অডিয়েন্স হিসেব', 'Network & Platform Breakdown')}
+                  </span>
+
+                  <div className="space-y-2 text-xs">
+                    {[
+                      { name: 'YouTube (USA & Global)', pct: '48%', color: 'bg-red-500' },
+                      { name: 'Facebook Pages (BD/India)', pct: '30%', color: 'bg-blue-600' },
+                      { name: 'TikTok Accounts (Viral)', pct: '14%', color: 'bg-black' },
+                      { name: 'Instagram Themes', pct: '8%', color: 'bg-pink-500' }
+                    ].map((item) => (
+                      <div key={item.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${item.color}`} />
+                          <span className="text-slate-700 font-medium">{item.name}</span>
+                        </div>
+                        <span className="font-bold text-slate-900">{item.pct}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="text-[10px] text-slate-400 border-t border-slate-100 pt-2 font-mono">
-                  {t('এসক্রো সিকিউরিটি পলিসি সর্বদা কার্যকর', '100% Escrow Protection Guaranteed')}
+                {/* Widget 3: Escrow SLA & Average Handover Time */}
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 block mb-1">
+                      {t('এসক্রো রিলিজ সময়সীমা (SLA)', 'Average Handover Time')}
+                    </span>
+                    <p className="text-[11px] text-slate-500">
+                      {t('৭ দিনের ইউটিউব প্রাইমারি ওনারশিপ ট্রায়াল সমাপ্তির গড় সময়', 'YouTube 7-day primary owner audit timeline')}
+                    </p>
+                  </div>
+
+                  <div className="flex items-baseline gap-2 my-2">
+                    <span className="text-3xl font-black text-sky-600 tracking-tight">7.2</span>
+                    <span className="text-xs font-bold text-slate-500">{t('দিন (Days)', 'Days Average')}</span>
+                    <span className="text-[11px] font-bold text-emerald-600 ml-auto">99.4% {t('সাফল্য', 'Success')}</span>
+                  </div>
+
+                  <div className="text-[10px] text-slate-400 border-t border-slate-100 pt-2 font-mono">
+                    {t('এসক্রো সিকিউরিটি পলিসি সর্বদা কার্যকর', '100% Escrow Protection Guaranteed')}
+                  </div>
                 </div>
+
               </div>
-
-            </div>
+            )}
           </div>
         </main>
       </div>

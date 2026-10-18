@@ -81,21 +81,27 @@ authRouter.post('/login', (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+    return res.status(400).json({ error: 'ইমেইল এবং পাসওয়ার্ড আবশ্যক (Email and password are required)' });
   }
 
-  const user = db.getUserByEmail(email);
+  const cleanEmail = String(email).trim().toLowerCase();
+  const user = db.getUserByEmail(cleanEmail);
   if (!user) {
-    return res.status(401).json({ error: 'Invalid email or password' });
+    return res.status(401).json({ error: 'ভুল ইমেইল বা পাসওয়ার্ড। সঠিক তথ্য প্রদান করুন।' });
   }
 
-  const hashed = hashPassword(password);
-  if (user.passwordHash !== hashed) {
-    return res.status(401).json({ error: 'Invalid email or password' });
+  const rawPass = String(password);
+  const trimmedPass = rawPass.trim();
+  const hashedRaw = hashPassword(rawPass);
+  const hashedTrimmed = hashPassword(trimmedPass);
+
+  // Accept matching either raw or trimmed password (prevents phone keyboard space issues)
+  if (user.passwordHash !== hashedRaw && user.passwordHash !== hashedTrimmed) {
+    return res.status(401).json({ error: 'ভুল ইমেইল বা পাসওয়ার্ড। সঠিক পাসওয়ার্ড দিন।' });
   }
 
   if (user.isBanned) {
-    return res.status(403).json({ error: 'Account suspended by administration' });
+    return res.status(403).json({ error: 'এই অ্যাকাউন্টটি অ্যাডমিন দ্বারা সাময়িকভাবে স্থগিত রয়েছে (Account suspended)' });
   }
 
   const token = generateToken(user);

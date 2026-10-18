@@ -13,7 +13,7 @@ import { BuyerDashboardView } from './views/BuyerDashboardView';
 import { AdminDashboardView } from './views/AdminDashboardView';
 
 function MainApp() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [currentView, setCurrentView] = useState<'home' | 'channel-details' | 'order-details' | 'seller-dashboard' | 'buyer-dashboard' | 'admin-dashboard'>('home');
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -130,28 +130,35 @@ function MainApp() {
         )}
 
         {currentView === 'admin-dashboard' && (
-          user?.email?.toLowerCase() === 'alifsheenshopping@gmail.com' ? (
+          loading ? (
+            <div className="flex flex-col items-center justify-center py-32 space-y-4">
+              <div className="w-10 h-10 border-4 border-slate-200 border-t-rose-600 rounded-full animate-spin" />
+              <p className="text-xs font-bold text-slate-500">অ্যাডমিন ড্যাশবোর্ড লোড হচ্ছে...</p>
+            </div>
+          ) : user?.email?.toLowerCase() === 'alifsheenshopping@gmail.com' ? (
             <AdminDashboardView
               onSelectOrder={(orderId) => handleNavigate('order-details', { id: orderId })}
               onSelectChannel={(channelId) => handleNavigate('channel-details', { id: channelId })}
             />
           ) : (
-            <div className="max-w-lg mx-auto my-20 p-8 bg-white border border-rose-200 rounded-3xl shadow-2xl text-center space-y-4">
-              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-3xl font-black shadow-inner">
-                🔒
+            <div className="max-w-lg mx-auto my-16 p-8 bg-white border border-slate-200 rounded-3xl shadow-xl text-center space-y-4">
+              <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto text-2xl font-black shadow-xs">
+                🛡️
               </div>
-              <h3 className="text-xl font-black text-slate-900">
-                অননুমোদিত প্রবেশাধিকার (Access Denied)
+              <h3 className="text-lg font-black text-slate-900">
+                অ্যাডমিন কনসোল ভেরিফিকেশন
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                অ্যাডমিন প্যানেল শুধুমাত্র অফিশিয়াল সুপার এডমিন <span className="font-mono font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">alifsheenshopping@gmail.com</span> এর জন্য সংরক্ষিত। অন্য কোনো জিমেইল বা অ্যাকাউন্ট দিয়ে অ্যাডমিন এক্সেস গ্রহণযোগ্য নয়।
+                অ্যাডমিন ড্যাশবোর্ডে প্রবেশ করতে অনুগ্রহ করে অফিশিয়াল অ্যাডমিন একাউন্ট (<span className="font-mono font-bold text-slate-800">alifsheenshopping@gmail.com</span>) দিয়ে সাইন ইন করুন।
               </p>
-              <button
-                onClick={() => handleNavigate('home')}
-                className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs cursor-pointer shadow-md transition"
-              >
-                হোম পেজে ফিরে যান
-              </button>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => handleNavigate('home')}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-bold text-xs cursor-pointer transition"
+                >
+                  হোম পেজে ফিরে যান
+                </button>
+              </div>
             </div>
           )
         )}
