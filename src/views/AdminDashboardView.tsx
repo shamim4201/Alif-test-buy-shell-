@@ -19,6 +19,7 @@ import { getLocalizedChannelTitle, ORDER_STATUS_TRANSLATIONS, ROLE_TRANSLATIONS 
 import { EvidenceModal } from '../components/EvidenceModal';
 import { CategoryLogo, PlatformLogo } from '../components/CategoryIcons';
 import { AdminTabViews } from '../components/AdminTabViews';
+import { BrandLogo } from '../components/BrandLogo';
 import {
   LayoutDashboard,
   Tv,
@@ -522,21 +523,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         >
           <div>
             {/* Brand Logo Header */}
-            <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-600 to-rose-500 flex items-center justify-center text-white shrink-0 shadow-md">
-                  <ShieldAlert className="w-5 h-5 text-white" />
-                </div>
-                {!sidebarCollapsed && (
-                  <div className="min-w-0">
-                    <span className="font-black text-white text-base tracking-tight block truncate">
-                      Alif Trust
-                    </span>
-                    <span className="text-[10px] text-sky-400 font-bold block uppercase tracking-wider">
-                      Admin Console
-                    </span>
-                  </div>
-                )}
+            <div className="p-3.5 border-b border-slate-800/80 flex items-center justify-between">
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                <BrandLogo
+                  theme="dark"
+                  size="sm"
+                  showSubtitle={false}
+                  variant={sidebarCollapsed ? 'icon-only' : 'full'}
+                />
               </div>
 
               <button
@@ -649,7 +643,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           <div className="md:hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex">
             <div className="w-72 bg-[#0f172a] text-slate-300 h-full p-4 overflow-y-auto space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <span className="font-black text-white text-base">Alif Trust Admin</span>
+                <BrandLogo theme="dark" size="sm" showSubtitle={false} />
                 <button onClick={() => setMobileSidebarOpen(false)} className="text-slate-400 hover:text-white p-1">✕</button>
               </div>
               <nav className="space-y-1">

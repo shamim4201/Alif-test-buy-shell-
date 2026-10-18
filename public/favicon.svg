@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="bgGrad" x1="15%" y1="10%" x2="85%" y2="90%">
+      <stop offset="0%" stop-color="#1064ee" />
+      <stop offset="55%" stop-color="#0a4dbd" />
+      <stop offset="100%" stop-color="#06368d" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#021c4a" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Circular Royal Blue Emblem -->
+  <circle cx="60" cy="60" r="58" fill="url(#bgGrad)" />
+  <circle cx="60" cy="60" r="56.5" stroke="rgba(255,255,255,0.22)" stroke-width="1.8" fill="none" />
+
+  <!-- Shopping Bag Handles -->
+  <path d="M45 37 C45 25, 63 25, 63 37" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" />
+
+  <!-- Shopping Bag Body (White) -->
+  <path d="M34 37 L74 37 L78 72 C78 75.5 75 78 71 78 L37 78 C33 78 30 75.5 30 72 Z" fill="#FFFFFF" filter="url(#shadow)" />
+
+  <!-- Stylized Letter 'A' inside Bag (Royal Blue) -->
+  <path d="M54 44.5 L45 68 H50.8 L52.6 63 H55.4 L57.2 68 H63 L54 44.5 Z M54 51 L55.2 58.5 H52.8 Z" fill="#0A4DBD" />
+
+  <!-- Joyful Curved Yellow/Orange Swoop across A -->
+  <path d="M41 62 C48 64, 57 59.5, 67.5 53" fill="none" stroke="#F59E0B" stroke-width="3.2" stroke-linecap="round" />
+  <path d="M41 62 C48 64, 57 59.5, 67.5 53" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" />
+
+  <!-- 3 Yellow Speed / Motion Lines on the right of the bag -->
+  <line x1="77" y1="44" x2="88" y2="44" stroke="#FBBF24" stroke-width="3" stroke-linecap="round" />
+  <line x1="79" y1="50.5" x2="92" y2="50.5" stroke="#FBBF24" stroke-width="3" stroke-linecap="round" />
+  <line x1="80.5" y1="57" x2="89.5" y2="57" stroke="#FBBF24" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Bold White "Alif" Typography -->
+  <text x="54" y="93" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="16" letter-spacing="0.5">Alif</text>
+
+  <!-- Yellow "trust buysell" cursive text -->
+  <text x="54" y="105" text-anchor="middle" fill="#FACC15" font-family="'Brush Script MT', 'Segoe Script', cursive, sans-serif" font-weight="bold" font-size="9.5" font-style="italic">trust buysell</text>
+</svg>

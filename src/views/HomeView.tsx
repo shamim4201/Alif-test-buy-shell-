@@ -3,6 +3,7 @@ import { ChannelListing, AccountType, PlatformType } from '../types';
 import { api } from '../services/api';
 import { ChannelCard } from '../components/ChannelCard';
 import { ReviewSlider } from '../components/ReviewSlider';
+import { BrandLogo } from '../components/BrandLogo';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import {
@@ -439,6 +440,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <section className="relative overflow-hidden pt-10 pb-14 border-b border-slate-200 bg-gradient-to-b from-white via-slate-50 to-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-3xl mx-auto text-center space-y-4">
+            {/* Brand Logo Presentation Badge */}
+            <div className="flex items-center justify-center mb-3">
+              <div className="p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-md shadow-blue-900/5 hover:shadow-lg transition">
+                <BrandLogo theme="light" size="lg" showSubtitle={true} />
+              </div>
+            </div>
+
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-700 shadow-xs">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span>{t("মাল্টি-প্ল্যাটফর্ম এস্ক্রো • নিরাপদ অ্যাকাউন্ট ও চ্যানেল ট্রান্সফার", "Multi-Platform Escrow • Safe Social Asset Transfers")}</span>
