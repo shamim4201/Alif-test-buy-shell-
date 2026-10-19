@@ -130,6 +130,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [reqSubs, setReqSubs] = useState('10k - 50k');
   const [reqEmail, setReqEmail] = useState('');
   const [reqNote, setReqNote] = useState('');
+  const [commissionRate, setCommissionRate] = useState<number>(5);
+
+  useEffect(() => {
+    api.getWebsiteSettings().then(res => {
+      if (res?.settings?.commissionRate !== undefined && res?.settings?.commissionRate !== null) {
+        setCommissionRate(Number(res.settings.commissionRate));
+      }
+    }).catch(() => {});
+
+    const handleSettingsUpdate = (e: any) => {
+      if (e?.detail?.commissionRate !== undefined) {
+        setCommissionRate(Number(e.detail.commissionRate));
+      }
+    };
+    window.addEventListener('website-settings-updated', handleSettingsUpdate);
+    return () => window.removeEventListener('website-settings-updated', handleSettingsUpdate);
+  }, []);
 
   const fetchChannels = async () => {
     try {
@@ -428,7 +445,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <span className="font-semibold text-slate-900 block">{t("প্ল্যাটফর্ম চার্জ পলিসি:", "Platform Escrow Policy:")}</span>
         <div className="flex items-center justify-between text-slate-600">
           <span>{t("চ্যানেল মূল্য", "Asset Price")}</span>
-          <span>{t("+ ৫% কাস্টডি চার্জ = মোট পরিশোধ", "+ 5% Escrow Custody = Total")}</span>
+          <span>{t(`+ ${commissionRate}% কাস্টডি চার্জ = মোট পরিশোধ`, `+ ${commissionRate}% Escrow Custody = Total`)}</span>
         </div>
       </div>
     </div>

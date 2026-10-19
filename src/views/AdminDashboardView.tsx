@@ -18,9 +18,10 @@ import { useCurrency } from '../context/CurrencyContext';
 import { getLocalizedChannelTitle, ORDER_STATUS_TRANSLATIONS, ROLE_TRANSLATIONS } from '../translations/translations';
 import { EvidenceModal } from '../components/EvidenceModal';
 import { CategoryLogo, PlatformLogo } from '../components/CategoryIcons';
-import { AdminTabViews } from '../components/AdminTabViews';
+import { AdminTabViews, TabType } from '../components/AdminTabViews';
 import { BrandLogo } from '../components/BrandLogo';
 import {
+  FileText,
   LayoutDashboard,
   Tv,
   Users,
@@ -64,21 +65,6 @@ interface AdminDashboardViewProps {
   onSelectOrder: (orderId: string) => void;
   onSelectChannel: (channelId: string) => void;
 }
-
-type TabType =
-  | 'overview'
-  | 'channels'
-  | 'users'
-  | 'orders'
-  | 'payments'
-  | 'disputes'
-  | 'settings'
-  | 'security'
-  | 'reports'
-  | 'coupons'
-  | 'notifications'
-  | 'tickets'
-  | 'fraud';
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onSelectOrder,
@@ -312,7 +298,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     if (!settingsData) return;
     try {
       setSavingSettings(true);
-      await api.updateWebsiteSettings(settingsData);
+      const res = await api.updateWebsiteSettings(settingsData);
+      window.dispatchEvent(
+        new CustomEvent('website-settings-updated', {
+          detail: res?.settings || settingsData
+        })
+      );
       showToast(t('ওয়েবসাইট সেটিংস সফলভাবে সংরক্ষিত হয়েছে', 'Website settings updated successfully'), 'success');
       loadData(true);
     } catch (err: any) {
@@ -500,6 +491,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     { id: 'orders', label: t('অর্ডার ও এসক্রো', 'Orders & Escrow'), icon: ShoppingBag, badge: activeEscrowOrders.length, badgeColor: 'bg-emerald-500' },
     { id: 'payments', label: t('পেমেন্ট ও কমিশন', 'Payments'), icon: CreditCard },
     { id: 'disputes', label: t('বিরোধ ও আরবিট্রেশন', 'Disputes'), icon: Scale, badge: disputedOrders.length, badgeColor: 'bg-rose-500 animate-pulse' },
+    { id: 'policies', label: t('পলিসি ও ফুটার কন্ট্রোল', 'Policies & Legal Center'), icon: FileText, badge: 'লাইভ', badgeColor: 'bg-emerald-600' },
     { id: 'settings', label: t('ওয়েবসাইট সেটিংস', 'Settings'), icon: Settings },
     { id: 'security', label: t('নিরাপত্তা ও রোল', 'Security & Roles'), icon: ShieldCheck },
     { id: 'reports', label: t('রিপোর্ট ও অ্যানালিটিক্স', 'Reports'), icon: TrendingUp },
@@ -609,11 +601,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {!sidebarCollapsed && (
                       <span className="flex-1 text-left truncate">{item.label}</span>
                     )}
-                    {!sidebarCollapsed && item.badge !== undefined && item.badge > 0 && (
-                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black text-white ${item.badgeColor || 'bg-slate-700'}`}>
-                        {item.badge}
-                      </span>
-                    )}
+                    {!sidebarCollapsed &&
+                      item.badge !== undefined &&
+                      (typeof item.badge === 'number' ? item.badge > 0 : Boolean(item.badge)) && (
+                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black text-white ${item.badgeColor || 'bg-slate-700'}`}>
+                          {item.badge}
+                        </span>
+                      )}
                   </button>
                 );
               })}
@@ -665,11 +659,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <IconComponent className="w-4 h-4" />
                         <span>{item.label}</span>
                       </div>
-                      {item.badge !== undefined && item.badge > 0 && (
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black text-white ${item.badgeColor || 'bg-slate-700'}`}>
-                          {item.badge}
-                        </span>
-                      )}
+                      {item.badge !== undefined &&
+                        (typeof item.badge === 'number' ? item.badge > 0 : Boolean(item.badge)) && (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black text-white ${item.badgeColor || 'bg-slate-700'}`}>
+                            {item.badge}
+                          </span>
+                        )}
                     </button>
                   );
                 })}
@@ -770,6 +765,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       ? t('পেমেন্ট ও কমিশন অডিট লেজার', 'Payments & Commission Ledger')
                       : activeTab === 'disputes'
                       ? t('বিরোধ নিষ্পত্তি ও আরবিট্রেশন সেন্টার', 'Dispute Arbitration Center')
+                      : activeTab === 'policies'
+                      ? t('পলিসি, সিকিউরিটি স্ট্যান্ডার্ড ও মার্কেটপ্লেস কন্ট্রোল', 'Policies, Security Standards & Marketplace Governance')
                       : t('সুপার অ্যাডমিন প্ল্যাটফর্ম সেটিংস', 'Administrative Platform Governance')}
                   </h1>
                 </div>
@@ -924,7 +921,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   </div>
                   <div className="min-w-0">
                     <span className="text-[10px] sm:text-[11px] font-bold text-white/90 block truncate uppercase tracking-wider">
-                      {t('কমিশন আয় (৫%)', 'Platform Net Fees')}
+                      {t(`কমিশন আয় (${settingsData?.commissionRate ?? 5}%)`, `Platform Net Fees (${settingsData?.commissionRate ?? 5}%)`)}
                     </span>
                     <span className="text-lg sm:text-2xl font-black block leading-none">
                       ${stats?.totalFees || 78}

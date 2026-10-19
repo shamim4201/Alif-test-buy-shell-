@@ -283,6 +283,29 @@ export interface WebsiteSettings {
   privacyPolicy: string;
   refundPolicy: string;
   safetyProtocol: string;
+  marketplaceGuide?: string;
+  securityStandardTitle?: string;
+  securityStandardDescription?: string;
+  securityStandardBadge?: string;
+  trustBadgeText?: string;
+  footerDisclaimer?: string;
+
+  // Header Titles
+  policiesMenuTitle?: string;
+  marketplaceMenuTitle?: string;
+  securityStandardMenuTitle?: string;
+
+  // Marketplace Menu Links Labels
+  marketplaceLinkBrowse?: string;
+  marketplaceLinkSell?: string;
+  marketplaceLinkHowTransferWorks?: string;
+  marketplaceLinkBuyerHub?: string;
+
+  // Policies Menu Links Labels
+  policyLinkTos?: string;
+  policyLinkPrivacy?: string;
+  policyLinkRefund?: string;
+  policyLinkSafety?: string;
 }
 
 export interface NotificationItem {

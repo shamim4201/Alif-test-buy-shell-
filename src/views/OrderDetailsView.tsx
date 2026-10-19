@@ -341,7 +341,12 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                   <span className="text-slate-800 font-medium">{formatPrice(order.amount)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>{t("কাস্টডি ফি (৫%):", "Custody Fee (5%):")}</span>
+                  <span>
+                    {t(
+                      `কাস্টডি ফি (${order.amount > 0 ? (order.platformFee / order.amount * 100).toFixed(order.platformFee % order.amount === 0 ? 0 : 1) : 5}%):`,
+                      `Custody Fee (${order.amount > 0 ? (order.platformFee / order.amount * 100).toFixed(order.platformFee % order.amount === 0 ? 0 : 1) : 5}%):`
+                    )}
+                  </span>
                   <span className="text-amber-700 font-medium">+ {formatPrice(order.platformFee)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-200">

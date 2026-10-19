@@ -61,16 +61,23 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
   const [offerPrice, setOfferPrice] = useState<number | string>('');
   const [buyerGoogleEmail, setBuyerGoogleEmail] = useState('');
   const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [commissionRate, setCommissionRate] = useState<number>(5);
 
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
-        const res = await api.getChannel(channelId);
+        const [res, settingsRes] = await Promise.all([
+          api.getChannel(channelId),
+          api.getWebsiteSettings().catch(() => ({ settings: null }))
+        ]);
         setChannel(res.channel);
         setSeller(res.seller);
         setReviews(res.reviews || []);
         setOfferPrice(res.channel.askingPrice);
+        if (settingsRes?.settings?.commissionRate !== undefined && settingsRes?.settings?.commissionRate !== null) {
+          setCommissionRate(Number(settingsRes.settings.commissionRate));
+        }
       } catch (err: any) {
         showToast(err.message || t('অ্যাকাউন্টের তথ্য লোড করতে ব্যর্থ হয়েছে', 'Failed to load channel details'), 'error');
       } finally {
@@ -78,6 +85,14 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
       }
     }
     loadData();
+
+    const handleSettingsUpdate = (e: any) => {
+      if (e?.detail?.commissionRate !== undefined) {
+        setCommissionRate(Number(e.detail.commissionRate));
+      }
+    };
+    window.addEventListener('website-settings-updated', handleSettingsUpdate);
+    return () => window.removeEventListener('website-settings-updated', handleSettingsUpdate);
   }, [channelId]);
 
   if (loading) {
@@ -554,8 +569,8 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                 </span>
                 <div className="flex flex-wrap items-center justify-between gap-1 pt-1 border-t border-slate-200 font-bold">
                   <span className="text-slate-900">{formatPrice(channel.askingPrice)} ({t("মূল্য", "Price")})</span>
-                  <span className="text-amber-700 font-semibold">+ {formatPrice(Math.round(channel.askingPrice * 0.05))} (5% {t("চার্জ", "Fee")})</span>
-                  <span className="text-emerald-700">= {formatPrice(channel.askingPrice + Math.round(channel.askingPrice * 0.05))} ({t("সর্বমোট", "Total")})</span>
+                  <span className="text-amber-700 font-semibold">+ {formatPrice(Math.round(channel.askingPrice * (commissionRate / 100)))} ({commissionRate}% {t("চার্জ", "Fee")})</span>
+                  <span className="text-emerald-700">= {formatPrice(channel.askingPrice + Math.round(channel.askingPrice * (commissionRate / 100)))} ({t("সর্বমোট", "Total")})</span>
                 </div>
               </div>
 
@@ -681,8 +696,8 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                 />
                 <div className="flex flex-wrap items-center justify-between gap-1 text-xs font-semibold pt-1.5 text-slate-600">
                   <span>{t("অ্যাকাউন্ট মূল্য:", "Base Price:")} ${(Number(offerPrice) || 0).toLocaleString()}</span>
-                  <span className="text-amber-700">+ 5% {t("চার্জ:", "Fee:")} ${Math.round((Number(offerPrice) || 0) * 0.05).toLocaleString()}</span>
-                  <span className="text-emerald-700 font-bold">= {t("মোট:", "Total:")} ${((Number(offerPrice) || 0) + Math.round((Number(offerPrice) || 0) * 0.05)).toLocaleString()} USD</span>
+                  <span className="text-amber-700">+ {commissionRate}% {t("চার্জ:", "Fee:")} ${Math.round((Number(offerPrice) || 0) * (commissionRate / 100)).toLocaleString()}</span>
+                  <span className="text-emerald-700 font-bold">= {t("মোট:", "Total:")} ${((Number(offerPrice) || 0) + Math.round((Number(offerPrice) || 0) * (commissionRate / 100))).toLocaleString()} USD</span>
                 </div>
               </div>
 

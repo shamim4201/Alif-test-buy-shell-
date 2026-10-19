@@ -265,6 +265,11 @@ export interface WebsiteSettings {
   privacyPolicy: string;
   refundPolicy: string;
   safetyProtocol: string;
+  marketplaceGuide?: string;
+  securityStandardTitle?: string;
+  securityStandardDescription?: string;
+  securityStandardBadge?: string;
+  footerDisclaimer?: string;
 }
 
 export interface NotificationItem {

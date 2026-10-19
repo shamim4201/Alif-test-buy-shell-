@@ -23,9 +23,9 @@ function MainApp() {
 
   // Legal Modal State
   const [legalModalOpen, setLegalModalOpen] = useState(false);
-  const [legalInitialTab, setLegalInitialTab] = useState<'tos' | 'privacy' | 'refund' | 'safety'>('tos');
+  const [legalInitialTab, setLegalInitialTab] = useState<'tos' | 'privacy' | 'refund' | 'safety' | 'marketplace'>('tos');
 
-  const handleOpenLegal = (tab: 'tos' | 'privacy' | 'refund' | 'safety') => {
+  const handleOpenLegal = (tab: 'tos' | 'privacy' | 'refund' | 'safety' | 'marketplace') => {
     setLegalInitialTab(tab);
     setLegalModalOpen(true);
   };

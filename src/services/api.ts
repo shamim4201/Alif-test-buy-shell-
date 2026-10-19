@@ -23,6 +23,9 @@ export function setStoredToken(token: string | null) {
   }
 }
 
+// Detect if static hosting / offline environment (e.g. Vercel static build or local file)
+let isOfflineFallbackActive = false;
+
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = getStoredToken();
   const headers = new Headers(options.headers || {});
@@ -37,6 +40,12 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
   const fullUrl = API_BASE_URL ? `${API_BASE_URL.replace(/\/$/, '')}${url}` : url;
   const res = await fetch(fullUrl, { ...options, headers });
+  
+  if (res.status === 404 || res.status === 502 || res.status === 503) {
+    isOfflineFallbackActive = true;
+    throw new Error(`Request failed with status ${res.status}`);
+  }
+
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
@@ -51,18 +60,24 @@ async function callWithFallback<T>(
   apiCall: () => Promise<T>,
   fallbackCall: () => Promise<T>
 ): Promise<T> {
+  if (isOfflineFallbackActive) {
+    return await fallbackCall();
+  }
   try {
     return await apiCall();
   } catch (err: any) {
     const msg = String(err?.message || '');
     if (
+      isOfflineFallbackActive ||
       msg.includes('status 404') ||
       msg.includes('status 502') ||
       msg.includes('status 503') ||
       msg.includes('Failed to fetch') ||
       msg.includes('NetworkError') ||
-      msg.includes('Load failed')
+      msg.includes('Load failed') ||
+      msg.includes('404')
     ) {
+      isOfflineFallbackActive = true;
       return await fallbackCall();
     }
     throw err;
