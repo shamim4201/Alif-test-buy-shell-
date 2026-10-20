@@ -760,7 +760,17 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                       </td>
                       <td className="px-4 py-3.5">
                         <span className="font-black text-slate-900 block">${ord.amount.toLocaleString()}</span>
-                        <span className="text-[10px] text-emerald-600 font-bold block">+${ord.platformFee} Fee</span>
+                        <div className="text-[10px] space-y-0.5">
+                          <span className="text-amber-700 font-semibold block">
+                            +{t('বায়ার ফি:', 'Buyer:')} ${ord.buyerFee !== undefined ? ord.buyerFee : Math.round(ord.platformFee / 2)}
+                          </span>
+                          <span className="text-rose-600 font-semibold block">
+                            -{t('সেলার ফি:', 'Seller:')} ${ord.sellerFee !== undefined ? ord.sellerFee : Math.round(ord.platformFee / 2)}
+                          </span>
+                          <span className="text-emerald-700 font-black block">
+                            {t('মোট আয়:', 'Net Earned:')} ${ord.platformFee}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-3.5">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
@@ -837,16 +847,27 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                 <Percent className="w-5 h-5" />
               </div>
               <div>
-                <span className="font-black text-emerald-950 block text-xs sm:text-sm">
-                  {t('প্ল্যাটফর্মের বর্তমান কমিশন হার:', 'Active Platform Commission Rate:')}{' '}
-                  <span className="text-emerald-700 font-black text-sm sm:text-base ml-1 px-2.5 py-0.5 rounded-lg bg-emerald-100 border border-emerald-300">
-                    {settingsData?.commissionRate ?? 5}%
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-black text-emerald-950 block text-xs sm:text-sm">
+                    {t('কমিশন মডেল:', 'Commission Model:')}{' '}
+                    <span className="text-emerald-800 font-bold">
+                      {settingsData?.feeDeductionTarget === 'both' || !settingsData?.feeDeductionTarget
+                        ? t('উভয় পক্ষ (বায়ার ও সেলার দুজনের থেকেই কাটা হয়)', 'Both Parties (Buyer & Seller Deducted)')
+                        : settingsData?.feeDeductionTarget === 'buyer'
+                        ? t('শুধুমাত্র বায়ারের থেকে', 'Buyer Only')
+                        : t('শুধুমাত্র সেলারের থেকে', 'Seller Only')}
+                    </span>
                   </span>
-                </span>
+                  <span className="text-emerald-700 font-black text-xs px-2.5 py-0.5 rounded-lg bg-emerald-100 border border-emerald-300">
+                    {settingsData?.feeDeductionTarget === 'both' || !settingsData?.feeDeductionTarget
+                      ? `${settingsData?.buyerFeePercent ?? 2.5}% বায়ার + ${settingsData?.sellerFeePercent ?? 2.5}% সেলার = ${settingsData?.commissionRate ?? 5}% মোট`
+                      : `${settingsData?.commissionRate ?? 5}%`}
+                  </span>
+                </div>
                 <span className="text-[11px] text-slate-600 mt-0.5 block">
                   {t(
-                    'প্রতিটি সফল এসক্রো অর্ডার ও কাস্টডি ফি এই পার্সেন্টেজের ভিত্তিতে স্বয়ংক্রিয়ভাবে অর্জিত হয়।',
-                    'All escrow transactions and custody fees automatically calculate based on this active rate.'
+                    'বায়ারের ডিপোজিট থেকে কাস্টডি ফি এবং সেলারের পেআউট থেকে কমিশন স্বয়ংক্রিয়ভাবে হিসাব হয়ে প্ল্যাটফর্মের নেট লাভ তৈরি হয়।',
+                    'Platform custody fees and seller payout deductions are automatically accounted for.'
                   )}
                 </span>
               </div>
@@ -857,7 +878,7 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
               className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0 text-xs"
             >
               <Settings className="w-3.5 h-3.5" />
-              <span>{t('কমিশন পরিবর্তন বা সেট করুন', 'Change / Set Commission %')}</span>
+              <span>{t('কমিশন ও মডেল পরিবর্তন করুন', 'Configure Commission & Split')}</span>
             </button>
           </div>
 
@@ -1766,112 +1787,342 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                 />
               </div>
 
-              {/* Commission Percentage Suite */}
-              <div className="sm:col-span-2 p-5 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-sky-50/40 border border-emerald-200/90 shadow-xs space-y-4">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-                        <Percent className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-black text-emerald-950">
-                          {t('আপনার প্ল্যাটফর্ম ফি / এসক্রো কমিশন পার্সেন্টেজ', 'Your Platform Escrow Commission Percentage')}
-                        </h4>
-                        <span className="text-[11px] text-emerald-800 font-semibold block">
-                          {t('বর্তমান সক্রিয় কমিশন হার:', 'Current Active Rate:')}{' '}
-                          <strong className="text-emerald-700 font-black text-xs px-2 py-0.5 rounded-md bg-emerald-100 border border-emerald-300">
-                            {settingsData?.commissionRate ?? 5}%
-                          </strong>
+              {/* Dual Commission & Percentage Split Studio */}
+              <div className="sm:col-span-2 p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-sky-50/40 border-2 border-emerald-300 shadow-sm space-y-5">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                      <Percent className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black text-emerald-950 flex items-center gap-2">
+                        <span>{t('এসক্রো কমিশন ও ফি কর্তন ব্যবস্থা (Commission Split Policy)', 'Escrow Commission & Fee Split Policy')}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">
+                          {t('লাইভ কনফিগারেশন', 'Live Setting')}
+                        </span>
+                      </h4>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        {t(
+                          'কমিশন কার থেকে কাটা হবে (বায়ার, সেলার নাকি দুজনের থেকেই) তা নিচে নির্বাচন করুন এবং শতকরা হার সেট করুন।',
+                          'Select who pays the commission (Buyer, Seller, or Both) and set the percentage rate for each.'
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-left sm:text-right shrink-0">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">{t('মোট প্ল্যাটফর্ম আয়:', 'Total Platform Fee:')}</span>
+                    <span className="text-lg font-black text-emerald-700">
+                      {(() => {
+                        const target = settingsData?.feeDeductionTarget || 'both';
+                        const bRate = settingsData?.buyerFeePercent !== undefined && settingsData?.buyerFeePercent !== null ? settingsData.buyerFeePercent : (target === 'seller' ? 0 : 2.5);
+                        const sRate = settingsData?.sellerFeePercent !== undefined && settingsData?.sellerFeePercent !== null ? settingsData.sellerFeePercent : (target === 'buyer' ? 0 : 2.5);
+                        return target === 'both' ? `${bRate + sRate}%` : `${settingsData?.commissionRate ?? 5}%`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 1. Who pays? Deduction Target Selector */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-black text-slate-800 uppercase tracking-wider">
+                    {t('১. কমিশন কার থেকে কাটা হবে? (Fee Deduction Model):', '1. Who pays the commission? (Fee Deduction Model):')}
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {/* Option A: BOTH (Recommended) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettingsData(prev => {
+                          if (!prev) return null;
+                          const b = prev.buyerFeePercent ?? 2.5;
+                          const s = prev.sellerFeePercent ?? 2.5;
+                          return {
+                            ...prev,
+                            feeDeductionTarget: 'both',
+                            buyerFeePercent: b,
+                            sellerFeePercent: s,
+                            commissionRate: Number((b + s).toFixed(2))
+                          };
+                        });
+                      }}
+                      className={`p-3.5 rounded-xl border-2 text-left transition cursor-pointer flex flex-col justify-between ${
+                        (settingsData?.feeDeductionTarget || 'both') === 'both'
+                          ? 'border-emerald-500 bg-white shadow-md ring-2 ring-emerald-400/20'
+                          : 'border-slate-200 bg-white/70 hover:border-emerald-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-xs text-slate-900">
+                          {t('দুজনের থেকেই কাটা হবে', 'Both Buyer & Seller')}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black">
+                          {t('সুপারিশকৃত', 'Recommended')}
                         </span>
                       </div>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                      {t(
-                        'আপনি প্রতিটি চ্যানেল বা অ্যাকাউন্ট বিক্রি থেকে কত পার্সেন্ট কমিশন নিজের কাছে রাখবেন তা এখানে লিখুন বা বাটন ক্লিক করে সেট করুন। নিচে "সংরক্ষণ করুন" বাটনে চাপ দিলেই এই নতুন কমিশন হার পুরো সাইটে চালু হয়ে যাবে।',
-                        'Configure what percentage of each account sale is retained as your platform fee. Click the Save button below to apply across all buyer checkouts and escrow orders.'
-                      )}
-                    </p>
+                      <p className="text-[11px] text-slate-600 mt-1.5 leading-relaxed">
+                        {t(
+                          'বায়ার অতিরিক্ত কাস্টডি ফি দেবেন এবং সেলারের বিক্রয়মূল্য থেকে কমিশন কাটা হবে।',
+                          'Buyer pays custody fee, and seller pays commission from payout.'
+                        )}
+                      </p>
+                    </button>
+
+                    {/* Option B: Buyer Only */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettingsData(prev => {
+                          if (!prev) return null;
+                          const rate = prev.buyerFeePercent || prev.commissionRate || 5;
+                          return {
+                            ...prev,
+                            feeDeductionTarget: 'buyer',
+                            buyerFeePercent: rate,
+                            sellerFeePercent: 0,
+                            commissionRate: rate
+                          };
+                        });
+                      }}
+                      className={`p-3.5 rounded-xl border-2 text-left transition cursor-pointer flex flex-col justify-between ${
+                        settingsData?.feeDeductionTarget === 'buyer'
+                          ? 'border-emerald-500 bg-white shadow-md ring-2 ring-emerald-400/20'
+                          : 'border-slate-200 bg-white/70 hover:border-emerald-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-xs text-slate-900">
+                          {t('শুধুমাত্র বায়ারের থেকে', 'Buyer Only')}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-1.5 leading-relaxed">
+                        {t(
+                          'বায়ার দামের সাথে অতিরিক্ত ফি দেবেন, সেলার তার সম্পূর্ণ বিক্রয়মূল্য পাবেন।',
+                          'Buyer pays total fee on top. Seller gets 100% of asking price.'
+                        )}
+                      </p>
+                    </button>
+
+                    {/* Option C: Seller Only */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettingsData(prev => {
+                          if (!prev) return null;
+                          const rate = prev.sellerFeePercent || prev.commissionRate || 5;
+                          return {
+                            ...prev,
+                            feeDeductionTarget: 'seller',
+                            buyerFeePercent: 0,
+                            sellerFeePercent: rate,
+                            commissionRate: rate
+                          };
+                        });
+                      }}
+                      className={`p-3.5 rounded-xl border-2 text-left transition cursor-pointer flex flex-col justify-between ${
+                        settingsData?.feeDeductionTarget === 'seller'
+                          ? 'border-emerald-500 bg-white shadow-md ring-2 ring-emerald-400/20'
+                          : 'border-slate-200 bg-white/70 hover:border-emerald-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-xs text-slate-900">
+                          {t('শুধুমাত্র সেলারের থেকে', 'Seller Only')}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-1.5 leading-relaxed">
+                        {t(
+                          'বায়ার শুধু মূল দাম দেবেন, সেলারের পেআউট থেকে কমিশন কর্তন করা হবে।',
+                          'Buyer pays exact price. Commission deducted from seller payout.'
+                        )}
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Percentage Rates Configuration */}
+                <div className="p-4 rounded-xl bg-white border border-emerald-200/90 shadow-2xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                      {t('২. শতকরা হার (% Rate) নির্ধারণ করুন:', '2. Configure Percentage (%):')}
+                    </span>
+                    {(settingsData?.feeDeductionTarget || 'both') === 'both' && (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-bold text-slate-500">{t('উভয় পক্ষের কুইক স্প্লিট:', 'Quick Splits:')}</span>
+                        {[
+                          { label: '১.৫% + ১.৫% = ৩%', b: 1.5, s: 1.5 },
+                          { label: '২.৫% + ২.৫% = ৫%', b: 2.5, s: 2.5 },
+                          { label: '৩.৫% + ৩.৫% = ৭%', b: 3.5, s: 3.5 },
+                          { label: '৫% + ৫% = ১০%', b: 5, s: 5 }
+                        ].map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              setSettingsData(prev => prev ? {
+                                ...prev,
+                                feeDeductionTarget: 'both',
+                                buyerFeePercent: preset.b,
+                                sellerFeePercent: preset.s,
+                                commissionRate: preset.b + preset.s
+                              } : null);
+                            }}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-pointer transition"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Preset quick buttons */}
-                  <div className="flex flex-col items-start lg:items-end gap-1.5 shrink-0">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      {t('জনপ্রিয় কমিশন হার (ক্লিক করুন):', 'Quick Presets:')}
-                    </span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {[0, 2.5, 5, 7.5, 10, 15].map((rate) => (
-                        <button
-                          key={rate}
-                          type="button"
-                          onClick={() => setSettingsData(prev => prev ? { ...prev, commissionRate: rate } : null)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
-                            (settingsData?.commissionRate ?? 5) === rate
-                              ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400'
-                              : 'bg-white border border-slate-200 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/60'
-                          }`}
-                        >
-                          {rate}%
-                        </button>
-                      ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Buyer Rate */}
+                    <div className={`p-3 rounded-xl border transition ${
+                      settingsData?.feeDeductionTarget === 'seller' ? 'opacity-40 bg-slate-50 border-slate-200' : 'bg-emerald-50/50 border-emerald-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-black text-emerald-950 flex items-center gap-1">
+                          <span>{t('বায়ার ফি হার (% Buyer Custody Fee)', 'Buyer Custody Fee (%)')}</span>
+                        </label>
+                        <span className="text-xs font-black text-emerald-700">
+                          {settingsData?.feeDeductionTarget === 'seller' ? '০% (অক্রিয়)' : `${settingsData?.buyerFeePercent ?? 2.5}%`}
+                        </span>
+                      </div>
+                      <div className="relative mt-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max="25"
+                          step="0.1"
+                          disabled={settingsData?.feeDeductionTarget === 'seller'}
+                          value={settingsData?.feeDeductionTarget === 'seller' ? 0 : (settingsData?.buyerFeePercent ?? 2.5)}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setSettingsData(prev => {
+                              if (!prev) return null;
+                              const s = prev.feeDeductionTarget === 'both' ? (prev.sellerFeePercent ?? 2.5) : 0;
+                              return {
+                                ...prev,
+                                buyerFeePercent: val,
+                                commissionRate: Number((val + s).toFixed(2))
+                              };
+                            });
+                          }}
+                          className="w-full px-3 py-2 pr-8 rounded-xl bg-white border border-emerald-300 text-sm font-black text-emerald-950 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                        />
+                        <span className="absolute right-3 top-2.5 text-xs font-bold text-emerald-700">%</span>
+                      </div>
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        {t('বায়ার অ্যাকাউন্ট কেনার সময় এই শতাংশ অতিরিক্ত কাস্টডি চার্জ হিসেবে জমা দেবেন।', 'Buyer deposits this percentage as escrow custody fee.')}
+                      </span>
+                    </div>
+
+                    {/* Seller Rate */}
+                    <div className={`p-3 rounded-xl border transition ${
+                      settingsData?.feeDeductionTarget === 'buyer' ? 'opacity-40 bg-slate-50 border-slate-200' : 'bg-rose-50/40 border-rose-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-black text-rose-950 flex items-center gap-1">
+                          <span>{t('সেলার কমিশন হার (% Seller Commission)', 'Seller Commission (%)')}</span>
+                        </label>
+                        <span className="text-xs font-black text-rose-700">
+                          {settingsData?.feeDeductionTarget === 'buyer' ? '০% (অক্রিয়)' : `${settingsData?.sellerFeePercent ?? 2.5}%`}
+                        </span>
+                      </div>
+                      <div className="relative mt-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max="25"
+                          step="0.1"
+                          disabled={settingsData?.feeDeductionTarget === 'buyer'}
+                          value={settingsData?.feeDeductionTarget === 'buyer' ? 0 : (settingsData?.sellerFeePercent ?? 2.5)}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setSettingsData(prev => {
+                              if (!prev) return null;
+                              const b = prev.feeDeductionTarget === 'both' ? (prev.buyerFeePercent ?? 2.5) : 0;
+                              return {
+                                ...prev,
+                                sellerFeePercent: val,
+                                commissionRate: Number((b + val).toFixed(2))
+                              };
+                            });
+                          }}
+                          className="w-full px-3 py-2 pr-8 rounded-xl bg-white border border-rose-300 text-sm font-black text-rose-950 focus:outline-hidden focus:ring-2 focus:ring-rose-500"
+                        />
+                        <span className="absolute right-3 top-2.5 text-xs font-bold text-rose-700">%</span>
+                      </div>
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        {t('সফল হস্তান্তর শেষে সেলারকে টাকা ছাড় করার সময় এই শতাংশ কমিশন কর্তন হবে।', 'Deducted from seller payout upon successful ownership release.')}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-emerald-200/60 items-center">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                      {t('কাস্টম শতকরা হার ইনপুট (% পার্সেন্টেজ লিখুন):', 'Set Custom Percentage (Input Any %):')}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="0"
-                        max="50"
-                        step="0.1"
-                        value={settingsData?.commissionRate ?? 5}
-                        onChange={(e) => setSettingsData(prev => prev ? { ...prev, commissionRate: Number(e.target.value) } : null)}
-                        className="w-full px-4 py-2.5 pr-10 rounded-xl bg-white border border-emerald-300 text-base font-black text-emerald-950 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 shadow-2xs"
-                        placeholder="5"
-                      />
-                      <span className="absolute right-3.5 top-3 text-sm font-black text-emerald-700">%</span>
-                    </div>
-                    <span className="text-[11px] text-slate-500 mt-1.5 block">
-                      {t(
-                        'পরামর্শ: অধিকাংশ এসক্রো প্ল্যাটফর্ম ৩% থেকে ১০% কমিশন রাখে। ০% দিলে প্ল্যাটফর্মে কোনো চার্জ কাটা হবে না।',
-                        'Recommendation: Most escrow marketplaces charge 3% to 10%. Setting 0% removes all platform fees.'
-                      )}
-                    </span>
-                  </div>
+                {/* 3. Live 3-Way Split Simulation Box */}
+                {(() => {
+                  const target = settingsData?.feeDeductionTarget || 'both';
+                  const bRate = target === 'seller' ? 0 : (settingsData?.buyerFeePercent ?? 2.5);
+                  const sRate = target === 'buyer' ? 0 : (settingsData?.sellerFeePercent ?? 2.5);
+                  const examplePrice = 1000;
+                  const bFee = Math.round(examplePrice * (bRate / 100));
+                  const sFee = Math.round(examplePrice * (sRate / 100));
+                  const bTotal = examplePrice + bFee;
+                  const sPayout = Math.max(0, examplePrice - sFee);
+                  const totalProfit = bFee + sFee;
 
-                  {/* Live Simulation Calculator Box */}
-                  <div className="p-3.5 rounded-2xl bg-white border border-emerald-200/90 shadow-2xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-emerald-900 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                        <span>{t('লাইভ আয়ের হিসাব উদাহরণ', 'Live Revenue Simulation')}</span>
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                        {settingsData?.commissionRate ?? 5}% Rate
-                      </span>
-                    </div>
+                  return (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-white via-slate-50 to-white border border-emerald-300 shadow-2xs space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 text-amber-500" />
+                          <span>{t('লাইভ দ্বিমুখী স্প্লিট সিমুলেটর ($১,০০০ ডলারের ডিলে হিসাব)', 'Live 3-Way Split Simulation ($1,000 Deal)')}</span>
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black">
+                          {target === 'both' ? t('উভয় পক্ষ কর্তন সক্রিয়', 'Dual Split Active') : target}
+                        </span>
+                      </div>
 
-                    <div className="space-y-1 text-xs">
-                      <div className="flex justify-between text-slate-600">
-                        <span>{t('একটি চ্যানেলের দাম:', 'Example Channel Value:')}</span>
-                        <span className="font-bold text-slate-900">$1,000 (৳১,২২,০০০)</span>
-                      </div>
-                      <div className="flex justify-between text-emerald-700 font-bold">
-                        <span>{t(`আপনার কমিশন আয় (${settingsData?.commissionRate ?? 5}%):`, `Your Commission (${settingsData?.commissionRate ?? 5}%):`)}</span>
-                        <span className="font-black text-emerald-600">+${Math.round(1000 * ((settingsData?.commissionRate ?? 5) / 100))} (৳{Math.round(1000 * ((settingsData?.commissionRate ?? 5) / 100) * 122).toLocaleString()})</span>
-                      </div>
-                      <div className="flex justify-between text-slate-800 font-black border-t border-slate-100 pt-1">
-                        <span>{t('বায়ার সর্বমোট জমা দেবেন:', 'Buyer Total Deposited:')}</span>
-                        <span className="text-emerald-700">${1000 + Math.round(1000 * ((settingsData?.commissionRate ?? 5) / 100))}</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                        {/* Buyer Pays */}
+                        <div className="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                            {t('১. বায়ার সর্বমোট দেবেন:', '1. Buyer Deposits:')}
+                          </span>
+                          <span className="text-sm font-black text-slate-900 block">${bTotal.toLocaleString()}</span>
+                          <span className="text-[10px] text-amber-700 block">
+                            ${examplePrice} + ${bFee} ({bRate}% {t('কাস্টডি ফি', 'fee')})
+                          </span>
+                        </div>
+
+                        {/* Seller Receives */}
+                        <div className="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                            {t('২. সেলার নেট পাবেন:', '2. Seller Payout:')}
+                          </span>
+                          <span className="text-sm font-black text-slate-900 block">${sPayout.toLocaleString()}</span>
+                          <span className="text-[10px] text-rose-600 block">
+                            ${examplePrice} - ${sFee} ({sRate}% {t('কমিশন কর্তন', 'commission')})
+                          </span>
+                        </div>
+
+                        {/* Platform Earns */}
+                        <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 space-y-1">
+                          <span className="text-[10px] uppercase font-black text-emerald-800 block">
+                            {t('৩. প্ল্যাটফর্মের মোট লাভ:', '3. Platform Net Profit:')}
+                          </span>
+                          <span className="text-sm font-black text-emerald-700 block">+${totalProfit.toLocaleString()}</span>
+                          <span className="text-[10px] text-emerald-700 block font-semibold">
+                            ${bFee} (বায়ার) + ${sFee} (সেলার)
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
 
               <div>

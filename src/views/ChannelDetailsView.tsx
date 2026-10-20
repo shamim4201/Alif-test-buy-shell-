@@ -61,7 +61,17 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
   const [offerPrice, setOfferPrice] = useState<number | string>('');
   const [buyerGoogleEmail, setBuyerGoogleEmail] = useState('');
   const [submittingOrder, setSubmittingOrder] = useState(false);
-  const [commissionRate, setCommissionRate] = useState<number>(5);
+  const [feeSettings, setFeeSettings] = useState<{
+    target: 'both' | 'buyer' | 'seller';
+    buyerRate: number;
+    sellerRate: number;
+    totalRate: number;
+  }>({
+    target: 'both',
+    buyerRate: 2.5,
+    sellerRate: 2.5,
+    totalRate: 5
+  });
 
   useEffect(() => {
     async function loadData() {
@@ -75,9 +85,13 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
         setSeller(res.seller);
         setReviews(res.reviews || []);
         setOfferPrice(res.channel.askingPrice);
-        if (settingsRes?.settings?.commissionRate !== undefined && settingsRes?.settings?.commissionRate !== null) {
-          setCommissionRate(Number(settingsRes.settings.commissionRate));
-        }
+
+        const st = settingsRes?.settings || {};
+        const target = (st.feeDeductionTarget as 'both' | 'buyer' | 'seller') || 'both';
+        const total = Number(st.commissionRate) || 5;
+        const buyer = target === 'seller' ? 0 : (st.buyerFeePercent !== undefined && st.buyerFeePercent !== null ? Number(st.buyerFeePercent) : (target === 'both' ? total / 2 : total));
+        const seller = target === 'buyer' ? 0 : (st.sellerFeePercent !== undefined && st.sellerFeePercent !== null ? Number(st.sellerFeePercent) : (target === 'both' ? total / 2 : total));
+        setFeeSettings({ target, buyerRate: buyer, sellerRate: seller, totalRate: total });
       } catch (err: any) {
         showToast(err.message || t('অ্যাকাউন্টের তথ্য লোড করতে ব্যর্থ হয়েছে', 'Failed to load channel details'), 'error');
       } finally {
@@ -87,9 +101,12 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
     loadData();
 
     const handleSettingsUpdate = (e: any) => {
-      if (e?.detail?.commissionRate !== undefined) {
-        setCommissionRate(Number(e.detail.commissionRate));
-      }
+      const st = e?.detail || {};
+      const target = (st.feeDeductionTarget as 'both' | 'buyer' | 'seller') || 'both';
+      const total = Number(st.commissionRate) || 5;
+      const buyer = target === 'seller' ? 0 : (st.buyerFeePercent !== undefined && st.buyerFeePercent !== null ? Number(st.buyerFeePercent) : (target === 'both' ? total / 2 : total));
+      const seller = target === 'buyer' ? 0 : (st.sellerFeePercent !== undefined && st.sellerFeePercent !== null ? Number(st.sellerFeePercent) : (target === 'both' ? total / 2 : total));
+      setFeeSettings({ target, buyerRate: buyer, sellerRate: seller, totalRate: total });
     };
     window.addEventListener('website-settings-updated', handleSettingsUpdate);
     return () => window.removeEventListener('website-settings-updated', handleSettingsUpdate);
@@ -562,15 +579,35 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                 </div>
               </div>
 
-              {/* Side-by-side Charge Calculation */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
-                <span className="text-[11px] text-slate-500 uppercase tracking-wider block font-semibold">
-                  {t("মূল্য ও প্ল্যাটফর্ম চার্জ ব্রেকডাউন:", "Price & Platform Charge Breakdown:")}
+              {/* Side-by-side Dual Charge Calculation */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+                <span className="text-[11px] text-slate-500 uppercase tracking-wider block font-semibold flex items-center justify-between">
+                  <span>{t("মূল্য ও এসক্রো চার্জ ব্রেকডাউন:", "Price & Escrow Charge Breakdown:")}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold">
+                    {feeSettings.target === 'both' ? t('উভয় পক্ষ ফি মডেল', 'Dual Fee Model') : feeSettings.target}
+                  </span>
                 </span>
-                <div className="flex flex-wrap items-center justify-between gap-1 pt-1 border-t border-slate-200 font-bold">
-                  <span className="text-slate-900">{formatPrice(channel.askingPrice)} ({t("মূল্য", "Price")})</span>
-                  <span className="text-amber-700 font-semibold">+ {formatPrice(Math.round(channel.askingPrice * (commissionRate / 100)))} ({commissionRate}% {t("চার্জ", "Fee")})</span>
-                  <span className="text-emerald-700">= {formatPrice(channel.askingPrice + Math.round(channel.askingPrice * (commissionRate / 100)))} ({t("সর্বমোট", "Total")})</span>
+                <div className="space-y-1.5 pt-1 border-t border-slate-200">
+                  <div className="flex justify-between text-slate-700">
+                    <span>{t("চ্যানেলের মূল দাম:", "Channel Asset Price:")}</span>
+                    <span className="font-bold text-slate-900">{formatPrice(channel.askingPrice)}</span>
+                  </div>
+                  <div className="flex justify-between text-amber-700 font-medium">
+                    <span>{t(`বায়ার কাস্টডি ফি (${feeSettings.buyerRate}%):`, `Buyer Custody Fee (${feeSettings.buyerRate}%):`)}</span>
+                    <span className="font-bold">+ {formatPrice(Math.round(channel.askingPrice * (feeSettings.buyerRate / 100)))}</span>
+                  </div>
+                  <div className="flex justify-between font-black text-slate-900 pt-1 border-t border-slate-200 text-sm">
+                    <span className="text-emerald-700">{t("বায়ার মোট জমা দেবেন:", "Buyer Total Escrow:")}</span>
+                    <span className="text-emerald-700">
+                      {formatPrice(channel.askingPrice + Math.round(channel.askingPrice * (feeSettings.buyerRate / 100)))}
+                    </span>
+                  </div>
+                  {feeSettings.sellerRate > 0 && (
+                    <div className="flex justify-between text-[11px] text-slate-500 pt-1 border-t border-dashed border-slate-200">
+                      <span>{t(`সেলার কমিশন কর্তন (${feeSettings.sellerRate}%):`, `Seller Commission (${feeSettings.sellerRate}%):`)}</span>
+                      <span className="text-rose-600 font-medium">- {formatPrice(Math.round(channel.askingPrice * (feeSettings.sellerRate / 100)))}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -694,10 +731,24 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                   onChange={(e) => setOfferPrice(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-hidden focus:border-red-500"
                 />
-                <div className="flex flex-wrap items-center justify-between gap-1 text-xs font-semibold pt-1.5 text-slate-600">
-                  <span>{t("অ্যাকাউন্ট মূল্য:", "Base Price:")} ${(Number(offerPrice) || 0).toLocaleString()}</span>
-                  <span className="text-amber-700">+ {commissionRate}% {t("চার্জ:", "Fee:")} ${Math.round((Number(offerPrice) || 0) * (commissionRate / 100)).toLocaleString()}</span>
-                  <span className="text-emerald-700 font-bold">= {t("মোট:", "Total:")} ${((Number(offerPrice) || 0) + Math.round((Number(offerPrice) || 0) * (commissionRate / 100))).toLocaleString()} USD</span>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5 text-slate-700 mt-2">
+                  <div className="flex justify-between">
+                    <span>{t("অ্যাকাউন্টের মূল্য:", "Base Price:")}</span>
+                    <span className="font-bold text-slate-900">${(Number(offerPrice) || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-amber-700 font-medium">
+                    <span>{t(`বায়ার কাস্টডি ফি (${feeSettings.buyerRate}%):`, `Buyer Custody Fee (${feeSettings.buyerRate}%):`)}</span>
+                    <span className="font-bold">+${Math.round((Number(offerPrice) || 0) * (feeSettings.buyerRate / 100)).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between font-black text-emerald-800 pt-1 border-t border-slate-200 text-sm">
+                    <span>{t("মোট জমা দিতে হবে:", "Total Escrow Deposit:")}</span>
+                    <span>${((Number(offerPrice) || 0) + Math.round((Number(offerPrice) || 0) * (feeSettings.buyerRate / 100))).toLocaleString()} USD</span>
+                  </div>
+                  {feeSettings.target === 'both' && (
+                    <p className="text-[10px] text-slate-500 pt-1 border-t border-dashed border-slate-200">
+                      {t(`* এই প্ল্যাটফর্মের সুরক্ষার জন্য বায়ার (${feeSettings.buyerRate}%) এবং সেলার (${feeSettings.sellerRate}%) দুজনের থেকেই ফি কার্যকর করা হয়।`, `* Platform splits safety & escrow protection fees equally between buyer (${feeSettings.buyerRate}%) and seller (${feeSettings.sellerRate}%).`)}
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -315,10 +315,36 @@ export const clientDbService = {
     if (!channel) throw new Error('Channel not found');
 
     const price = payload.offeredPrice || channel.askingPrice || (channel as any).price || 50000;
-    const commissionRate = (db.settings?.commissionRate !== undefined && db.settings?.commissionRate !== null)
-      ? Number(db.settings.commissionRate)
-      : 5;
-    const platformFee = Math.round(price * (commissionRate / 100));
+    const settings = db.settings || {};
+    const target = settings.feeDeductionTarget || 'both';
+
+    let buyerRate = 2.5;
+    let sellerRate = 2.5;
+
+    if (target === 'both') {
+      buyerRate = settings.buyerFeePercent !== undefined && settings.buyerFeePercent !== null
+        ? Number(settings.buyerFeePercent)
+        : (settings.commissionRate ? Number(settings.commissionRate) / 2 : 2.5);
+      sellerRate = settings.sellerFeePercent !== undefined && settings.sellerFeePercent !== null
+        ? Number(settings.sellerFeePercent)
+        : (settings.commissionRate ? Number(settings.commissionRate) / 2 : 2.5);
+    } else if (target === 'buyer') {
+      buyerRate = settings.buyerFeePercent !== undefined && settings.buyerFeePercent !== null
+        ? Number(settings.buyerFeePercent)
+        : (settings.commissionRate ? Number(settings.commissionRate) : 5);
+      sellerRate = 0;
+    } else {
+      buyerRate = 0;
+      sellerRate = settings.sellerFeePercent !== undefined && settings.sellerFeePercent !== null
+        ? Number(settings.sellerFeePercent)
+        : (settings.commissionRate ? Number(settings.commissionRate) : 5);
+    }
+
+    const buyerFee = Math.round(price * (buyerRate / 100));
+    const sellerFee = Math.round(price * (sellerRate / 100));
+    const platformFee = buyerFee + sellerFee;
+    const totalAmount = price + buyerFee;
+    const sellerPayoutAmount = Math.max(0, price - sellerFee);
 
     const newOrder: Order = {
       id: `ord_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -334,15 +360,18 @@ export const clientDbService = {
       sellerEmail: 'seller@example.com',
       amount: price,
       platformFee,
-      totalAmount: price + platformFee,
+      buyerFee,
+      sellerFee,
+      sellerPayoutAmount,
+      totalAmount,
       status: 'pending',
       buyerGoogleEmail: payload.buyerGoogleEmail,
       transferSteps: [
-        { step: 1, title: 'Deposit Escrow Funds', description: 'Buyer deposits the total amount into the Alif Trust escrow account.', completed: false },
+        { step: 1, title: 'Deposit Escrow Funds', description: `Buyer deposits the total amount of $${totalAmount.toLocaleString()} (including $${buyerFee.toLocaleString()} escrow fee) into the Alif Trust escrow account.`, completed: false },
         { step: 2, title: 'Ownership Invitation', description: 'Seller invites buyer Google account as Manager / Primary Owner.', completed: false },
         { step: 3, title: '7-Day Waiting & Security Audit', description: 'YouTube mandatory primary ownership probation period monitored by admin.', completed: false },
         { step: 4, title: 'Primary Ownership Transfer', description: 'Seller transfers Primary Ownership to buyer and leaves channel.', completed: false },
-        { step: 5, title: 'Disbursement of Funds', description: 'Admin releases payment to seller minus escrow fee.', completed: false }
+        { step: 5, title: 'Disbursement of Funds', description: `Admin releases net payment of $${sellerPayoutAmount.toLocaleString()} to seller (minus $${sellerFee.toLocaleString()} seller commission).`, completed: false }
       ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()

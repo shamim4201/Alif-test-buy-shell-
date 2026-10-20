@@ -112,6 +112,9 @@ export interface Order {
   sellerEmail: string;
   amount: number;
   platformFee: number;
+  buyerFee?: number;
+  sellerFee?: number;
+  sellerPayoutAmount?: number;
   totalAmount: number;
   status: OrderStatus;
   paymentDetails?: {
@@ -267,8 +270,10 @@ export interface WebsiteSettings {
   siteName: string;
   siteTagline: string;
   logoUrl?: string;
-  primaryColor: string;
-  commissionRate: number; // e.g., 5%
+  commissionRate: number; // e.g., 5% total or legacy
+  feeDeductionTarget?: 'both' | 'buyer' | 'seller'; // 'both' = উভয় পক্ষ (বায়ার ও সেলার)
+  buyerFeePercent?: number; // e.g., 2.5%
+  sellerFeePercent?: number; // e.g., 2.5%
   minimumListingPrice: number;
   featuredListingFee: number;
   maintenanceMode: boolean;

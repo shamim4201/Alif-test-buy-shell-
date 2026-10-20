@@ -328,34 +328,43 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
               <span className="text-xs text-slate-500 uppercase tracking-wider block font-bold">
                 {t("আর্থিক হিসাব (Financial Summary)", "Financial Summary")}
               </span>
-              <div className="p-2.5 rounded-xl bg-white border border-slate-200 my-2 shadow-2xs">
-                <div className="flex flex-wrap items-center justify-between gap-1 text-xs font-bold text-slate-800">
-                  <span>{t("মূল্য: ", "Price: ")}{formatPrice(order.amount)}</span>
-                  <span className="text-amber-700">+ {t("চার্জ: ", "Fee: ")}{formatPrice(order.platformFee)}</span>
-                  <span className="text-emerald-700">= {t("মোট: ", "Total: ")}{formatPrice(order.totalAmount)}</span>
-                </div>
-              </div>
-              <div className="text-[11px] text-slate-600 space-y-0.5">
-                <div className="flex justify-between">
-                  <span>{t("নেট দাম:", "Net Price:")}</span>
-                  <span className="text-slate-800 font-medium">{formatPrice(order.amount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>
-                    {t(
-                      `কাস্টডি ফি (${order.amount > 0 ? (order.platformFee / order.amount * 100).toFixed(order.platformFee % order.amount === 0 ? 0 : 1) : 5}%):`,
-                      `Custody Fee (${order.amount > 0 ? (order.platformFee / order.amount * 100).toFixed(order.platformFee % order.amount === 0 ? 0 : 1) : 5}%):`
-                    )}
-                  </span>
-                  <span className="text-amber-700 font-medium">+ {formatPrice(order.platformFee)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-200">
-                  <span>{t("সর্বমোট এস্ক্রো পরিমাণ:", "Total Escrow Amount:")}</span>
-                  <span className="text-emerald-700 font-bold">{formatPrice(order.totalAmount)}</span>
-                </div>
-                <div className="text-[10px] text-slate-500 text-right">
-                  ≈ {currency === 'USD' ? formatBdt(order.totalAmount) : formatUsd(order.totalAmount)}
-                </div>
+              <div className="p-2.5 rounded-xl bg-white border border-slate-200 my-2 shadow-2xs space-y-1">
+                {(() => {
+                  const bFee = order.buyerFee !== undefined ? order.buyerFee : (order.totalAmount > order.amount ? (order.totalAmount - order.amount) : Math.round(order.platformFee / 2));
+                  const sFee = order.sellerFee !== undefined ? order.sellerFee : (order.platformFee - bFee);
+                  const sPayout = order.sellerPayoutAmount ?? Math.max(0, order.amount - sFee);
+                  const bRate = order.amount > 0 ? ((bFee / order.amount) * 100).toFixed(1).replace('.0', '') : '2.5';
+                  const sRate = order.amount > 0 ? ((sFee / order.amount) * 100).toFixed(1).replace('.0', '') : '2.5';
+
+                  return (
+                    <div className="text-[11px] text-slate-600 space-y-1">
+                      <div className="flex justify-between">
+                        <span>{t("চ্যানেলের মূল্য:", "Deal Asset Value:")}</span>
+                        <span className="text-slate-800 font-bold">{formatPrice(order.amount)}</span>
+                      </div>
+                      <div className="flex justify-between text-amber-700">
+                        <span>{t(`বায়ার এসক্রো ফি (+${bRate}%):`, `Buyer Escrow Fee (+${bRate}%):`)}</span>
+                        <span className="font-semibold">+{formatPrice(bFee)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-slate-900 border-t border-slate-100 pt-0.5">
+                        <span className="text-emerald-700">{t("বায়ারের সর্বমোট জমা:", "Buyer Total Deposited:")}</span>
+                        <span className="text-emerald-700 font-black">{formatPrice(order.totalAmount)}</span>
+                      </div>
+                      <div className="flex justify-between text-rose-600 pt-1 border-t border-dashed border-slate-200">
+                        <span>{t(`সেলার কমিশন কর্তন (-${sRate}%):`, `Seller Fee Deducted (-${sRate}%):`)}</span>
+                        <span className="font-semibold">-{formatPrice(sFee)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-slate-900">
+                        <span>{t("সেলারকে প্রদেয় পেআউট:", "Seller Net Payout:")}</span>
+                        <span className="text-slate-900 font-black">{formatPrice(sPayout)}</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-emerald-800 bg-emerald-50/80 px-2 py-0.5 rounded-md font-bold mt-1">
+                        <span>{t("প্ল্যাটফর্মের সর্বমোট আয়:", "Platform Net Revenue:")}</span>
+                        <span>{formatPrice(order.platformFee)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
