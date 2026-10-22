@@ -1599,6 +1599,78 @@ export const SEED_DATA = {
     "bkashMerchantNumber": "01712345678",
     "nagadMerchantNumber": "01812345678",
     "bankDetails": "City Bank Ltd, Account: 120349817201, Branch: Gulshan 2, Dhaka",
+    "usdtTrc20Address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+    "usdtBep20Address": "0x55d398326f99059fF775485246999027B3197955",
+    "customGateways": [
+      {
+        "id": "gw_bkash_merchant",
+        "name": "বিকাশ মার্চেন্ট (bKash Merchant)",
+        "type": "bdt",
+        "category": "mobile_banking",
+        "accountNumber": "01712345678",
+        "accountHolderName": "Alif Trust Media Escrow",
+        "instructions": "বিকাশ অ্যাপ ওপেন করে 'Payment' সিলেক্ট করে টাকা পাঠান। রেফারেন্সে Order ID লিখুন।",
+        "isActive": true
+      },
+      {
+        "id": "gw_nagad_merchant",
+        "name": "নগদ অনলাইন (Nagad Escrow)",
+        "type": "bdt",
+        "category": "mobile_banking",
+        "accountNumber": "01812345678",
+        "accountHolderName": "Alif Trust Media Escrow",
+        "instructions": "নগদ অ্যাপ থেকে Send Money বা Merchant Pay সম্পন্ন করে ট্রানজেকশন আইডি দিন।",
+        "isActive": true
+      },
+      {
+        "id": "gw_city_bank",
+        "name": "সিটি ব্যাংক (City Bank PLC)",
+        "type": "bdt",
+        "category": "bank",
+        "bankName": "City Bank PLC",
+        "accountHolderName": "Alif Sheen Media Group Ltd",
+        "accountNumber": "120349817201",
+        "branchName": "Gulshan-2 Branch, Dhaka",
+        "routingNumber": "225261839",
+        "swiftCode": "CIBLBDDH",
+        "instructions": "অনলাইন ব্যাংকিং (NPSB / BEFTN) বা যেকোনো ব্রাঞ্চ থেকে ডিপোজিট করে ডিপোজিট স্লিপের ছবি ও রেফারেন্স দিন।",
+        "isActive": true
+      },
+      {
+        "id": "gw_islami_bank",
+        "name": "ইসলামী ব্যাংক বাংলাদেশ (Islami Bank)",
+        "type": "bdt",
+        "category": "bank",
+        "bankName": "Islami Bank Bangladesh PLC",
+        "accountHolderName": "Alif Trust Tech Escrow",
+        "accountNumber": "2050145020199201",
+        "branchName": "Motijheel Corporate Branch",
+        "routingNumber": "125273199",
+        "instructions": "Cellfin, i-Banking অথবা ব্রাঞ্চ ডিপোজিট করে ট্রানজেকশন স্লিপের স্ক্রিনশট আপলোড করুন।",
+        "isActive": true
+      },
+      {
+        "id": "gw_usdt_trc20",
+        "name": "USDT - Tron Network (TRC-20)",
+        "type": "usdt",
+        "category": "crypto",
+        "accountNumber": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "accountHolderName": "Official Escrow Vault (Tron)",
+        "instructions": "শুধুমাত্র Tron (TRC-20) নেটওয়ার্কে USDT ট্রান্সফার করুন। পাঠানোর পর ব্লকচেইন TxID দিন।",
+        "isActive": true
+      },
+      {
+        "id": "gw_usdt_bep20",
+        "name": "USDT - BNB Smart Chain (BEP-20)",
+        "type": "usdt",
+        "category": "crypto",
+        "accountNumber": "0x55d398326f99059fF775485246999027B3197955",
+        "accountHolderName": "Official BSC Vault",
+        "instructions": "শুধুমাত্র BNB Smart Chain (BEP-20) নেটওয়ার্কে পাঠান।",
+        "isActive": true
+      }
+    ],
+    "bdtConversionRate": 122,
     "enable2FA": true,
     "termsOfService": "# টার্মস অফ সার্ভিস ও সেলার ওয়ারেন্টি\nআলিফ ট্রাস্ট প্ল্যাটফর্মে স্বাগতম। একাউন্ট তৈরি বা কোনো অর্ডারে অংশগ্রহণের মাধ্যমে আপনি ডিজিটাল মিডিয়া সম্পদ হস্তান্তরের এই আইনি শর্তাবলীতে সম্মতি প্রদান করছেন।\n\n# ১. সেলারের বৈধ ওনারশিপ ওয়ারেন্টি\nপ্রত্যেক সেলার নিশ্চয়তা দেন যে তিনি তালিকাভুক্ত চ্যানেলের একমাত্র বৈধ স্রষ্টা ও স্বত্বাধিকারী। কোনো অপ্রকাশিত কপিরাইট স্ট্রাইক, কমিউনিটি গাইডলাইন লঙ্ঘন বা নকল কৃত্রিম ভিউজ নেই। হস্তান্তরের পর কোনো রিভার্স রিকোয়েস্ট বা হ্যাক দাবি গ্রহণযোগ্য হবে না।\n\n# ২. প্ল্যাটফর্ম বাইপাস নিষেধাজ্ঞা\nক্রেতা ও বিক্রেতা আলিফ ট্রাস্টকে বাইপাস করে সরাসরি যোগাযোগ বা লেনদেন করবেন না। প্ল্যাটফর্মের গ্যারান্টি শুধুমাত্র সিস্টেমের ভেতরের লেনদেনের জন্যই প্রযোজ্য।\n\n# ৩. কাস্টডি ও সার্ভার-ভেরিফাইড পেমেন্ট\nবায়ারের সকল পেমেন্ট প্ল্যাটফর্ম কাস্টডিতে সুরক্ষিত থাকে। বায়ার নিজে ওনারশিপ গ্রহণ নিশ্চিত না করা পর্যন্ত টাকা সুরক্ষিত অবস্থায় রাখা হয়। সফল হস্তান্তরের পর সেলার নির্ধারিত মার্চেন্ট মাধ্যমে পেমেন্ট পাবেন।",
     "privacyPolicy": "# প্রাইভেসি পলিসি ও তথ্য সুরক্ষা\nআলিফ ট্রাস্ট ওনারশিপ হস্তান্তর ও যাচাইকরণের জন্য শুধুমাত্র প্রয়োজনীয় ন্যূনতম তথ্য সংগ্রহ করে। কোনো ব্যক্তিগত তথ্য বাণিজ্যিক উদ্দেশ্যে তৃতীয় পক্ষের নিকট বিক্রি বা শেয়ার করা হয় না।\n\n# ১. অ্যানালিটিক্স ও সংবেদনশীল তথ্য গোপন রাখা\nলিস্টিংয়ের স্ক্রিনশটে সংবেদনশীল আর্থিক তথ্য (যেমন ব্যক্তিগত অ্যাডসেন্স আইডি বা ব্যাংক অ্যাকাউন্ট নম্বর) স্বয়ংক্রিয়ভাবে গোপন রাখা হয়।\n\n# ২. যোগাযোগের গোপনীয়তা\nপ্ল্যাটফর্ম মেসেজিং সিস্টেম শুধুমাত্র প্রতারণা ও স্ক্যাম রোধের উদ্দেশ্যে স্বয়ংক্রিয় সুরক্ষা ফিল্টারের মাধ্যমে পর্যবেক্ষণে থাকে। কোনো ব্যক্তিগত ফোন বা অফ-প্ল্যাটফর্ম লিংক অনুমোদন করা হয় না।\n\n# ৩. ডেটা এনক্রিপশন ও মুছে ফেলার অধিকার\nব্যবহারকারীদের সমস্ত এনআইডি ও কেওয়াইসি তথ্য উচ্চস্তরের ডেটা এনক্রিপশনে সুরক্ষিত থাকে। ব্যবহারকারী চাইলে যেকোনো সময় অ্যাকাউন্ট ও ডেটা অপসারণের আবেদন করতে পারবেন।",

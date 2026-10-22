@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { api } from '../services/api';
 import {
   AdminStats,
   ChannelListing,
@@ -6,6 +7,7 @@ import {
   User,
   Transaction,
   WebsiteSettings,
+  CustomPaymentGateway,
   AdminAuditLog,
   SupportTicket,
   Coupon,
@@ -40,7 +42,16 @@ import {
   FileText,
   Lock,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  Building2,
+  Smartphone,
+  Coins,
+  Copy,
+  Check,
+  Edit2,
+  Image as ImageIcon,
+  ZoomIn,
+  X
 } from 'lucide-react';
 
 export type TabType =
@@ -118,6 +129,7 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
   stats,
   filteredChannels,
   pendingApprovals,
+  orders = [],
   filteredOrders,
   disputedOrders,
   usersList,
@@ -165,6 +177,110 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
   const [activePolicyTab, setActivePolicyTab] = useState<'safety' | 'tos' | 'privacy' | 'refund' | 'marketplace'>('safety');
   const [activePolicyGroup, setActivePolicyGroup] = useState<'policies' | 'security' | 'marketplace'>('policies');
   const [showPolicyPreview, setShowPolicyPreview] = useState(false);
+
+  // Dynamic Gateway and Bank Management States
+  const [gatewayModalOpen, setGatewayModalOpen] = useState(false);
+  const [editingGatewayId, setEditingGatewayId] = useState<string | null>(null);
+  const [gatewayForm, setGatewayForm] = useState<Partial<CustomPaymentGateway>>({
+    name: '',
+    type: 'bdt',
+    category: 'bank',
+    accountNumber: '',
+    accountHolderName: '',
+    bankName: '',
+    branchName: '',
+    routingNumber: '',
+    swiftCode: '',
+    instructions: '',
+    isActive: true
+  });
+  const [gatewayFilterType, setGatewayFilterType] = useState<'all' | 'bdt' | 'usdt'>('all');
+  const [adminProofModalUrl, setAdminProofModalUrl] = useState<string | null>(null);
+
+  const handleOpenAddGateway = (defaultType: 'bdt' | 'usdt' = 'bdt', defaultCategory: 'bank' | 'mobile_banking' | 'crypto' = 'bank') => {
+    setEditingGatewayId(null);
+    setGatewayForm({
+      name: '',
+      type: defaultType,
+      category: defaultCategory,
+      accountNumber: '',
+      accountHolderName: '',
+      bankName: '',
+      branchName: '',
+      routingNumber: '',
+      swiftCode: '',
+      instructions: '',
+      isActive: true
+    });
+    setGatewayModalOpen(true);
+  };
+
+  const handleOpenEditGateway = (gw: CustomPaymentGateway) => {
+    setEditingGatewayId(gw.id);
+    setGatewayForm({ ...gw });
+    setGatewayModalOpen(true);
+  };
+
+  const handleSaveGateway = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!gatewayForm.name?.trim() || !gatewayForm.accountNumber?.trim()) return;
+
+    setSettingsData((prev) => {
+      if (!prev) return prev;
+      const currentGateways = prev.customGateways ? [...prev.customGateways] : [];
+      let updated: CustomPaymentGateway[];
+      if (editingGatewayId) {
+        updated = currentGateways.map((g) =>
+          g.id === editingGatewayId ? ({ ...g, ...gatewayForm, id: g.id } as CustomPaymentGateway) : g
+        );
+      } else {
+        const newGw: CustomPaymentGateway = {
+          id: `gw_${Date.now()}`,
+          name: (gatewayForm.name || '').trim(),
+          type: gatewayForm.type || 'bdt',
+          category: gatewayForm.category || 'bank',
+          accountNumber: (gatewayForm.accountNumber || '').trim(),
+          accountHolderName: gatewayForm.accountHolderName?.trim() || '',
+          bankName: gatewayForm.bankName?.trim() || '',
+          branchName: gatewayForm.branchName?.trim() || '',
+          routingNumber: gatewayForm.routingNumber?.trim() || '',
+          swiftCode: gatewayForm.swiftCode?.trim() || '',
+          instructions: gatewayForm.instructions?.trim() || '',
+          isActive: gatewayForm.isActive ?? true,
+          createdAt: new Date().toISOString()
+        };
+        updated = [newGw, ...currentGateways];
+      }
+      // Persist directly to storage/server
+      api.updateWebsiteSettings({ customGateways: updated }).catch(console.error);
+      return { ...prev, customGateways: updated };
+    });
+
+    setGatewayModalOpen(false);
+  };
+
+  const handleToggleGatewayStatus = (id: string) => {
+    setSettingsData((prev) => {
+      if (!prev || !prev.customGateways) return prev;
+      const updated = prev.customGateways.map((g) =>
+        g.id === id ? { ...g, isActive: !g.isActive } : g
+      );
+      api.updateWebsiteSettings({ customGateways: updated }).catch(console.error);
+      return { ...prev, customGateways: updated };
+    });
+  };
+
+  const handleDeleteGateway = (id: string) => {
+    if (!window.confirm(t('আপনি কি নিশ্চিত যে এই গেটওয়েটি তালিকা থেকে মুছে ফেলতে চান?', 'Are you sure you want to delete this payment gateway?'))) {
+      return;
+    }
+    setSettingsData((prev) => {
+      if (!prev || !prev.customGateways) return prev;
+      const updated = prev.customGateways.filter((g) => g.id !== id);
+      api.updateWebsiteSettings({ customGateways: updated }).catch(console.error);
+      return { ...prev, customGateways: updated };
+    });
+  };
 
   // Helper to get current active policy text
   const getCurrentPolicyText = () => {
@@ -882,6 +998,184 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
             </button>
           </div>
 
+          {/* Dynamic Payment Gateways & Bank Accounts Studio */}
+          <div className="p-5 border-b border-slate-200 bg-white space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  <span>{t('পেমেন্ট গেটওয়ে ও ব্যাংক একাউন্ট কনফিগারেশন', 'Payment Gateways & Bank Accounts Suite')}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                    {(settingsData?.customGateways || []).length} {t('গেটওয়ে সক্রিয়', 'Configured')}
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {t(
+                    'বায়ারদের পেমেন্ট ডিপোজিটের জন্য একাধিক ব্যাংক একাউন্ট (City, Islami, DBBL ইত্যাদি), বিকাশ, নগদ, রকেট এবং USDT ক্রিপ্টো ওয়ালেট যুক্ত ও পরিচালনা করুন।',
+                    'Manage multiple bank accounts, mobile banking numbers, and crypto USDT wallets for escrow deposits.'
+                  )}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => handleOpenAddGateway('bdt', 'bank')}
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>{t('+ নতুন ব্যাংক একাউন্ট যোগ করুন', '+ Add Bank Account')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenAddGateway('bdt', 'mobile_banking')}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{t('+ গেটওয়ে / ওয়ালেট যোগ করুন', '+ Add Gateway')}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1.5 pt-1">
+              {(['all', 'bdt', 'usdt'] as const).map((ft) => {
+                const count = (settingsData?.customGateways || []).filter(g => ft === 'all' || g.type === ft).length;
+                return (
+                  <button
+                    key={ft}
+                    type="button"
+                    onClick={() => setGatewayFilterType(ft)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                      gatewayFilterType === ft
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    <span>
+                      {ft === 'all' ? t('সকল গেটওয়ে ও ব্যাংক', 'All Gateways') : ft === 'bdt' ? t('🇧🇩 BDT গেটওয়ে ও ব্যাংক', 'BDT & Banks') : t('🪙 USDT ক্রিপ্টো', 'USDT Crypto')}
+                    </span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${gatewayFilterType === ft ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Gateway Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
+              {(settingsData?.customGateways || [])
+                .filter(gw => gatewayFilterType === 'all' || gw.type === gatewayFilterType)
+                .map((gw) => (
+                  <div
+                    key={gw.id}
+                    className={`p-4 rounded-2xl border-2 transition space-y-2.5 relative ${
+                      gw.isActive
+                        ? gw.category === 'bank'
+                          ? 'bg-blue-50/40 border-blue-200/90 hover:border-blue-300'
+                          : gw.type === 'usdt'
+                          ? 'bg-amber-50/40 border-amber-200/90 hover:border-amber-300'
+                          : 'bg-emerald-50/40 border-emerald-200/90 hover:border-emerald-300'
+                        : 'bg-slate-50 border-slate-200 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                          gw.category === 'bank'
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : gw.type === 'usdt'
+                            ? 'bg-amber-500 text-white shadow-2xs'
+                            : 'bg-pink-600 text-white shadow-2xs'
+                        }`}>
+                          {gw.category === 'bank' ? <Building2 className="w-4 h-4" /> : gw.type === 'usdt' ? <Coins className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
+                        </div>
+                        <div>
+                          <h5 className="font-black text-xs text-slate-900 leading-tight">{gw.name}</h5>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] font-bold uppercase text-slate-500">{gw.type.toUpperCase()}</span>
+                            <span>•</span>
+                            <span className="text-[10px] font-semibold text-slate-600">
+                              {gw.category === 'bank' ? t('ব্যাংক', 'Bank') : gw.category === 'mobile_banking' ? t('মোবাইল ব্যাংকিং', 'Mobile') : t('ক্রিপ্টো', 'Crypto')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleGatewayStatus(gw.id)}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition ${
+                          gw.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                        }`}
+                        title={gw.isActive ? t('নিষ্ক্রিয় করুন', 'Deactivate') : t('সক্রিয় করুন', 'Activate')}
+                      >
+                        {gw.isActive ? `● ${t('সক্রিয়', 'Active')}` : `○ ${t('নিষ্ক্রিয়', 'Disabled')}`}
+                      </button>
+                    </div>
+
+                    {/* Account Details Box */}
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 space-y-1 text-xs font-mono">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400 font-sans">{gw.category === 'bank' ? t('একাউন্ট নং:', 'A/C No:') : t('নম্বর / ঠিকানা:', 'Number / Address:')}</span>
+                        <span className="font-bold text-slate-900 select-all truncate max-w-[170px]">{gw.accountNumber}</span>
+                      </div>
+                      {gw.accountHolderName && (
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-400 font-sans">{t('হোল্ডার নাম:', 'Holder:')}</span>
+                          <span className="font-sans font-semibold text-slate-800 truncate max-w-[170px]">{gw.accountHolderName}</span>
+                        </div>
+                      )}
+                      {gw.bankName && (
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-400 font-sans">{t('ব্যাংক:', 'Bank:')}</span>
+                          <span className="font-sans font-bold text-blue-700 truncate max-w-[170px]">{gw.bankName}</span>
+                        </div>
+                      )}
+                      {gw.branchName && (
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-slate-400 font-sans">{t('শাখা:', 'Branch:')}</span>
+                          <span className="font-sans text-slate-600 truncate max-w-[170px]">{gw.branchName}</span>
+                        </div>
+                      )}
+                      {gw.routingNumber && (
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-slate-400 font-sans">{t('রাউটিং:', 'Routing:')}</span>
+                          <span className="text-slate-800">{gw.routingNumber}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] text-slate-400 truncate max-w-[160px]">
+                        {gw.instructions || t('বায়ারের জন্য সক্রিয় গেটওয়ে', 'Active for buyer checkout')}
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditGateway(gw)}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                          title={t('এডিট করুন', 'Edit')}
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteGateway(gw.id)}
+                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
+                          title={t('মুছে ফেলুন', 'Delete')}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
@@ -891,49 +1185,69 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                   <th className="px-4 py-3.5">{t('ধরণ (Type)', 'Transaction Type')}</th>
                   <th className="px-4 py-3.5">{t('পরিমাণ ও ফি', 'Gross / Net Fee')}</th>
                   <th className="px-4 py-3.5">{t('পেমেন্ট গেটওয়ে', 'Gateway')}</th>
+                  <th className="px-4 py-3.5">{t('প্রুফ স্লিপ', 'Slip Proof')}</th>
                   <th className="px-4 py-3.5">{t('স্ট্যাটাস', 'Status')}</th>
                   <th className="px-5 py-3.5 text-right">{t('তারিখ', 'Date')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/80 transition">
-                    <td className="px-5 py-3.5">
-                      <span className="font-mono font-bold text-slate-900 block">{tx.transactionRef || tx.id}</span>
-                      <span className="text-[10px] text-slate-400 font-mono">Order: {tx.orderId || 'Direct Escrow'}</span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="font-bold text-slate-800 block">{tx.userName}</span>
-                      <span className="text-[10px] text-slate-400 capitalize">{tx.userRole}</span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 uppercase">
-                        {tx.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="font-black text-slate-900 block">${tx.amount.toLocaleString()} {tx.currency}</span>
-                      <span className="text-[10px] text-emerald-600 font-bold block">+${tx.fee} commission</span>
-                    </td>
-                    <td className="px-4 py-3.5 font-mono font-semibold text-slate-700">
-                      {tx.paymentProvider || tx.paymentMethod}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        tx.status === 'success'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : tx.status === 'pending'
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                          : 'bg-red-50 text-red-700 border border-red-200'
-                      }`}>
-                        {tx.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right text-[11px] text-slate-400 font-mono">
-                      {new Date(tx.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
+                {filteredTransactions.map((tx) => {
+                  const matchedOrd = orders.find(o => o.id === tx.orderId || o.paymentDetails?.transactionRef === tx.transactionRef);
+                  const proofUrl = matchedOrd?.paymentDetails?.screenshotUrl;
+
+                  return (
+                    <tr key={tx.id} className="hover:bg-slate-50/80 transition">
+                      <td className="px-5 py-3.5">
+                        <span className="font-mono font-bold text-slate-900 block">{tx.transactionRef || tx.id}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Order: {tx.orderId || 'Direct Escrow'}</span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="font-bold text-slate-800 block">{tx.userName}</span>
+                        <span className="text-[10px] text-slate-400 capitalize">{tx.userRole}</span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 uppercase">
+                          {tx.type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="font-black text-slate-900 block">${tx.amount.toLocaleString()} {tx.currency}</span>
+                        <span className="text-[10px] text-emerald-600 font-bold block">+${tx.fee} commission</span>
+                      </td>
+                      <td className="px-4 py-3.5 font-mono font-semibold text-slate-700">
+                        {tx.paymentProvider || tx.paymentMethod}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {proofUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => setAdminProofModalUrl(proofUrl)}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <ImageIcon className="w-3 h-3 text-emerald-600" />
+                            <span>{t('রসিদ দেখুন', 'View Slip')}</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-300 text-[11px] font-mono">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          tx.status === 'success'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : tx.status === 'pending'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}>
+                          {tx.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-right text-[11px] text-slate-400 font-mono">
+                        {new Date(tx.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -2830,6 +3144,451 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: ADD / EDIT CUSTOM PAYMENT GATEWAY & BANK ACCOUNT */}
+      {/* ============================================================== */}
+      {gatewayModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-fade-in text-slate-800">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                  {gatewayForm.category === 'bank' ? (
+                    <Building2 className="w-5 h-5 text-emerald-400" />
+                  ) : gatewayForm.type === 'usdt' ? (
+                    <Coins className="w-5 h-5 text-amber-400" />
+                  ) : (
+                    <Smartphone className="w-5 h-5 text-pink-400" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black tracking-wide">
+                    {editingGatewayId
+                      ? t('পেমেন্ট গেটওয়ে / ব্যাংক একাউন্ট এডিট করুন', 'Edit Gateway / Bank Account')
+                      : t('নতুন পেমেন্ট গেটওয়ে বা ব্যাংক একাউন্ট যোগ করুন', 'Add Payment Gateway / Bank Account')}
+                  </h3>
+                  <p className="text-[11px] text-slate-300">
+                    {t('বায়ার পেমেন্ট করার সময় এই একাউন্ট তথ্য দেখতে পাবে।', 'Visible to buyers when making escrow deposit.')}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGatewayModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveGateway} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-xs">
+              {/* Type Selection: BDT vs USDT */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1.5">
+                  {t('১. কারেন্সি ও পেমেন্ট ধরণ (Currency & Gateway Type) *', '1. Gateway Currency Type *')}
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setGatewayForm((prev) => ({ ...prev, type: 'bdt', category: prev.category === 'crypto' ? 'bank' : prev.category }))}
+                    className={`p-3 rounded-xl border-2 text-left font-bold transition flex items-center gap-2.5 cursor-pointer ${
+                      gatewayForm.type === 'bdt'
+                        ? 'border-emerald-600 bg-emerald-50/80 text-emerald-950 shadow-xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <span className="text-xl">🇧🇩</span>
+                    <div>
+                      <span className="block font-black text-xs">{t('BDT (বাংলাদেশী টাকা)', 'BDT (Bangladeshi Taka)')}</span>
+                      <span className="text-[10px] font-normal text-slate-500">{t('ব্যাংক একাউন্ট, বিকাশ, নগদ, রকেট', 'Banks, bKash, Nagad, Rocket')}</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGatewayForm((prev) => ({ ...prev, type: 'usdt', category: 'crypto' }))}
+                    className={`p-3 rounded-xl border-2 text-left font-bold transition flex items-center gap-2.5 cursor-pointer ${
+                      gatewayForm.type === 'usdt'
+                        ? 'border-amber-500 bg-amber-50/80 text-amber-950 shadow-xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <span className="text-xl">🪙</span>
+                    <div>
+                      <span className="block font-black text-xs">{t('USDT (ক্রিপ্টোকারেন্সি)', 'USDT (Crypto / Blockchain)')}</span>
+                      <span className="text-[10px] font-normal text-slate-500">{t('TRC-20, BEP-20, Binance Pay', 'TRC-20, BEP-20, Binance Pay')}</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Category Selector */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1.5">
+                  {t('২. গেটওয়ে ক্যাটাগরি (Gateway Category) *', '2. Category *')}
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setGatewayForm((prev) => ({ ...prev, category: 'bank' }))}
+                    className={`p-2.5 rounded-xl border font-bold text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                      gatewayForm.category === 'bank'
+                        ? 'border-blue-600 bg-blue-50 text-blue-900 shadow-2xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4 text-blue-600" />
+                    <span className="text-[11px]">{t('ব্যাংক একাউন্ট', 'Bank Account')}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGatewayForm((prev) => ({ ...prev, category: 'mobile_banking' }))}
+                    className={`p-2.5 rounded-xl border font-bold text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                      gatewayForm.category === 'mobile_banking'
+                        ? 'border-pink-600 bg-pink-50 text-pink-900 shadow-2xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4 text-pink-600" />
+                    <span className="text-[11px]">{t('মোবাইল ব্যাংকিং', 'Mobile Banking')}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGatewayForm((prev) => ({ ...prev, category: 'crypto' }))}
+                    className={`p-2.5 rounded-xl border font-bold text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                      gatewayForm.category === 'crypto'
+                        ? 'border-amber-600 bg-amber-50 text-amber-900 shadow-2xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Coins className="w-4 h-4 text-amber-600" />
+                    <span className="text-[11px]">{t('ক্রিপ্টো ওয়ালেট', 'Crypto Wallet')}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Presets for Bangladeshi Banks & Wallets */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  {t('দ্রুত প্রিসেট (Quick Presets)', 'Quick Presets')}
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {gatewayForm.category === 'bank' ? (
+                    <>
+                      {[
+                        { name: 'City Bank Corporate', bank: 'City Bank PLC', branch: 'Gulshan-2 Branch', routing: '120261839' },
+                        { name: 'Islami Bank Bangladesh', bank: 'Islami Bank Bangladesh PLC', branch: 'Principal Branch', routing: '125272382' },
+                        { name: 'Dutch-Bangla Bank (DBBL)', bank: 'Dutch-Bangla Bank Limited', branch: 'Motijheel Branch', routing: '090262438' },
+                        { name: 'BRAC Bank Limited', bank: 'BRAC Bank Limited', branch: 'Banani Branch', routing: '060260783' },
+                        { name: 'Eastern Bank PLC (EBL)', bank: 'Eastern Bank PLC', branch: 'Dhanmondi Branch', routing: '095261053' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() =>
+                            setGatewayForm((prev) => ({
+                              ...prev,
+                              name: preset.name,
+                              bankName: preset.bank,
+                              branchName: preset.branch,
+                              routingNumber: preset.routing
+                            }))
+                          }
+                          className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-[10px] font-bold transition cursor-pointer"
+                        >
+                          + {preset.name}
+                        </button>
+                      ))}
+                    </>
+                  ) : gatewayForm.category === 'mobile_banking' ? (
+                    <>
+                      {[
+                        { name: 'বিকাশ মার্চেন্ট (bKash Merchant)', note: 'মার্চেন্ট পেমেন্ট সিলেক্ট করে কাউন্টার নম্বর দিন।' },
+                        { name: 'বিকাশ পার্সোনাল (bKash Personal)', note: 'সেন্ড মানি করুন ও রেফারেন্সে অর্ডার আইডি দিন।' },
+                        { name: 'নগদ মার্চেন্ট (Nagad Merchant)', note: 'নগদ মার্চেন্ট পেমেন্ট।' },
+                        { name: 'নগদ পার্সোনাল (Nagad Personal)', note: 'নগদ সেন্ড মানি করুন।' },
+                        { name: 'রকেট মার্চেন্ট (Rocket)', note: 'রকেট বিল পে বা পেমেন্ট।' },
+                        { name: 'উপায় (Upay)', note: 'উপায় মার্চেন্ট বা পার্সোনাল।' },
+                        { name: 'সেলফিন (Cellfin)', note: 'ইসলামী ব্যাংক সেলফিন ফান্ড ট্রান্সফার।' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() =>
+                            setGatewayForm((prev) => ({
+                              ...prev,
+                              name: preset.name,
+                              instructions: preset.note
+                            }))
+                          }
+                          className="px-2.5 py-1 rounded-lg bg-pink-50 hover:bg-pink-100 text-pink-800 border border-pink-200 text-[10px] font-bold transition cursor-pointer"
+                        >
+                          + {preset.name}
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {[
+                        { name: 'USDT (TRC-20 Tron)', note: 'Only send USDT via Tron (TRC-20) network.' },
+                        { name: 'USDT (BEP-20 BSC)', note: 'Only send USDT via BNB Smart Chain (BEP-20).' },
+                        { name: 'Binance Pay (Pay ID / Email)', note: 'Send zero-fee USDT via Binance Pay to our verified ID.' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() =>
+                            setGatewayForm((prev) => ({
+                              ...prev,
+                              name: preset.name,
+                              instructions: preset.note
+                            }))
+                          }
+                          className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold transition cursor-pointer"
+                        >
+                          + {preset.name}
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Gateway Title */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('গেটওয়ে বা ব্যাংকের ডিসপ্লে নাম *', 'Gateway / Bank Title *')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={gatewayForm.name || ''}
+                  onChange={(e) => setGatewayForm((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder={
+                    gatewayForm.category === 'bank'
+                      ? 'e.g. City Bank Corporate Escrow'
+                      : gatewayForm.type === 'usdt'
+                      ? 'e.g. USDT (TRC-20) Vault'
+                      : 'e.g. বিকাশ মার্চেন্ট (bKash Merchant Pay)'
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              {/* Account Number / Phone / Wallet */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {gatewayForm.category === 'bank'
+                    ? t('ব্যাংক একাউন্ট নম্বর (Account Number) *', 'Bank Account Number *')
+                    : gatewayForm.type === 'usdt'
+                    ? t('ক্রিপ্টো ওয়ালেট অ্যাড্রেস / Pay ID *', 'Crypto Wallet Address / Pay ID *')
+                    : t('মোবাইল নম্বর / একাউন্ট নং *', 'Mobile Account Number *')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={gatewayForm.accountNumber || ''}
+                  onChange={(e) => setGatewayForm((prev) => ({ ...prev, accountNumber: e.target.value }))}
+                  placeholder={
+                    gatewayForm.category === 'bank'
+                      ? 'e.g. 1502482910001'
+                      : gatewayForm.type === 'usdt'
+                      ? 'e.g. Txyz... or 0x55d3... or Binance Pay ID'
+                      : 'e.g. 017XXXXXXXX / 018XXXXXXXX'
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              {/* Account Holder Name */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('একাউন্ট হোল্ডারের নাম (Account Holder / Beneficiary Name)', 'Account Holder Name')}
+                </label>
+                <input
+                  type="text"
+                  value={gatewayForm.accountHolderName || ''}
+                  onChange={(e) => setGatewayForm((prev) => ({ ...prev, accountHolderName: e.target.value }))}
+                  placeholder="e.g. Alif Trust Media Platform / Md Alif"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden font-medium"
+                />
+              </div>
+
+              {/* Bank Specific Fields (if Bank category) */}
+              {gatewayForm.category === 'bank' && (
+                <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/80 space-y-3">
+                  <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs">
+                    <Building2 className="w-4 h-4 text-blue-700" />
+                    <span>{t('ব্যাংকের বিস্তারিত তথ্য (ব্রাঞ্চ ও রাউটিং)', 'Bank Routing & Branch Details')}</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        {t('ব্যাংকের নাম (Bank Name)', 'Bank Name')}
+                      </label>
+                      <input
+                        type="text"
+                        value={gatewayForm.bankName || ''}
+                        onChange={(e) => setGatewayForm((prev) => ({ ...prev, bankName: e.target.value }))}
+                        placeholder="e.g. City Bank PLC"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:border-blue-500 focus:outline-hidden bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        {t('শাখা (Branch Name)', 'Branch Name')}
+                      </label>
+                      <input
+                        type="text"
+                        value={gatewayForm.branchName || ''}
+                        onChange={(e) => setGatewayForm((prev) => ({ ...prev, branchName: e.target.value }))}
+                        placeholder="e.g. Gulshan-2 Branch, Dhaka"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:border-blue-500 focus:outline-hidden bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        {t('রাউটিং নম্বর (Routing Number)', 'Routing Number')}
+                      </label>
+                      <input
+                        type="text"
+                        value={gatewayForm.routingNumber || ''}
+                        onChange={(e) => setGatewayForm((prev) => ({ ...prev, routingNumber: e.target.value }))}
+                        placeholder="e.g. 120261839 (9 digits)"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono text-slate-900 focus:border-blue-500 focus:outline-hidden bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        {t('সুইফট কোড (Swift Code - ঐচ্ছিক)', 'Swift Code (Optional)')}
+                      </label>
+                      <input
+                        type="text"
+                        value={gatewayForm.swiftCode || ''}
+                        onChange={(e) => setGatewayForm((prev) => ({ ...prev, swiftCode: e.target.value }))}
+                        placeholder="e.g. CIBLBDDH"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono text-slate-900 focus:border-blue-500 focus:outline-hidden bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Instructions / Note for Buyer */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('বায়ারের জন্য বিশেষ নির্দেশনা বা নোট (Instructions for Buyer)', 'Special Instructions / Notes')}
+                </label>
+                <textarea
+                  rows={2}
+                  value={gatewayForm.instructions || ''}
+                  onChange={(e) => setGatewayForm((prev) => ({ ...prev, instructions: e.target.value }))}
+                  placeholder={t(
+                    'যেমন: ব্যাংক কাউন্টার বা অনলাইন ফান্ড ট্রান্সফার (NPSB/BEFTN) করে পেমেন্ট স্লিপের ছবি ও TrxID আপলোড করুন।',
+                    'e.g. Deposit via online NPSB/BEFTN or branch counter, then attach receipt slip and TrxID.'
+                  )}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden resize-none"
+                />
+              </div>
+
+              {/* Active Toggle */}
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="gw_isActive"
+                  checked={gatewayForm.isActive ?? true}
+                  onChange={(e) => setGatewayForm((prev) => ({ ...prev, isActive: e.target.checked }))}
+                  className="w-4 h-4 text-emerald-600 rounded-md focus:ring-emerald-500 border-slate-300 cursor-pointer"
+                />
+                <label htmlFor="gw_isActive" className="text-xs font-bold text-slate-800 cursor-pointer">
+                  {t('এই পেমেন্ট গেটওয়েটি অবিলম্বে বায়ারদের জন্য সক্রিয় রাখুন', 'Keep this gateway active for buyers immediately')}
+                </label>
+              </div>
+
+              {/* Form Buttons */}
+              <div className="flex items-center gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setGatewayModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer text-center"
+                >
+                  {t('বাতিল', 'Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition cursor-pointer text-center shadow-xs"
+                >
+                  {editingGatewayId
+                    ? t('পরিবর্তন সংরক্ষণ করুন', 'Update Gateway')
+                    : t('গেটওয়ে ও ব্যাংক সংরক্ষণ করুন', 'Save Gateway & Bank')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: PAYMENT PROOF SCREENSHOT LIGHTBOX */}
+      {/* ============================================================== */}
+      {adminProofModalUrl && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="relative max-w-2xl w-full bg-white rounded-3xl p-5 shadow-2xl space-y-4 animate-fade-in text-slate-900">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2 font-black text-sm">
+                <ImageIcon className="w-5 h-5 text-emerald-600" />
+                <span>{t('বায়ারের জমা দেওয়া পেমেন্ট রসিদ / স্ক্রিনশট প্রুফ', 'Buyer Payment Proof / Receipt Slip')}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAdminProofModalUrl(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[70vh] overflow-auto rounded-2xl bg-slate-950 flex items-center justify-center p-2">
+              <img
+                src={adminProofModalUrl}
+                alt="Payment Proof Receipt"
+                className="max-h-[65vh] w-auto object-contain rounded-xl shadow-lg"
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 pt-1">
+              <span>{t('এডমিন অডিট কনসোল: পেমেন্ট ও স্ক্রিনশট যাচাই করে এসক্রো তহবিল অনুমোদন করুন।', 'Admin Audit Console: Verify deposit slip before releasing escrow.')}</span>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={adminProofModalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold flex items-center gap-1.5 transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>{t('নতুন ট্যাবে খুলুন', 'Open Tab')}</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setAdminProofModalUrl(null)}
+                  className="px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold transition cursor-pointer"
+                >
+                  {t('বন্ধ করুন', 'Close')}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

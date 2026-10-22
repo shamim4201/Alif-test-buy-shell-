@@ -122,6 +122,9 @@ export interface Order {
     transactionRef: string;
     confirmedAt: string;
     verifiedByServer: boolean;
+    screenshotUrl?: string;
+    senderAccount?: string;
+    notes?: string;
   };
   transferSteps: OrderTransferStep[];
   disputeReason?: string;
@@ -266,6 +269,23 @@ export interface FraudAlert {
   createdAt: string;
 }
 
+export interface CustomPaymentGateway {
+  id: string;
+  name: string; // e.g. "City Bank Corporate", "Islami Bank", "Upay Personal", "Binance Pay"
+  type: 'bdt' | 'usdt';
+  category: 'mobile_banking' | 'bank' | 'crypto' | 'other';
+  accountNumber: string; // Account No, Phone No, or Wallet Address
+  accountHolderName?: string; // Account Name e.g. "Alif Trust Media Escrow"
+  bankName?: string; // e.g. "City Bank PLC"
+  branchName?: string; // e.g. "Gulshan-2 Branch"
+  routingNumber?: string; // e.g. "120261839"
+  swiftCode?: string; // e.g. "CIBLBDDH"
+  instructions?: string; // Special notes for buyer e.g. "Send via NPSB / BEFTN and use Order ID in remarks"
+  qrCodeUrl?: string;
+  isActive: boolean;
+  createdAt?: string;
+}
+
 export interface WebsiteSettings {
   siteName: string;
   siteTagline: string;
@@ -274,6 +294,7 @@ export interface WebsiteSettings {
   feeDeductionTarget?: 'both' | 'buyer' | 'seller'; // 'both' = উভয় পক্ষ (বায়ার ও সেলার)
   buyerFeePercent?: number; // e.g., 2.5%
   sellerFeePercent?: number; // e.g., 2.5%
+  customGateways?: CustomPaymentGateway[]; // ডায়নামিক পেমেন্ট গেটওয়ে ও ব্যাংক একাউন্ট তালিকা
   minimumListingPrice: number;
   featuredListingFee: number;
   maintenanceMode: boolean;
@@ -283,6 +304,10 @@ export interface WebsiteSettings {
   bkashMerchantNumber: string;
   nagadMerchantNumber: string;
   bankDetails: string;
+  usdtTrc20Address?: string;
+  usdtBep20Address?: string;
+  usdtQrCodeUrl?: string;
+  bdtConversionRate?: number; // e.g., 122
   enable2FA: boolean;
   termsOfService: string;
   privacyPolicy: string;

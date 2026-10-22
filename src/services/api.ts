@@ -244,7 +244,16 @@ export const api = {
     );
   },
 
-  async confirmPayment(orderId: string, payload: { paymentMethod?: string; transactionRef?: string }): Promise<{ order: Order }> {
+  async confirmPayment(
+    orderId: string,
+    payload: {
+      paymentMethod?: string;
+      transactionRef?: string;
+      screenshotUrl?: string;
+      senderAccount?: string;
+      notes?: string;
+    }
+  ): Promise<{ order: Order }> {
     return callWithFallback(
       () =>
         fetchWithAuth(`/api/orders/${orderId}/confirm-payment`, {

@@ -30,6 +30,11 @@ export function getClientDb(): LocalDbData {
       if (adminIdx === -1) {
         parsed.users.unshift(SEED_DATA.users[0]);
       }
+      if (!parsed.settings) {
+        parsed.settings = SEED_DATA.settings;
+      } else if (!parsed.settings.customGateways || parsed.settings.customGateways.length === 0) {
+        parsed.settings.customGateways = SEED_DATA.settings.customGateways;
+      }
       return parsed;
     }
   } catch (e) {
@@ -383,7 +388,16 @@ export const clientDbService = {
     return { order: newOrder };
   },
 
-  async confirmPayment(orderId: string, payload: { paymentMethod?: string; transactionRef?: string }): Promise<{ order: Order }> {
+  async confirmPayment(
+    orderId: string,
+    payload: {
+      paymentMethod?: string;
+      transactionRef?: string;
+      screenshotUrl?: string;
+      senderAccount?: string;
+      notes?: string;
+    }
+  ): Promise<{ order: Order }> {
     const db = getClientDb();
     const order = db.orders.find((o) => o.id === orderId);
     if (!order) throw new Error('Order not found');
@@ -392,6 +406,9 @@ export const clientDbService = {
     order.paymentDetails = {
       method: payload.paymentMethod || 'bKash / Nagad Escrow',
       transactionRef: payload.transactionRef || `TRX${Date.now()}`,
+      screenshotUrl: payload.screenshotUrl,
+      senderAccount: payload.senderAccount,
+      notes: payload.notes,
       confirmedAt: new Date().toISOString(),
       verifiedByServer: true
     };
