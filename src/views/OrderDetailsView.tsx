@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Order, ChannelListing, User, Message, WebsiteSettings } from '../types';
+import { Order, ChannelListing, User, Message, WebsiteSettings, CustomPaymentGateway } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -33,7 +33,10 @@ import {
   X,
   Eye,
   ZoomIn,
-  FileCheck
+  FileCheck,
+  XCircle,
+  AlertOctagon,
+  RotateCcw
 } from 'lucide-react';
 
 interface OrderDetailsViewProps {
@@ -47,7 +50,7 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
   onBack,
   onOpenLegal
 }) => {
-  const { user, showToast } = useAuth();
+  const { user, showToast, quickSwitch } = useAuth();
   const { currency, formatPrice, formatUsd, formatBdt, language, t } = useCurrency();
   const [order, setOrder] = useState<Order | null>(null);
   const [channel, setChannel] = useState<ChannelListing | null>(null);
@@ -119,6 +122,11 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
 
   // Review modal
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+
+  // Admin Escrow Audit
+  const [adminRejectModalOpen, setAdminRejectModalOpen] = useState(false);
+  const [adminRejectReason, setAdminRejectReason] = useState('');
+  const [isProcessingAdminAction, setIsProcessingAdminAction] = useState(false);
 
   const loadOrderData = async () => {
     try {
@@ -230,12 +238,55 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
         senderAccount: senderAccountInfo.trim()
       });
       setOrder(res.order);
-      showToast(t('পেমেন্ট ট্রানজেকশন আইডি ও স্ক্রিনশট সফলভাবে এডমিন এস্ক্রো ভল্টে জমা হয়েছে!', 'Payment TrxID & Screenshot proof safely locked in Platform Admin Escrow Vault!'), 'success');
+      setPaymentSectionOpen(false);
+      showToast(t('পেমেন্ট ট্রানজেকশন আইডি ও স্ক্রিনশট এডমিন অডিট ভল্টে জমা হয়েছে! এডমিন যাচাই শেষে হস্তান্তর ধাপ শুরু হবে।', 'Payment proof submitted to Admin Audit Vault! Handover steps will unlock once Admin verifies.'), 'success');
       loadChat();
     } catch (err: any) {
       showToast(err.message || t('পেমেন্ট নিশ্চিতকরণ ব্যর্থ হয়েছে', 'Payment confirmation failed'), 'error');
     } finally {
       setVerifyingPayment(false);
+    }
+  };
+
+  // Admin approves payment deposit into escrow vault
+  const handleAdminApprovePayment = async () => {
+    try {
+      setIsProcessingAdminAction(true);
+      const res = await api.adminApprovePayment(order.id);
+      setOrder(res.order);
+      showToast(
+        t('✅ পেমেন্ট সফলভাবে ভেরিফাই ও অনুমোদন করা হয়েছে! হস্তান্তর ধাপ আনলক হয়েছে।', '✅ Payment verified and approved into Escrow Vault! Handover steps unlocked.'),
+        'success'
+      );
+      loadChat();
+    } catch (err: any) {
+      showToast(err.message || t('পেমেন্ট অনুমোদন করতে ব্যর্থ হয়েছে', 'Failed to approve payment'), 'error');
+    } finally {
+      setIsProcessingAdminAction(false);
+    }
+  };
+
+  // Admin rejects fake or invalid payment and resets status
+  const handleAdminRejectPayment = async () => {
+    if (!adminRejectReason.trim()) {
+      showToast(t('অনুগ্রহ করে পেমেন্ট বাতিল ও রিসেট করার কারণ লিখুন বা নির্বাচন করুন', 'Please enter or select a rejection reason'), 'error');
+      return;
+    }
+    try {
+      setIsProcessingAdminAction(true);
+      const res = await api.adminRejectPayment(order.id, adminRejectReason.trim());
+      setOrder(res.order);
+      setAdminRejectModalOpen(false);
+      setAdminRejectReason('');
+      showToast(
+        t('❌ ভুল/ফেক পেমেন্ট তথ্য বাতিল ও রিসেট করা হয়েছে। বায়ারকে সঠিক তথ্য দিয়ে পুনরায় জমা দিতে হবে।', '❌ Payment details rejected and reset. Buyer must resubmit valid information.'),
+        'info'
+      );
+      loadChat();
+    } catch (err: any) {
+      showToast(err.message || t('পেমেন্ট বাতিল করতে ব্যর্থ হয়েছে', 'Failed to reject payment'), 'error');
+    } finally {
+      setIsProcessingAdminAction(false);
     }
   };
 
@@ -472,20 +523,44 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
             {order.paymentDetails && (
               <div className="pt-3 border-t border-slate-200 space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-xs">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>{t("সার্ভার-ভেরিফাইড ডিপোজিট", "Server-Verified Deposit Secured")}</span>
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    {order.paymentDetails.adminApprovalStatus === 'approved' ? (
+                      <>
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        <span className="text-emerald-800">{t("এডমিন-অনুমোদিত ডিপোজিট", "Admin-Approved Escrow Deposit")}</span>
+                      </>
+                    ) : order.paymentDetails.adminApprovalStatus === 'rejected' ? (
+                      <>
+                        <XCircle className="w-4 h-4 text-rose-600" />
+                        <span className="text-rose-800">{t("পেমেন্ট তথ্য বাতিল ও রিসেটকৃত", "Deposit Rejected & Reset")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
+                        <span className="text-amber-800">{t("এডমিন ভেরিফিকেশন অপেক্ষমাণ", "Pending Admin Verification")}</span>
+                      </>
+                    )}
                   </div>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                    {order.paymentDetails.method}
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    order.paymentDetails.adminApprovalStatus === 'approved'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : order.paymentDetails.adminApprovalStatus === 'rejected'
+                      ? 'bg-rose-100 text-rose-800'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {order.paymentDetails.adminApprovalStatus === 'approved'
+                      ? t('অনুমোদিত ✓', 'Approved ✓')
+                      : order.paymentDetails.adminApprovalStatus === 'rejected'
+                      ? t('বাতিলকৃত ✕', 'Rejected ✕')
+                      : t('পেন্ডিং ⏳', 'Pending ⏳')}
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-600 flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-200">
                   <span className="font-semibold">{t("ট্রানজেকশন রেফারেন্স:", "TrxID / Ref:")}</span>
-                  <span className="font-mono font-bold text-slate-900 select-all">{order.paymentDetails.transactionRef}</span>
+                  <span className="font-mono font-bold text-slate-900 select-all truncate max-w-[140px]">{order.paymentDetails.transactionRef}</span>
                 </div>
                 {order.paymentDetails.screenshotUrl && (
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/80 border border-emerald-200">
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200">
                     <div className="flex items-center gap-2">
                       <img
                         src={order.paymentDetails.screenshotUrl}
@@ -495,17 +570,26 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                       />
                       <div>
                         <span className="text-[11px] font-bold text-slate-900 block">{t("পেমেন্ট স্লিপ সংযুক্ত", "Payment Proof Attached")}</span>
-                        <span className="text-[10px] text-emerald-700">{t("ভেরিফাইড ভাউচার", "Verified Voucher")}</span>
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          {order.paymentDetails.adminApprovalStatus === 'approved'
+                            ? t("ভেরিফাইড ভাউচার", "Verified Slip")
+                            : t("অডিটাধীন রসিদ", "Under Audit Slip")}
+                        </span>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setViewProofModalUrl(order.paymentDetails!.screenshotUrl!)}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold flex items-center gap-1 transition cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-bold flex items-center gap-1 transition cursor-pointer"
                     >
                       <Eye className="w-3 h-3" />
                       <span>{t("স্ক্রিনশট দেখুন", "View Slip")}</span>
                     </button>
+                  </div>
+                )}
+                {order.paymentDetails.adminApprovalStatus === 'rejected' && order.paymentDetails.adminRejectionReason && (
+                  <div className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px]">
+                    <strong>{t("বাতিলের কারণ: ", "Reason: ")}</strong> {order.paymentDetails.adminRejectionReason}
                   </div>
                 )}
               </div>
@@ -536,53 +620,262 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
           {/* ============================================================== */}
           {/* STEP 1: ESCROW CUSTODY DEPOSIT (EMBEDDED DIRECTLY INSIDE PROTOCOL) */}
           {/* ============================================================== */}
-          {order.status === 'pending' && isBuyer ? (
-            <div className="rounded-2xl border-2 border-emerald-400 bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-emerald-50/90 overflow-hidden shadow-sm">
-              {/* Interactive Header: Click to Open / Collapse Payment */}
-              <button
-                type="button"
-                onClick={() => setPaymentSectionOpen(!paymentSectionOpen)}
-                className="w-full p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left cursor-pointer hover:bg-emerald-100/40 transition"
-              >
+          {order.paymentDetails?.adminApprovalStatus === 'approved' ? (
+            /* Confirmed & Admin-Approved Deposit Card inside Protocol */
+            <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/90 border-2 border-emerald-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                  <ShieldCheck className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black uppercase text-emerald-900 bg-emerald-200/80 px-2.5 py-0.5 rounded-md">
+                      {t("ধাপ ১ সম্পন্ন: প্ল্যাটফর্ম এস্ক্রো কাস্টডি পেমেন্ট অনুমোদিত ও সুরক্ষিত", "Step 1 Completed: Escrow Deposit Approved & Locked")}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black">
+                      ✓ {t("এডমিন ভেরিফাইড", "Admin Verified")}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 mt-1">
+                    <span className="font-bold text-slate-900">{order.paymentDetails.method}</span> • TrxID: <span className="font-mono font-bold text-slate-900 select-all">{order.paymentDetails.transactionRef}</span>
+                    {order.paymentDetails.senderAccount && ` • ${t("প্রেরক: ", "Sender: ")}${order.paymentDetails.senderAccount}`}
+                  </p>
+                  <p className="text-[11px] text-emerald-800 font-medium mt-0.5">
+                    {t("টাকা সরাসরি প্ল্যাটফর্ম এডমিন ভল্টে নিরাপদে সংরক্ষিত রয়েছে — বিক্রেতার কাছে হস্তান্তর সম্পন্ন না হওয়া পর্যন্ত যাবে না।", "Funds are securely locked in Admin Escrow — will not reach seller until transfer is completed.")}
+                  </p>
+                </div>
+              </div>
+              {order.paymentDetails.screenshotUrl && (
+                <button
+                  type="button"
+                  onClick={() => setViewProofModalUrl(order.paymentDetails!.screenshotUrl!)}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shadow-xs shrink-0"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{t("অনুমোদিত রসিদ দেখুন", "View Approved Slip")}</span>
+                </button>
+              )}
+            </div>
+          ) : (order.paymentDetails?.adminApprovalStatus === 'pending' && !paymentSectionOpen) ? (
+            /* Pending Admin Escrow Verification */
+            <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 space-y-3 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-                    <Lock className="w-5 h-5 text-white" />
+                  <div className="w-11 h-11 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-xs shrink-0">
+                    <Clock className="w-6 h-6 animate-pulse" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-black uppercase tracking-wider text-emerald-900 bg-emerald-200/70 px-2.5 py-0.5 rounded-md">
-                        {t("ধাপ ১: এস্ক্রো পেমেন্ট ডিপোজিট", "Step 1: Escrow Custody Deposit")}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-md">
+                        {t("ধাপ ১: পেমেন্ট অডিট ও ভেরিফিকেশন চলছে", "Step 1: Escrow Audit in Progress")}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold animate-pulse">
-                        {t("পেমেন্ট আবশ্যক", "Payment Required")}
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-bold animate-pulse">
+                        ⏳ {t("এডমিন পর্যালোচনায়", "Under Admin Review")}
                       </span>
                     </div>
                     <h3 className="text-sm font-black text-slate-900 mt-1">
-                      {t("প্ল্যাটফর্ম এস্ক্রো ভল্টে ডিপোজিট সম্পন্ন করুন", "Deposit Funds to Platform Escrow Vault")}
+                      {t("বায়ারের পেমেন্ট তথ্য সফলভাবে এডমিন অডিট ভল্টে জমা হয়েছে", "Payment proof submitted to Admin Vault")}
                     </h3>
-                    <p className="text-[11px] text-slate-600">
-                      {t("এখানে ক্লিক করে BDT বা USDT বোতাম সিলেক্ট করুন এবং পেমেন্ট ডিটেইলস দিন", "Click to select BDT or USDT button and submit payment details")}
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      <span className="font-semibold">{order.paymentDetails.method}</span> • TrxID: <span className="font-mono font-bold text-slate-900 select-all">{order.paymentDetails.transactionRef}</span>
+                      {order.paymentDetails.senderAccount && ` • ${t("প্রেরক: ", "Sender: ")}${order.paymentDetails.senderAccount}`}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-center">
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  {order.paymentDetails.screenshotUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setViewProofModalUrl(order.paymentDetails!.screenshotUrl!)}
+                      className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>{t("স্ক্রিনশট দেখুন", "View Slip")}</span>
+                    </button>
+                  )}
+                  {isBuyer && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentSectionOpen(true)}
+                      className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-semibold cursor-pointer shadow-2xs"
+                    >
+                      {t("তথ্য সংশোধন করুন", "Edit / Resubmit")}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-100/70 rounded-xl text-xs text-amber-900 flex items-center gap-2">
+                <Info className="w-4 h-4 shrink-0 text-amber-700" />
+                <span>
+                  {t("প্ল্যাটফর্ম এডমিন ব্যাংক স্টেটমেন্ট বা ওয়ালেট ব্যালেন্স মিলিয়ে নিশ্চিত করার পর পরবর্তী ট্রান্সফার ধাপটি স্বয়ংক্রিয়ভাবে খুলে দেওয়া হবে।", "Platform admin is auditing bank ledger. Handover steps will unlock automatically upon verification.")}
+                </span>
+              </div>
+            </div>
+          ) : isBuyer ? (
+            <div className={`rounded-2xl border-2 overflow-hidden shadow-sm ${
+              order.paymentDetails?.adminApprovalStatus === 'rejected'
+                ? 'border-rose-400 bg-gradient-to-br from-rose-50/90 via-orange-50/40 to-rose-50/90'
+                : 'border-emerald-400 bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-emerald-50/90'
+            }`}>
+              {/* Interactive Header: Click to Open / Collapse Payment */}
+              <div
+                onClick={() => setPaymentSectionOpen(!paymentSectionOpen)}
+                className={`w-full p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer transition select-none ${
+                  order.paymentDetails?.adminApprovalStatus === 'rejected'
+                    ? 'hover:bg-rose-100/30'
+                    : 'hover:bg-emerald-100/30'
+                }`}
+              >
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className={`w-11 h-11 rounded-2xl text-white flex items-center justify-center font-bold shadow-xs shrink-0 ${
+                    order.paymentDetails?.adminApprovalStatus === 'rejected' ? 'bg-rose-600' : 'bg-emerald-600'
+                  }`}>
+                    {order.paymentDetails?.adminApprovalStatus === 'rejected' ? (
+                      <AlertOctagon className="w-5 h-5 text-white" />
+                    ) : (
+                      <Lock className="w-5 h-5 text-white" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
+                        order.paymentDetails?.adminApprovalStatus === 'rejected'
+                          ? 'text-rose-900 bg-rose-200/80'
+                          : 'text-emerald-900 bg-emerald-200/70'
+                      }`}>
+                        {order.paymentDetails?.adminApprovalStatus === 'rejected'
+                          ? t("ধাপ ১: এস্ক্রো ডিপোজিট (বাতিল ও রিসেটকৃত)", "Step 1: Escrow Deposit (Rejected & Reset)")
+                          : t("ধাপ ১: এস্ক্রো পেমেন্ট ডিপোজিট", "Step 1: Escrow Custody Deposit")}
+                      </span>
+                      {order.paymentDetails?.adminApprovalStatus === 'rejected' ? (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold animate-pulse">
+                          ✕ {t("ভুল তথ্য বাতিলকৃত - পুনরায় দিন", "Info Rejected - Resubmit")}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold animate-pulse">
+                          {t("পেমেন্ট আবশ্যক", "Payment Required")}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-black text-slate-900 mt-1">
+                      {order.paymentDetails?.adminApprovalStatus === 'rejected'
+                        ? t("সঠিক তথ্য ও প্রমাণ দিয়ে পুনরায় ডিপোজিট সাবমিট করুন", "Resubmit Valid TrxID & Genuine Proof Slip")
+                        : t("প্ল্যাটফর্ম এস্ক্রো ভল্টে ডিপোজিট সম্পন্ন করুন", "Deposit Funds to Platform Escrow Vault")}
+                    </h3>
+                    <p className="text-[11px] text-slate-600">
+                      {t("সরাসরি BDT বা USDT বাটনে চাপুন এবং অ্যাকাউন্ট ডিটেইলস দেখে পেমেন্ট সম্পন্ন করুন", "Click BDT or USDT button to view account details and submit payment")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between lg:justify-end gap-3 sm:gap-4 flex-wrap pt-2 lg:pt-0 border-t lg:border-t-0 border-emerald-200/70">
+                  {/* Two Direct Action Buttons: BDT and USDT */}
+                  <div className="flex items-center gap-1.5 sm:gap-2 bg-white/90 p-1 rounded-2xl border border-emerald-300 shadow-2xs">
+                    {/* BDT Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPaymentGatewayTab('bdt');
+                        setPaymentSectionOpen(true);
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+                        paymentSectionOpen && paymentGatewayTab === 'bdt'
+                          ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-300 scale-[1.02]'
+                          : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200'
+                      }`}
+                      title={t("BDT পেমেন্ট গেটওয়ে (বিকাশ, নগদ, ব্যাংক)", "BDT Gateways (bKash, Nagad, Bank)")}
+                    >
+                      <span className="text-base">🇧🇩</span>
+                      <div className="text-left">
+                        <div className="flex items-center gap-1 leading-none">
+                          <span className="font-black text-xs">BDT</span>
+                          {paymentSectionOpen && paymentGatewayTab === 'bdt' && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                          )}
+                        </div>
+                        <span className="text-[9px] opacity-80 block font-normal mt-0.5 leading-none">
+                          {t("টাকা / ব্যাংক", "Taka / Bank")}
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* USDT Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPaymentGatewayTab('usdt');
+                        setPaymentSectionOpen(true);
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+                        paymentSectionOpen && paymentGatewayTab === 'usdt'
+                          ? 'bg-teal-700 text-white shadow-md ring-2 ring-teal-300 scale-[1.02]'
+                          : 'bg-teal-50 text-teal-900 hover:bg-teal-100 border border-teal-200'
+                      }`}
+                      title={t("USDT ক্রিপ্টোকারেন্সি (TRC20, BEP20, Binance)", "USDT Crypto (TRC20, BEP20, Binance)")}
+                    >
+                      <span className="text-base">🪙</span>
+                      <div className="text-left">
+                        <div className="flex items-center gap-1 leading-none">
+                          <span className="font-black text-xs">USDT</span>
+                          {paymentSectionOpen && paymentGatewayTab === 'usdt' && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                          )}
+                        </div>
+                        <span className="text-[9px] opacity-80 block font-normal mt-0.5 leading-none">
+                          {t("ক্রিপ্টো TRC20", "Crypto TRC20")}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Amount Due text */}
                   <div className="text-right">
                     <span className="text-[10px] font-bold text-slate-500 block uppercase">{t("প্রদেয় অর্থ", "Amount Due")}</span>
-                    <span className="text-base font-black text-slate-900 font-mono">${order.totalAmount.toLocaleString()} USD</span>
+                    <span className="text-sm sm:text-base font-black text-slate-900 font-mono">${order.totalAmount.toLocaleString()} USD</span>
                     <span className="text-[10px] font-bold text-emerald-700 block">
                       ≈ ৳{Math.round(order.totalAmount * (settings?.bdtConversionRate || 122)).toLocaleString()} BDT
                     </span>
                   </div>
-                  <div className="w-8 h-8 rounded-xl bg-white border border-emerald-300 flex items-center justify-center text-emerald-700 shadow-2xs">
+
+                  {/* Chevron Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPaymentSectionOpen(!paymentSectionOpen);
+                    }}
+                    className="w-8 h-8 rounded-xl bg-white border border-emerald-300 flex items-center justify-center text-emerald-700 hover:bg-emerald-50 shadow-2xs transition cursor-pointer"
+                    title={paymentSectionOpen ? t("পেমেন্ট বন্ধ করুন", "Collapse Payment") : t("পেমেন্ট খুলুন", "Open Payment")}
+                  >
                     {paymentSectionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </div>
+                  </button>
                 </div>
-              </button>
+              </div>
 
               {/* Expandable Payment Body */}
               {paymentSectionOpen && (
-                <div className="p-4 sm:p-6 border-t border-emerald-200 bg-white space-y-5 animate-fade-in">
+                <div id="escrow-payment-section" className="p-4 sm:p-6 border-t border-emerald-200 bg-white space-y-5 animate-fade-in">
+                  {/* Rejection Alert Banner if Rejected by Admin */}
+                  {order.paymentDetails?.adminApprovalStatus === 'rejected' && (
+                    <div className="p-4 sm:p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-950 space-y-2.5 shadow-xs">
+                      <div className="flex items-center gap-2 font-black text-rose-800 text-sm">
+                        <AlertOctagon className="w-5 h-5 text-rose-600 shrink-0" />
+                        <span>{t('এডমিন অডিট সতর্কতা: আপনার পেমেন্ট তথ্য বাতিল ও রিসেট করা হয়েছে!', 'Admin Audit Alert: Payment Details Rejected & Reset!')}</span>
+                      </div>
+                      <div className="p-3 bg-white/90 rounded-xl border border-rose-200 text-xs">
+                        <strong className="text-rose-900">{t('এডমিনের বাতিলের কারণ: ', 'Admin Rejection Reason: ')}</strong>
+                        <span className="text-rose-800 font-semibold">{order.paymentDetails.adminRejectionReason || t('ভুল ট্রানজেকশন আইডি বা ভুয়া স্ক্রিনশট রসিদ।', 'Invalid Transaction ID or fake voucher slip.')}</span>
+                      </div>
+                      <p className="text-[11px] text-rose-800 font-medium">
+                        {t('🚫 ভুল বা ফেক তথ্য দেওয়ার কারণে পরবর্তী ধাপ বন্ধ রাখা হয়েছে। সঠিক TrxID ও আসল পেমেন্ট স্লিপ দিয়ে পুনরায় সাবমিট করুন। এডমিন অনুমোদন ছাড়া কোনো পরবর্তী ধাপে যাওয়া যাবে না।', '🚫 Handover steps are blocked due to rejected payment. Please resubmit valid TrxID and genuine proof slip below.')}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Escrow Custody Destination Notice */}
                   <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/60 to-emerald-50 border-2 border-emerald-300 space-y-2 text-xs">
                     <div className="flex items-center gap-2 text-emerald-950 font-black text-sm">
@@ -602,352 +895,314 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                     </p>
                   </div>
 
-                  {/* Primary Payment Selector: 2 BUTTONS (BDT and USDT) */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <Coins className="w-4 h-4 text-emerald-600" />
-                        <span>{t("পেমেন্ট গেটওয়ে নির্বাচন করুন (Select Gateway):", "Select Payment Gateway:")}</span>
-                      </label>
-                      <span className="text-[11px] text-slate-500 font-medium">
-                        {t("পছন্দের মাধ্যমে ক্লিক করুন", "Click your preferred gateway")}
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Button 1: BDT (বাংলাদেশী গেটওয়ে) */}
-                      <button
-                        type="button"
-                        onClick={() => setPaymentGatewayTab('bdt')}
-                        className={`p-4 rounded-2xl border-2 text-left transition relative cursor-pointer ${
-                          paymentGatewayTab === 'bdt'
-                            ? 'bg-emerald-50/90 border-emerald-500 shadow-md ring-2 ring-emerald-400/20'
-                            : 'bg-white hover:bg-slate-50 border-slate-200'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 ${
-                              paymentGatewayTab === 'bdt' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700'
-                            }`}>
-                              🇧🇩
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-black text-sm text-slate-900">
-                                  {t("BDT (বাংলাদেশী টাকা)", "BDT (Bangladeshi Taka)")}
-                                </span>
-                              </div>
-                              <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
-                                {t("বিকাশ • নগদ • রকেট • ব্যাংক ট্রান্সফার", "bKash • Nagad • Rocket • Bank Transfer")}
-                              </span>
-                            </div>
-                          </div>
-                          {paymentGatewayTab === 'bdt' ? (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold shrink-0">
-                              ✓ {t("নির্বাচিত", "Active")}
-                            </span>
-                          ) : (
-                            <span className="text-[11px] font-bold text-slate-400 shrink-0">
-                              {t("বাছাই করুন", "Select")}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-2.5 pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs font-semibold">
-                          <span className="text-slate-500">{t("মোট প্রদেয় BDT:", "Pay in BDT:")}</span>
-                          <span className="text-emerald-700 font-black font-mono">
-                            ৳{Math.round(order.totalAmount * (settings?.bdtConversionRate || 122)).toLocaleString()} BDT
-                          </span>
-                        </div>
-                      </button>
-
-                      {/* Button 2: USDT (ইউএসডিটি গেটওয়ে) */}
-                      <button
-                        type="button"
-                        onClick={() => setPaymentGatewayTab('usdt')}
-                        className={`p-4 rounded-2xl border-2 text-left transition relative cursor-pointer ${
-                          paymentGatewayTab === 'usdt'
-                            ? 'bg-amber-50/90 border-amber-500 shadow-md ring-2 ring-amber-400/20'
-                            : 'bg-white hover:bg-slate-50 border-slate-200'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 ${
-                              paymentGatewayTab === 'usdt' ? 'bg-amber-500 text-white shadow-xs' : 'bg-slate-100 text-slate-700'
-                            }`}>
-                              🪙
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-black text-sm text-slate-900">
-                                  {t("USDT (ক্রিপ্টোকারেন্সি)", "USDT (Cryptocurrency)")}
-                                </span>
-                              </div>
-                              <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
-                                {t("TRC-20 • BEP-20 • Binance Pay", "TRC-20 • BEP-20 • Binance Pay")}
-                              </span>
-                            </div>
-                          </div>
-                          {paymentGatewayTab === 'usdt' ? (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-bold shrink-0">
-                              ✓ {t("নির্বাচিত", "Active")}
-                            </span>
-                          ) : (
-                            <span className="text-[11px] font-bold text-slate-400 shrink-0">
-                              {t("বাছাই করুন", "Select")}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-2.5 pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs font-semibold">
-                          <span className="text-slate-500">{t("মোট প্রদেয় USDT:", "Pay in USDT:")}</span>
-                          <span className="text-amber-700 font-black font-mono">
-                            {order.totalAmount.toLocaleString()} USDT
-                          </span>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
 
                   {/* Sub-Method Selector & Details based on Active Tab */}
-                  {paymentGatewayTab === 'bdt' ? (
-                    /* ================= BDT GATEWAYS & BANK ACCOUNTS ================= */
-                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-                      {(() => {
-                        const bdtGateways = (settings?.customGateways || []).filter(g => g.type === 'bdt' && g.isActive !== false);
-                        const activeGw = bdtGateways.find(g => g.id === selectedGatewayId) || bdtGateways[0];
+                  {(() => {
+                    const DEFAULT_PLATFORM_GATEWAYS: CustomPaymentGateway[] = [
+                      {
+                        id: 'gw_bkash_merchant',
+                        name: 'বিকাশ মার্চেন্ট (bKash Merchant)',
+                        type: 'bdt',
+                        category: 'mobile_banking',
+                        accountNumber: settings?.bkashMerchantNumber || '01712345678',
+                        accountHolderName: 'Alif Trust Media Escrow',
+                        instructions: "বিকাশ অ্যাপে 'Payment' অপশনে গিয়ে মার্চেন্ট নম্বরে টাকা পাঠান। রেফারেন্সে Order ID লিখুন।",
+                        isActive: true
+                      },
+                      {
+                        id: 'gw_nagad_merchant',
+                        name: 'নগদ অনলাইন (Nagad Escrow)',
+                        type: 'bdt',
+                        category: 'mobile_banking',
+                        accountNumber: settings?.nagadMerchantNumber || '01812345678',
+                        accountHolderName: 'Alif Trust Media Escrow',
+                        instructions: "নগদ অ্যাপ থেকে Send Money বা Merchant Pay সম্পন্ন করে ট্রানজেকশন আইডি দিন।",
+                        isActive: true
+                      },
+                      {
+                        id: 'gw_city_bank',
+                        name: 'সিটি ব্যাংক (City Bank PLC)',
+                        type: 'bdt',
+                        category: 'bank',
+                        bankName: 'City Bank PLC',
+                        accountHolderName: 'Alif Sheen Media Group Ltd',
+                        accountNumber: '120349817201',
+                        branchName: 'Gulshan-2 Branch, Dhaka',
+                        routingNumber: '225261839',
+                        swiftCode: 'CIBLBDDH',
+                        instructions: "অনলাইন ব্যাংকিং (NPSB / BEFTN) বা যেকোনো ব্রাঞ্চ থেকে ডিপোজিট করে ডিপোজিট স্লিপের ছবি ও রেফারেন্স দিন।",
+                        isActive: true
+                      },
+                      {
+                        id: 'gw_islami_bank',
+                        name: 'ইসলামী ব্যাংক বাংলাদেশ (Islami Bank)',
+                        type: 'bdt',
+                        category: 'bank',
+                        bankName: 'Islami Bank Bangladesh PLC',
+                        accountHolderName: 'Alif Trust Tech Escrow',
+                        accountNumber: '2050145020199201',
+                        branchName: 'Motijheel Corporate Branch',
+                        routingNumber: '125273199',
+                        instructions: "Cellfin, i-Banking অথবা ব্রাঞ্চ ডিপোজিট করে ট্রানজেকশন স্লিপের স্ক্রিনশট আপলোড করুন।",
+                        isActive: true
+                      },
+                      {
+                        id: 'gw_usdt_trc20',
+                        name: 'USDT - Tron Network (TRC-20)',
+                        type: 'usdt',
+                        category: 'crypto',
+                        accountNumber: settings?.usdtTrc20Address || 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+                        accountHolderName: 'Official Escrow Vault (Tron)',
+                        instructions: "শুধুমাত্র Tron (TRC-20) নেটওয়ার্কে USDT ট্রান্সফার করুন। পাঠানোর পর ব্লকচেইন TxID দিন।",
+                        isActive: true
+                      },
+                      {
+                        id: 'gw_usdt_bep20',
+                        name: 'USDT - BNB Smart Chain (BEP-20)',
+                        type: 'usdt',
+                        category: 'crypto',
+                        accountNumber: settings?.usdtBep20Address || '0x55d398326f99059fF775485246999027B3197955',
+                        accountHolderName: 'Official BSC Vault',
+                        instructions: "শুধুমাত্র BNB Smart Chain (BEP-20) নেটওয়ার্কে পাঠান।",
+                        isActive: true
+                      }
+                    ];
 
-                        return (
-                          <>
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                              <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                                <span>{t("বাংলাদেশি গেটওয়ে বা ব্যাংক বেছে নিন:", "Choose BDT Gateway or Bank Account:")}</span>
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                                  {bdtGateways.length} {t("উপলব্ধ", "Available")}
-                                </span>
+                    const rawCustom = Array.isArray(settings?.customGateways) ? settings.customGateways : [];
+                    const effectiveGateways: CustomPaymentGateway[] = rawCustom.length > 0
+                      ? rawCustom
+                      : DEFAULT_PLATFORM_GATEWAYS;
+
+                    const bdtGateways = effectiveGateways.filter(g => g.type === 'bdt' && g.isActive !== false);
+                    const usdtGateways = effectiveGateways.filter(g => g.type === 'usdt' && g.isActive !== false);
+
+                    if (paymentGatewayTab === 'bdt') {
+                      const activeGw = bdtGateways.find(g => g.id === selectedGatewayId) || bdtGateways[0];
+
+                      return (
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                              <span className="text-base">🇧🇩</span>
+                              <span>{t("বাংলাদেশি গেটওয়ে বা ব্যাংক বেছে নিন:", "Choose BDT Gateway or Bank Account:")}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                {bdtGateways.length} {t("উপলব্ধ", "Available")}
                               </span>
-                            </div>
+                            </span>
+                            <span className="text-xs font-black text-emerald-700">
+                              {t("মোট প্রদেয় BDT:", "Pay in BDT:")} <span className="font-mono">৳{Math.round(order.totalAmount * (settings?.bdtConversionRate || 122)).toLocaleString()} BDT</span>
+                            </span>
+                          </div>
 
-                            {/* Gateways & Banks Selector Chips */}
-                            {bdtGateways.length > 0 ? (
-                              <div className="flex flex-wrap gap-2">
-                                {bdtGateways.map((gw) => {
-                                  const isSelected = (activeGw?.id === gw.id);
-                                  return (
-                                    <button
-                                      key={gw.id}
-                                      type="button"
-                                      onClick={() => setSelectedGatewayId(gw.id)}
-                                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-                                        isSelected
-                                          ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400/30'
-                                          : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-                                      }`}
-                                    >
-                                      {gw.category === 'bank' ? (
-                                        <Building2 className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-blue-600'}`} />
-                                      ) : (
-                                        <Smartphone className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-pink-600'}`} />
-                                      )}
-                                      <span>{gw.name}</span>
-                                      {gw.category === 'bank' && (
-                                        <span className={`text-[9px] px-1.5 py-0.2 rounded-md font-semibold ${
-                                          isSelected ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700'
-                                        }`}>
-                                          {t("ব্যাংক", "Bank")}
-                                        </span>
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <div className="text-xs text-slate-500 italic p-3 bg-white rounded-xl border border-slate-200">
-                                {t("কোনো কাস্টম গেটওয়ে পাওয়া যায়নি। ডিফল্ট একাউন্ট সক্রিয় রয়েছে।", "No custom gateways configured. Default admin account active.")}
-                              </div>
-                            )}
-
-                            {/* Detailed Gateway / Bank Card */}
-                            {activeGw && (
-                              <div className="p-4 rounded-xl bg-white border-2 border-emerald-200 space-y-3.5">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                                      <h4 className="font-black text-sm text-slate-900">{activeGw.name}</h4>
-                                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-bold uppercase">
-                                        {activeGw.category === 'bank' ? t("অফিসিয়াল ব্যাংক অ্যাকাউন্ট", "Official Bank Escrow") : t("মোবাইল ব্যাংকিং", "Mobile Banking")}
-                                      </span>
-                                    </div>
-                                    {activeGw.accountHolderName && (
-                                      <p className="text-[11px] text-slate-600 font-semibold mt-0.5">
-                                        {t("একাউন্ট হোল্ডার নাম:", "Account Name:")} <span className="text-slate-900 font-bold">{activeGw.accountHolderName}</span>
-                                      </p>
-                                    )}
-                                  </div>
-
-                                  {/* Copy Account Number Button */}
-                                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 self-start sm:self-auto">
-                                    <span className="font-mono font-black text-sm text-slate-900 select-all">
-                                      {activeGw.accountNumber}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleCopyText(activeGw.accountNumber, activeGw.id)}
-                                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
-                                    >
-                                      {copiedKey === activeGw.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                      <span>{copiedKey === activeGw.id ? t("কপি হয়েছে", "Copied") : t("কপি", "Copy")}</span>
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Bank Details Grid if category is bank */}
-                                {activeGw.category === 'bank' && (
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 p-3 rounded-xl bg-blue-50/60 border border-blue-200/80 text-xs">
-                                    {activeGw.bankName && (
-                                      <div>
-                                        <span className="text-[10px] font-bold text-blue-700 block uppercase">{t("ব্যাংকের নাম", "Bank Name")}</span>
-                                        <span className="font-bold text-slate-900">{activeGw.bankName}</span>
-                                      </div>
-                                    )}
-                                    {activeGw.branchName && (
-                                      <div>
-                                        <span className="text-[10px] font-bold text-blue-700 block uppercase">{t("ব্রাঞ্চ / শাখা", "Branch")}</span>
-                                        <span className="font-semibold text-slate-800">{activeGw.branchName}</span>
-                                      </div>
-                                    )}
-                                    {activeGw.routingNumber && (
-                                      <div>
-                                        <span className="text-[10px] font-bold text-blue-700 block uppercase">{t("রাউটিং নম্বর", "Routing Number")}</span>
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="font-mono font-bold text-slate-900">{activeGw.routingNumber}</span>
-                                          <button
-                                            type="button"
-                                            onClick={() => handleCopyText(activeGw.routingNumber!, `rout_${activeGw.id}`)}
-                                            className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                                            title={t("রাউটিং কপি করুন", "Copy Routing")}
-                                          >
-                                            {copiedKey === `rout_${activeGw.id}` ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                                          </button>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {activeGw.swiftCode && (
-                                      <div>
-                                        <span className="text-[10px] font-bold text-blue-700 block uppercase">{t("সুইফট কোড (SWIFT)", "SWIFT Code")}</span>
-                                        <span className="font-mono font-bold text-slate-800">{activeGw.swiftCode}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Payment Instructions */}
-                                <div className="text-[11px] text-slate-700 bg-emerald-50/60 p-3 rounded-xl border border-emerald-100 space-y-1">
-                                  <p className="font-bold text-emerald-950 flex items-center justify-between">
-                                    <span>{t(`প্রদেয় মোট টাকা: ৳${Math.round(order.totalAmount * (settings?.bdtConversionRate || 122)).toLocaleString()} BDT`, `Total to Pay: ৳${Math.round(order.totalAmount * (settings?.bdtConversionRate || 122)).toLocaleString()} BDT`)}</span>
-                                    <span className="text-[10px] text-emerald-800 font-semibold">($1 = ৳{settings?.bdtConversionRate || 122})</span>
-                                  </p>
-                                  {activeGw.instructions && (
-                                    <p className="text-slate-600 pt-0.5">{activeGw.instructions}</p>
+                          {/* Gateways & Banks Selector Chips */}
+                          <div className="flex flex-wrap gap-2">
+                            {bdtGateways.map((gw) => {
+                              const isSelected = (activeGw?.id === gw.id);
+                              return (
+                                <button
+                                  key={gw.id}
+                                  type="button"
+                                  onClick={() => setSelectedGatewayId(gw.id)}
+                                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-2xs ${
+                                    isSelected
+                                      ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/30'
+                                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                                  }`}
+                                >
+                                  {gw.category === 'bank' ? (
+                                    <Building2 className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-blue-600'}`} />
+                                  ) : (
+                                    <Smartphone className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-emerald-600'}`} />
                                   )}
-                                  <p className="text-[10px] text-emerald-800 font-semibold pt-1">
-                                    {t("* পেমেন্ট সম্পন্ন করে TrxID এবং রসিদের স্ক্রিনশট নিচের বক্সে যুক্ত করুন।", "* After payment, enter the TrxID and upload proof screenshot below.")}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  ) : (
-                    /* ================= USDT GATEWAYS ================= */
-                    <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/50 border border-amber-200 space-y-4">
-                      {(() => {
-                        const usdtGateways = (settings?.customGateways || []).filter(g => g.type === 'usdt' && g.isActive !== false);
-                        const activeGw = usdtGateways.find(g => g.id === selectedGatewayId) || usdtGateways[0];
+                                  <span>{gw.name}</span>
+                                  {gw.category === 'bank' && (
+                                    <span className={`text-[9px] px-1.5 py-0.2 rounded-md font-semibold ${
+                                      isSelected ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700'
+                                    }`}>
+                                      {t("ব্যাংক", "Bank")}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
 
-                        return (
-                          <>
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                              <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                                <span>{t("ক্রিপ্টো গেটওয়ে বা নেটওয়ার্ক বেছে নিন:", "Choose Crypto Gateway / Network:")}</span>
-                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
-                                  {usdtGateways.length} {t("উপলব্ধ", "Available")}
-                                </span>
-                              </span>
-                            </div>
-
-                            {/* Crypto Chips */}
-                            {usdtGateways.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {usdtGateways.map((gw) => {
-                                  const isSelected = (activeGw?.id === gw.id);
-                                  return (
-                                    <button
-                                      key={gw.id}
-                                      type="button"
-                                      onClick={() => setSelectedGatewayId(gw.id)}
-                                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-                                        isSelected
-                                          ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400/30'
-                                          : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-                                      }`}
-                                    >
-                                      <Coins className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-amber-600'}`} />
-                                      <span>{gw.name}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
-
-                            {/* Detailed Crypto Card */}
-                            {activeGw && (
-                              <div className="p-4 rounded-xl bg-white border-2 border-amber-200 space-y-3.5">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                                  <div>
+                          {/* Detailed Gateway / Bank Card */}
+                          {activeGw && (
+                            <div className="p-4 rounded-xl bg-white border-2 border-emerald-300 space-y-3.5 shadow-xs">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                                     <h4 className="font-black text-sm text-slate-900">{activeGw.name}</h4>
-                                    <span className="text-[10px] text-amber-700 font-bold uppercase">
-                                      {t("অফিসিয়াল ক্রিপ্টো এসক্রো ডিপোজিট", "Official Crypto Escrow Vault")}
+                                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-bold uppercase">
+                                      {activeGw.category === 'bank' ? t("অফিসিয়াল ব্যাংক অ্যাকাউন্ট", "Official Bank Escrow") : t("মোবাইল ব্যাংকিং", "Mobile Banking")}
                                     </span>
                                   </div>
-                                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 self-start sm:self-auto">
-                                    <span className="font-mono font-black text-xs text-slate-900 select-all truncate max-w-[200px]">
-                                      {activeGw.accountNumber}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleCopyText(activeGw.accountNumber, activeGw.id)}
-                                      className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
-                                    >
-                                      {copiedKey === activeGw.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                      <span>{copiedKey === activeGw.id ? t("কপি হয়েছে", "Copied") : t("কপি", "Copy")}</span>
-                                    </button>
-                                  </div>
+                                  {activeGw.accountHolderName && (
+                                    <p className="text-[11px] text-slate-600 font-semibold mt-0.5">
+                                      {t("একাউন্ট হোল্ডার নাম:", "Account Name:")} <span className="text-slate-900 font-bold">{activeGw.accountHolderName}</span>
+                                    </p>
+                                  )}
                                 </div>
 
-                                <div className="text-[11px] text-slate-700 bg-amber-50/60 p-3 rounded-xl border border-amber-100 space-y-1">
-                                  <p className="font-bold text-amber-950 flex items-center justify-between">
-                                    <span>{t(`প্রদেয় মোট USDT: ${order.totalAmount.toLocaleString()} USDT`, `Total to Pay: ${order.totalAmount.toLocaleString()} USDT`)}</span>
-                                  </p>
-                                  {activeGw.instructions && (
-                                    <p className="text-slate-600 pt-0.5">{activeGw.instructions}</p>
-                                  )}
-                                  <p className="text-[10px] text-amber-800 font-semibold pt-1">
-                                    {t("* ক্রিপ্টো ট্রান্সফার শেষে প্রাপ্ত TxHash / Transaction ID এবং কনফার্মেশন স্ক্রিনশট নিচের বক্সে দিন।", "* After transfer, input TxHash and upload confirmation slip below.")}
-                                  </p>
+                                {/* Copy Account Number Button */}
+                                <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 self-start sm:self-auto">
+                                  <span className="font-mono font-black text-sm text-slate-900 select-all">
+                                    {activeGw.accountNumber}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyText(activeGw.accountNumber, activeGw.id)}
+                                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                                  >
+                                    {copiedKey === activeGw.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                    <span>{copiedKey === activeGw.id ? t("কপি হয়েছে", "Copied") : t("কপি", "Copy")}</span>
+                                  </button>
                                 </div>
                               </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  )}
+
+                              {/* Bank Details Grid if category is bank */}
+                              {activeGw.category === 'bank' && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 p-3 rounded-xl bg-blue-50/60 border border-blue-200/80 text-xs">
+                                  {activeGw.bankName && (
+                                    <div>
+                                      <span className="text-[10px] font-bold text-blue-700 block uppercase">{t("ব্যাংকের নাম", "Bank Name")}</span>
+                                      <span className="font-bold text-slate-900">{activeGw.bankName}</span>
+                                    </div>
+                                  )}
+                                  {activeGw.branchName && (
+                                    <div>
+                                      <span className="text-[10px] font-bold text-blue-700 block uppercase">{t("ব্রাঞ্চ / শাখা", "Branch")}</span>
+                                      <span className="font-semibold text-slate-800">{activeGw.branchName}</span>
+                                    </div>
+                                  )}
+                                  {activeGw.routingNumber && (
+                                    <div>
+                                      <span className="text-[10px] font-bold text-blue-700 block uppercase">{t("রাউটিং নম্বর", "Routing Number")}</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-mono font-bold text-slate-900">{activeGw.routingNumber}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleCopyText(activeGw.routingNumber!, `rout_${activeGw.id}`)}
+                                          className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                                          title={t("রাউটিং কপি করুন", "Copy Routing")}
+                                        >
+                                          {copiedKey === `rout_${activeGw.id}` ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {activeGw.swiftCode && (
+                                    <div>
+                                      <span className="text-[10px] font-bold text-blue-700 block uppercase">{t("সুইফট কোড (SWIFT)", "SWIFT Code")}</span>
+                                      <span className="font-mono font-bold text-slate-800">{activeGw.swiftCode}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Payment Instructions */}
+                              <div className="text-[11px] text-slate-700 bg-emerald-50/60 p-3 rounded-xl border border-emerald-100 space-y-1">
+                                <p className="font-bold text-emerald-950 flex items-center justify-between">
+                                  <span>{t(`প্রদেয় মোট টাকা: ৳${Math.round(order.totalAmount * (settings?.bdtConversionRate || 122)).toLocaleString()} BDT`, `Total to Pay: ৳${Math.round(order.totalAmount * (settings?.bdtConversionRate || 122)).toLocaleString()} BDT`)}</span>
+                                  <span className="text-[10px] text-emerald-800 font-semibold">($1 = ৳{settings?.bdtConversionRate || 122})</span>
+                                </p>
+                                {activeGw.instructions && (
+                                  <p className="text-slate-600 pt-0.5">{activeGw.instructions}</p>
+                                )}
+                                <p className="text-[10px] text-emerald-800 font-semibold pt-1">
+                                  {t("* পেমেন্ট সম্পন্ন করে TrxID এবং রসিদের স্ক্রিনশট নিচের বক্সে যুক্ত করুন।", "* After payment, enter the TrxID and upload proof screenshot below.")}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    } else {
+                      /* ================= USDT GATEWAYS ================= */
+                      const activeGw = usdtGateways.find(g => g.id === selectedGatewayId) || usdtGateways[0];
+
+                      return (
+                        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/50 border border-amber-200 space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                              <span className="text-base">🪙</span>
+                              <span>{t("ক্রিপ্টো গেটওয়ে বা নেটওয়ার্ক বেছে নিন:", "Choose Crypto Gateway / Network:")}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                                {usdtGateways.length} {t("উপলব্ধ", "Available")}
+                              </span>
+                            </span>
+                            <span className="text-xs font-black text-amber-700">
+                              {t("মোট প্রদেয় USDT:", "Pay in USDT:")} <span className="font-mono">{order.totalAmount.toLocaleString()} USDT</span>
+                            </span>
+                          </div>
+
+                          {/* Crypto Chips */}
+                          <div className="flex flex-wrap gap-2">
+                            {usdtGateways.map((gw) => {
+                              const isSelected = (activeGw?.id === gw.id);
+                              return (
+                                <button
+                                  key={gw.id}
+                                  type="button"
+                                  onClick={() => setSelectedGatewayId(gw.id)}
+                                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400/30'
+                                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                                  }`}
+                                >
+                                  <Coins className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-amber-600'}`} />
+                                  <span>{gw.name}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Detailed Crypto Card */}
+                          {activeGw && (
+                            <div className="p-4 rounded-xl bg-white border-2 border-amber-200 space-y-3.5 shadow-xs">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                                <div>
+                                  <h4 className="font-black text-sm text-slate-900">{activeGw.name}</h4>
+                                  <span className="text-[10px] text-amber-700 font-bold uppercase">
+                                    {t("অফিসিয়াল ক্রিপ্টো এসক্রো ডিপোজিট", "Official Crypto Escrow Vault")}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 self-start sm:self-auto">
+                                  <span className="font-mono font-black text-xs text-slate-900 select-all truncate max-w-[200px]">
+                                    {activeGw.accountNumber}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyText(activeGw.accountNumber, activeGw.id)}
+                                    className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                                  >
+                                    {copiedKey === activeGw.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                    <span>{copiedKey === activeGw.id ? t("কপি হয়েছে", "Copied") : t("কপি", "Copy")}</span>
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="text-[11px] text-slate-700 bg-amber-50/60 p-3 rounded-xl border border-amber-100 space-y-1">
+                                <p className="font-bold text-amber-950 flex items-center justify-between">
+                                  <span>{t(`প্রদেয় মোট USDT: ${order.totalAmount.toLocaleString()} USDT`, `Total to Pay: ${order.totalAmount.toLocaleString()} USDT`)}</span>
+                                </p>
+                                {activeGw.instructions && (
+                                  <p className="text-slate-600 pt-0.5">{activeGw.instructions}</p>
+                                )}
+                                <p className="text-[10px] text-amber-800 font-semibold pt-1">
+                                  {t("* ক্রিপ্টো ট্রান্সফার শেষে প্রাপ্ত TxHash / Transaction ID এবং কনফার্মেশন স্ক্রিনশট নিচের বক্সে দিন।", "* After transfer, input TxHash and upload confirmation slip below.")}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                  })()}
 
                   {/* Input Form: TrxID / TxHash and Sender Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
@@ -1107,39 +1362,6 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                 </div>
               )}
             </div>
-          ) : order.paymentDetails ? (
-            /* Confirmed Deposit Card inside Protocol */
-            <div className="p-4 rounded-2xl bg-emerald-50/80 border-2 border-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-                  <ShieldCheck className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black uppercase text-emerald-900">
-                      {t("ধাপ ১ সম্পন্ন: প্ল্যাটফর্ম এস্ক্রো কাস্টডি পেমেন্ট সুরক্ষিত ও লকড", "Step 1 Completed: Escrow Deposit Secured")}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-bold">✓ {t("ভেরিফাইড", "Verified")}</span>
-                  </div>
-                  <p className="text-xs text-slate-700 mt-0.5">
-                    <span className="font-bold">{order.paymentDetails.method}</span> • TrxID: <span className="font-mono font-bold text-slate-900">{order.paymentDetails.transactionRef}</span>
-                  </p>
-                  <p className="text-[11px] text-emerald-800 font-medium">
-                    {t("টাকা সরাসরি প্ল্যাটফর্ম এডমিন ভল্টে নিরাপদে সংরক্ষিত রয়েছে — বিক্রেতার কাছে হস্তান্তর সম্পন্ন না হওয়া পর্যন্ত যাবে না।", "Funds are securely locked in Admin Escrow — will not reach seller until transfer is approved.")}
-                  </p>
-                </div>
-              </div>
-              {order.paymentDetails.screenshotUrl && (
-                <button
-                  type="button"
-                  onClick={() => setViewProofModalUrl(order.paymentDetails!.screenshotUrl!)}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto shadow-xs shrink-0"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>{t("রসিদ / স্ক্রিনশট দেখুন", "View Payment Proof")}</span>
-                </button>
-              )}
-            </div>
           ) : (
             /* Pending deposit banner for seller / admin */
             <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center gap-3">
@@ -1152,6 +1374,180 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                   {t("ক্রেতা এখনও এস্ক্রো ভল্টে ডিপোজিট সম্পন্ন করেননি। ডিপোজিট ভেরিফাই হলে পরবর্তী হ্যান্ডওভার ধাপ শুরু হবে।", "Buyer has not yet deposited funds into escrow. Handover steps will begin once deposit is locked.")}
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* ADMIN ESCROW AUDIT & VERIFICATION PANEL */}
+          {/* ============================================================== */}
+          {order.paymentDetails && (isAdmin || user?.role === 'admin') && (
+            <div className="p-5 sm:p-6 rounded-3xl bg-slate-900 text-white border-2 border-amber-400 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-md shrink-0">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-black uppercase tracking-wider text-amber-400 bg-amber-400/20 px-2.5 py-0.5 rounded-md">
+                        {t("এডমিন এসক্রো অডিট প্যানেল", "Admin Escrow Audit Panel")}
+                      </span>
+                      {order.paymentDetails.adminApprovalStatus === 'approved' && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+                          ✓ {t("অনুমোদিত (Approved)", "Approved")}
+                        </span>
+                      )}
+                      {order.paymentDetails.adminApprovalStatus === 'rejected' && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+                          ✕ {t("বাতিল ও রিসেটকৃত (Rejected)", "Rejected")}
+                        </span>
+                      )}
+                      {(!order.paymentDetails.adminApprovalStatus || order.paymentDetails.adminApprovalStatus === 'pending') && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-bold animate-pulse">
+                          ⏳ {t("যাচাইয়ের অপেক্ষায় (Pending Verification)", "Pending Verification")}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-sm sm:text-base font-extrabold text-white mt-1">
+                      {t("বায়ারের ডিপোজিট সত্যতা যাচাই ও অনুমোদন নিয়ন্ত্রণ", "Buyer Deposit Audit & Escrow Approval Control")}
+                    </h3>
+                  </div>
+                </div>
+                <div className="text-left sm:text-right">
+                  <span className="text-[10px] text-slate-400 block uppercase font-mono">{t("প্ল্যাটফর্ম ভল্ট ভেরিফায়ার", "Platform Vault Auditor")}</span>
+                  <span className="text-xs text-amber-300 font-bold">{user?.name} ({t("এডমিন", "Admin")})</span>
+                </div>
+              </div>
+
+              {/* Submitted Details Inspection Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-800/80 p-4 rounded-2xl border border-slate-700">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">{t("পেমেন্ট গেটওয়ে / মেথড", "Payment Gateway / Method")}</span>
+                  <strong className="text-xs text-emerald-400 block font-semibold">{order.paymentDetails.method}</strong>
+                  {order.paymentDetails.senderAccount && (
+                    <span className="text-[11px] text-slate-300 block">
+                      {t("প্রেরক: ", "Sender: ")} <span className="font-mono text-white">{order.paymentDetails.senderAccount}</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">{t("ট্রানজেকশন রেফারেন্স (TrxID)", "Transaction Ref / TrxID")}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-xs text-amber-300 select-all truncate">
+                      {order.paymentDetails.transactionRef}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyText(order.paymentDetails!.transactionRef, 'admin-trx')}
+                      className="p-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-300 cursor-pointer"
+                      title="Copy TrxID"
+                    >
+                      {copiedKey === 'admin-trx' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  <span className="text-[10px] text-slate-400 block">
+                    {t("জমা দেওয়ার সময়: ", "Submitted at: ")}{new Date(order.paymentDetails.confirmedAt).toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">{t("পেমেন্ট প্রমাণ / রসিদ", "Payment Slip / Screenshot")}</span>
+                  {order.paymentDetails.screenshotUrl ? (
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={order.paymentDetails.screenshotUrl}
+                        alt="Payment Slip"
+                        className="w-10 h-10 rounded-lg object-cover border border-slate-600 cursor-pointer hover:opacity-80 transition"
+                        onClick={() => setViewProofModalUrl(order.paymentDetails!.screenshotUrl!)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setViewProofModalUrl(order.paymentDetails!.screenshotUrl!)}
+                        className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>{t("স্ক্রিনশট যাচাই করুন", "Inspect Slip")}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-rose-400 font-semibold">{t("কোনো স্ক্রিনশট পাওয়া যায়নি", "No Screenshot Provided")}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* If Rejected: Show Rejection Notice */}
+              {order.paymentDetails.adminApprovalStatus === 'rejected' && (
+                <div className="p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/50 text-rose-200 text-xs space-y-1">
+                  <strong className="text-rose-400 font-bold block flex items-center gap-1.5">
+                    <XCircle className="w-4 h-4 text-rose-400" />
+                    <span>{t("এডমিন দ্বারা বাতিল ও রিসেট করা হয়েছে:", "Rejected & Reset by Admin:")}</span>
+                  </strong>
+                  <p className="font-medium">{order.paymentDetails.adminRejectionReason}</p>
+                  <p className="text-[10px] text-rose-400">
+                    {t("বায়ার এই অবস্থায় কোনো পরবর্তী ধাপে যেতে পারবে না যতক্ষণ না সঠিক তথ্য প্রদান করে।", "Buyer is strictly blocked from advancing to next transfer steps until valid payment is verified.")}
+                  </p>
+                </div>
+              )}
+
+              {/* Admin Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-800">
+                <div className="text-xs text-slate-400">
+                  <span>{t("প্রদেয় এমাউন্ট: ", "Payable Amount: ")}</span>
+                  <strong className="text-white text-sm font-mono">${order.totalAmount.toLocaleString()} USD</strong>
+                  <span className="text-slate-400 ml-1">
+                    (৳{Math.round(order.totalAmount * (settings?.bdtConversionRate || 122)).toLocaleString()} BDT)
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Reject & Reset Fake Info Button */}
+                  <button
+                    type="button"
+                    disabled={isProcessingAdminAction}
+                    onClick={() => {
+                      setAdminRejectReason('');
+                      setAdminRejectModalOpen(true);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-sm"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>{t("ভুল/ফেক তথ্য রিসেট করুন", "Reject & Reset Fake Info")}</span>
+                  </button>
+
+                  {/* Approve & Confirm Escrow Button */}
+                  <button
+                    type="button"
+                    disabled={isProcessingAdminAction || order.paymentDetails.adminApprovalStatus === 'approved'}
+                    onClick={handleAdminApprovePayment}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-md"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>
+                      {order.paymentDetails.adminApprovalStatus === 'approved'
+                        ? t("অনুমোদিত ✓", "Approved ✓")
+                        : t("পেমেন্ট নিশ্চিত ও অনুমোদন করুন", "Verify & Approve Escrow")}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Admin Testing Switcher if logged in as buyer or seller */}
+          {order.paymentDetails && !isAdmin && (
+            <div className="p-3.5 bg-slate-100 border border-slate-300 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-700">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-slate-600" />
+                <span>{t("এডমিন প্যানেল থেকে পেমেন্ট অনুমোদন বা ফেক তথ্য রিসেট পরীক্ষা করতে চান?", "Want to test approving payment or resetting fake info as Admin?")}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => quickSwitch('admin')}
+                className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs cursor-pointer shadow-2xs"
+              >
+                {t("এডমিন হিসেবে সুইচ করুন", "Switch to Admin")}
+              </button>
             </div>
           )}
 
@@ -1201,76 +1597,111 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                   {/* Actions to complete milestone */}
                   {!step.completed && order.status !== 'completed' && order.status !== 'cancelled' && (
                     <div>
-                      {/* Step 1: Buyer provides Email/Handle */}
-                      {step.step === 1 && isBuyer && (
-                        <form onSubmit={handleSaveGoogleEmail} className="flex gap-2">
-                          <input
-                            type="email"
-                            required
-                            value={inputGoogleEmail}
-                            onChange={(e) => setInputGoogleEmail(e.target.value)}
-                            placeholder="buyer.clean.email@gmail.com"
-                            className="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-hidden"
-                          />
-                          <button
-                            type="submit"
-                            disabled={savingEmail}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-xs"
-                          >
-                            {t("সংরক্ষণ", "Save")}
-                          </button>
-                        </form>
-                      )}
+                      {(() => {
+                        const isStep1Approved = order.paymentDetails?.adminApprovalStatus === 'approved';
+                        const isRejected = order.paymentDetails?.adminApprovalStatus === 'rejected';
+                        const isPending = order.paymentDetails?.adminApprovalStatus === 'pending';
 
-                      {/* Step 2: Seller marks invite sent */}
-                      {step.step === 2 && isSeller && (
-                        <button
-                          onClick={() => handleCompleteStep(2)}
-                          className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold whitespace-nowrap cursor-pointer shadow-xs"
-                        >
-                          {t("ইনভাইট পাঠানো হয়েছে", "Mark Invite Sent")}
-                        </button>
-                      )}
+                        if (!isStep1Approved) {
+                          if (isRejected) {
+                            return (
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                                <AlertOctagon className="w-3.5 h-3.5 shrink-0 text-rose-600" />
+                                <span>{t("পেমেন্ট তথ্য বাতিল ও রিসেট করা হয়েছে। পরবর্তী ধাপে যাওয়া বন্ধ।", "Payment details rejected & reset. Advancing is blocked.")}</span>
+                              </div>
+                            );
+                          }
+                          if (isPending) {
+                            return (
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+                                <Clock className="w-3.5 h-3.5 shrink-0 text-amber-600 animate-pulse" />
+                                <span>{t("এডমিন কর্তৃক পেমেন্ট অডিট ও অনুমোদন সাপেক্ষে আনলক হবে", "Locked pending Admin escrow audit & approval")}</span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 text-xs font-semibold">
+                              <Lock className="w-3.5 h-3.5 shrink-0" />
+                              <span>{t("প্রথমে ধাপ ১-এ এস্ক্রো পেমেন্ট সম্পন্ন করতে হবে", "Complete Step 1 escrow payment first")}</span>
+                            </div>
+                          );
+                        }
 
-                      {/* Step 3: Buyer accepts invitation */}
-                      {step.step === 3 && isBuyer && (
-                        <button
-                          onClick={() => handleCompleteStep(3)}
-                          className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold whitespace-nowrap cursor-pointer shadow-xs"
-                        >
-                          {t("ইনভাইট গ্রহণ নিশ্চিত করুন", "Confirm Accepted")}
-                        </button>
-                      )}
+                        return (
+                          <>
+                            {/* Step 1: Buyer provides Email/Handle */}
+                            {step.step === 1 && isBuyer && (
+                              <form onSubmit={handleSaveGoogleEmail} className="flex gap-2">
+                                <input
+                                  type="email"
+                                  required
+                                  value={inputGoogleEmail}
+                                  onChange={(e) => setInputGoogleEmail(e.target.value)}
+                                  placeholder="buyer.clean.email@gmail.com"
+                                  className="bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-hidden"
+                                />
+                                <button
+                                  type="submit"
+                                  disabled={savingEmail}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-xs"
+                                >
+                                  {t("সংরক্ষণ", "Save")}
+                                </button>
+                              </form>
+                            )}
 
-                      {/* Step 4: Cooldown confirmation */}
-                      {step.step === 4 && (isBuyer || isSeller) && (
-                        <button
-                          onClick={() => handleCompleteStep(4)}
-                          className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold whitespace-nowrap cursor-pointer shadow-xs"
-                        >
-                          {t("কুলডাউন সময় শেষ হয়েছে", "Confirm Cooldown Elapsed")}
-                        </button>
-                      )}
+                            {/* Step 2: Seller marks invite sent */}
+                            {step.step === 2 && isSeller && (
+                              <button
+                                onClick={() => handleCompleteStep(2)}
+                                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold whitespace-nowrap cursor-pointer shadow-xs"
+                              >
+                                {t("ইনভাইট পাঠানো হয়েছে", "Mark Invite Sent")}
+                              </button>
+                            )}
 
-                      {/* Step 5: Primary ownership reassigned */}
-                      {step.step === 5 && isSeller && (
-                        <button
-                          onClick={() => handleCompleteStep(5)}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold whitespace-nowrap cursor-pointer shadow-xs"
-                        >
-                          {t("প্রাইমারি ওনারশিপ প্রদান সম্পন্ন", "Confirm Promoted to Primary Owner")}
-                        </button>
-                      )}
+                            {/* Step 3: Buyer accepts invitation */}
+                            {step.step === 3 && isBuyer && (
+                              <button
+                                onClick={() => handleCompleteStep(3)}
+                                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold whitespace-nowrap cursor-pointer shadow-xs"
+                              >
+                                {t("ইনভাইট গ্রহণ নিশ্চিত করুন", "Confirm Accepted")}
+                              </button>
+                            )}
 
-                      {/* Step 6: Buyer releases funds */}
-                      {step.step === 6 && isBuyer && (
-                        <button
-                          onClick={handleCompleteOrder}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider whitespace-nowrap shadow-sm cursor-pointer"
-                        >
-                          {t("প্রাইমারি ওনারশিপ নিশ্চিত ও পেমেন্ট রিলিজ", "Confirm Primary Ownership & Release Payout")}
-                        </button>
-                      )}
+                            {/* Step 4: Cooldown confirmation */}
+                            {step.step === 4 && (isBuyer || isSeller) && (
+                              <button
+                                onClick={() => handleCompleteStep(4)}
+                                className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold whitespace-nowrap cursor-pointer shadow-xs"
+                              >
+                                {t("কুলডাউন সময় শেষ হয়েছে", "Confirm Cooldown Elapsed")}
+                              </button>
+                            )}
+
+                            {/* Step 5: Primary ownership reassigned */}
+                            {step.step === 5 && isSeller && (
+                              <button
+                                onClick={() => handleCompleteStep(5)}
+                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold whitespace-nowrap cursor-pointer shadow-xs"
+                              >
+                                {t("প্রাইমারি ওনারশিপ প্রদান সম্পন্ন", "Confirm Promoted to Primary Owner")}
+                              </button>
+                            )}
+
+                            {/* Step 6: Buyer releases funds */}
+                            {step.step === 6 && isBuyer && (
+                              <button
+                                onClick={handleCompleteOrder}
+                                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider whitespace-nowrap shadow-sm cursor-pointer"
+                              >
+                                {t("প্রাইমারি ওনারশিপ নিশ্চিত ও পেমেন্ট রিলিজ", "Confirm Primary Ownership & Release Payout")}
+                              </button>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
@@ -1506,6 +1937,92 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                 className="px-5 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-black transition cursor-pointer"
               >
                 {t('বন্ধ করুন', 'Close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Admin Payment Rejection Modal */}
+      {adminRejectModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="relative w-full max-w-lg bg-white border border-rose-200 rounded-3xl p-6 sm:p-8 shadow-2xl animate-fade-in text-slate-800 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                <AlertOctagon className="w-6 h-6 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900">
+                  {t("ভুল বা ফেক পেমেন্ট তথ্য বাতিল ও রিসেট করুন", "Reject & Reset Fake / Invalid Payment")}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {t("বাতিল করলে বায়ারের হস্তান্তর ধাপ বন্ধ থাকবে যতক্ষণ না সে সঠিক তথ্য দেয়।", "Buyer cannot proceed until valid payment info is submitted and approved.")}
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Reason Presets */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">
+                {t("দ্রুত কারণ নির্বাচন করুন:", "Quick Select Reason:")}
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  t("ভুল বা অস্তিত্বহীন TrxID দেওয়া হয়েছে", "Invalid or nonexistent TrxID provided"),
+                  t("ফেক বা অস্পষ্ট স্ক্রিনশট রসিদ", "Fake or illegible screenshot slip"),
+                  t("ব্যাংক/বিকাশ স্টেটমেন্টে কোনো টাকা জমা আসেনি", "Deposit not received in official bank/wallet"),
+                  t("প্রদেয় পরিমাণের চেয়ে কম টাকা পাঠানো হয়েছে", "Underpaid / Incorrect amount sent"),
+                  t("অন্য অ্যাকাউন্টের পুরাতন ট্রানজেকশন স্লিপ", "Duplicate or reused payment voucher")
+                ].map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setAdminRejectReason(preset)}
+                    className={`text-[11px] px-2.5 py-1 rounded-lg border transition cursor-pointer font-medium ${
+                      adminRejectReason === preset
+                        ? 'bg-rose-100 border-rose-300 text-rose-800 font-bold'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700">
+                {t("বায়ারকে প্রদর্শিত বাতিলের কারণ (বিস্তারিত) *", "Rejection Reason Note for Buyer *")}
+              </label>
+              <textarea
+                required
+                rows={3}
+                value={adminRejectReason}
+                onChange={(e) => setAdminRejectReason(e.target.value)}
+                placeholder={t("যেমন: আপনার দেওয়া TrxID দিয়ে আমাদের ব্যাংক অ্যাকাউন্টে কোনো ডিপোজিট পাওয়া যায়নি। অনুগ্রহ করে সঠিক TrxID দিন...", "e.g. TrxID could not be matched with bank ledger. Please provide genuine receipt...")}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-rose-500"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setAdminRejectModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+              >
+                {t("বাতিল", "Cancel")}
+              </button>
+              <button
+                type="button"
+                disabled={isProcessingAdminAction || !adminRejectReason.trim()}
+                onClick={handleAdminRejectPayment}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>
+                  {isProcessingAdminAction
+                    ? t("প্রসেস হচ্ছে...", "Processing...")
+                    : t("বাতিল ও রিসেট নিশ্চিত করুন", "Confirm Reject & Reset")}
+                </span>
               </button>
             </div>
           </div>

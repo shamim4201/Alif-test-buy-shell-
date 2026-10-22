@@ -124,6 +124,9 @@ export interface Order {
     verifiedByServer: boolean;
     screenshotUrl?: string;
     senderAccount?: string;
+    adminApprovalStatus?: 'pending' | 'approved' | 'rejected';
+    adminRejectionReason?: string;
+    adminReviewedAt?: string;
     notes?: string;
   };
   transferSteps: OrderTransferStep[];

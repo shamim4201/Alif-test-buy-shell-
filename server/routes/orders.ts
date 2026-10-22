@@ -149,7 +149,7 @@ ordersRouter.post('/', authenticate, (req: Request, res: Response) => {
 // Server-side payment verification
 ordersRouter.post('/:id/confirm-payment', authenticate, (req: Request, res: Response) => {
   const user = (req as any).user as User;
-  const { paymentMethod, transactionRef } = req.body;
+  const { paymentMethod, transactionRef, screenshotUrl, senderAccount, notes } = req.body;
   const order = db.getOrderById(req.params.id);
 
   if (!order) {
@@ -157,57 +157,145 @@ ordersRouter.post('/:id/confirm-payment', authenticate, (req: Request, res: Resp
   }
 
   if (order.buyerId !== user.id && user.role !== 'admin') {
-    return res.status(403).json({ error: 'Only the buyer or admin can verify payment' });
+    return res.status(403).json({ error: 'Only the buyer or admin can submit payment' });
   }
 
   if (order.status !== 'pending') {
-    return res.status(400).json({ error: `Cannot verify payment for order with status '${order.status}'` });
+    return res.status(400).json({ error: `Cannot submit payment for order with status '${order.status}'` });
   }
 
-  // Server-side verification logic:
-  // Validate transaction reference existence and minimum structure
   const ref = transactionRef?.trim() || `TXN-CT-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
   const paymentDetails = {
-    method: paymentMethod || 'Secure Marketplace Bank Wire / Card Custody',
+    method: paymentMethod || 'Secure Marketplace Escrow',
     transactionRef: ref,
+    screenshotUrl: screenshotUrl || undefined,
+    senderAccount: senderAccount?.trim() || undefined,
+    notes: notes?.trim() || undefined,
     confirmedAt: new Date().toISOString(),
-    verifiedByServer: true
+    verifiedByServer: false,
+    adminApprovalStatus: 'pending' as const
   };
 
-  const transferSteps = [...order.transferSteps];
-  if (order.buyerGoogleEmail && transferSteps[0]) {
-    transferSteps[0].completed = true;
-    transferSteps[0].completedAt = new Date().toISOString();
-  }
-
   const updated = db.updateOrder(order.id, {
-    status: 'payment_confirmed',
-    paymentDetails,
-    transferSteps
+    status: 'pending',
+    paymentDetails
   });
 
-  // Automatically transition to transfer_in_progress once payment is verified
-  const inProgressOrder = db.updateOrder(order.id, {
-    status: 'transfer_in_progress'
-  });
-
-  // Mark channel status as pending sale
-  db.updateChannel(order.channelId, { status: 'paused' });
-
-  // Post system notice
+  // Post system notice to escrow audit
   db.createMessage({
     id: `msg_${Date.now()}`,
     orderId: order.id,
     senderId: 'system',
-    senderName: 'ChannelTrust Payment Verification',
+    senderName: 'ChannelTrust Escrow Auditor',
     senderRole: 'admin',
     recipientId: order.sellerId,
-    text: `Payment of $${order.totalAmount.toLocaleString()} has been VERIFIED and held securely. Seller: Please proceed to Step 2 and invite Buyer's Google email (${order.buyerGoogleEmail || 'provided in chat'}) as Brand Account Manager.`,
+    text: `Buyer has submitted payment deposit (TrxID: ${ref}). Order is pending Admin verification and escrow vault confirmation before transfer can begin.`,
     createdAt: new Date().toISOString()
   });
 
-  res.json({ order: inProgressOrder });
+  res.json({ order: updated });
+});
+
+// Admin approves escrow payment
+ordersRouter.post('/:id/admin-approve-payment', authenticate, (req: Request, res: Response) => {
+  const user = (req as any).user as User;
+  if (user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only platform admin can verify and approve payments' });
+  }
+
+  const order = db.getOrderById(req.params.id);
+  if (!order) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+
+  if (!order.paymentDetails) {
+    return res.status(400).json({ error: 'No payment details submitted yet' });
+  }
+
+  const transferSteps = [...order.transferSteps];
+  if (transferSteps[0]) {
+    transferSteps[0].completed = true;
+    transferSteps[0].completedAt = new Date().toISOString();
+  }
+
+  const updatedPaymentDetails = {
+    ...order.paymentDetails,
+    verifiedByServer: true,
+    adminApprovalStatus: 'approved' as const,
+    adminReviewedAt: new Date().toISOString(),
+    adminRejectionReason: undefined
+  };
+
+  const updated = db.updateOrder(order.id, {
+    status: 'transfer_in_progress',
+    paymentDetails: updatedPaymentDetails,
+    transferSteps
+  });
+
+  db.updateChannel(order.channelId, { status: 'paused' });
+
+  db.createMessage({
+    id: `msg_${Date.now()}`,
+    orderId: order.id,
+    senderId: 'system',
+    senderName: 'ChannelTrust Escrow Management',
+    senderRole: 'admin',
+    recipientId: order.buyerId,
+    text: `✅ Payment of $${order.totalAmount.toLocaleString()} has been officially VERIFIED by Admin and locked in Escrow Vault. Handover steps are now unlocked. Seller will now proceed with transfer invitation.`,
+    createdAt: new Date().toISOString()
+  });
+
+  res.json({ order: updated });
+});
+
+// Admin rejects and resets fake or invalid payment details
+ordersRouter.post('/:id/admin-reject-payment', authenticate, (req: Request, res: Response) => {
+  const user = (req as any).user as User;
+  if (user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only platform admin can reject payments' });
+  }
+
+  const order = db.getOrderById(req.params.id);
+  if (!order) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+
+  const { reason } = req.body;
+  const rejectionReason = reason?.trim() || 'ভুল বা ভুয়া পেমেন্ট তথ্য (Invalid or unverified Transaction Reference / Screenshot proof).';
+
+  const transferSteps = [...order.transferSteps];
+  if (transferSteps[0]) {
+    transferSteps[0].completed = false;
+    transferSteps[0].completedAt = undefined;
+  }
+
+  const updatedPaymentDetails = order.paymentDetails ? {
+    ...order.paymentDetails,
+    verifiedByServer: false,
+    adminApprovalStatus: 'rejected' as const,
+    adminRejectionReason: rejectionReason,
+    adminReviewedAt: new Date().toISOString()
+  } : undefined;
+
+  const updated = db.updateOrder(order.id, {
+    status: 'pending',
+    paymentDetails: updatedPaymentDetails,
+    transferSteps
+  });
+
+  db.createMessage({
+    id: `msg_${Date.now()}`,
+    orderId: order.id,
+    senderId: 'system',
+    senderName: 'ChannelTrust Security Alert',
+    senderRole: 'admin',
+    recipientId: order.buyerId,
+    text: `⚠️ PAYMENT REJECTED & RESET: Admin audit could not verify the submitted payment. Reason: "${rejectionReason}". Buyer cannot proceed with channel transfer until valid payment is submitted and approved.`,
+    createdAt: new Date().toISOString()
+  });
+
+  res.json({ order: updated });
 });
 
 // Update buyer Google email for Brand Account transfer

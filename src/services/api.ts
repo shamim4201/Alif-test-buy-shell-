@@ -264,6 +264,27 @@ export const api = {
     );
   },
 
+  async adminApprovePayment(orderId: string): Promise<{ order: Order }> {
+    return callWithFallback(
+      () =>
+        fetchWithAuth(`/api/orders/${orderId}/admin-approve-payment`, {
+          method: 'POST'
+        }),
+      () => clientDbService.adminApprovePayment(orderId)
+    );
+  },
+
+  async adminRejectPayment(orderId: string, reason?: string): Promise<{ order: Order }> {
+    return callWithFallback(
+      () =>
+        fetchWithAuth(`/api/orders/${orderId}/admin-reject-payment`, {
+          method: 'POST',
+          body: JSON.stringify({ reason })
+        }),
+      () => clientDbService.adminRejectPayment(orderId, reason)
+    );
+  },
+
   async setBuyerGoogleEmail(orderId: string, buyerGoogleEmail: string): Promise<{ order: Order }> {
     return callWithFallback(
       () =>
@@ -514,7 +535,7 @@ export const api = {
 
   async getWebsiteSettings(): Promise<{ settings: any }> {
     return callWithFallback(
-      () => fetchWithAuth('/api/admin/settings'),
+      () => fetchWithAuth('/api/settings'),
       () => clientDbService.getWebsiteSettings()
     );
   },

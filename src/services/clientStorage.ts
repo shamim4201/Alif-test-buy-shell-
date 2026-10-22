@@ -402,7 +402,7 @@ export const clientDbService = {
     const order = db.orders.find((o) => o.id === orderId);
     if (!order) throw new Error('Order not found');
 
-    order.status = 'payment_confirmed';
+    order.status = 'pending';
     order.paymentDetails = {
       method: payload.paymentMethod || 'bKash / Nagad Escrow',
       transactionRef: payload.transactionRef || `TRX${Date.now()}`,
@@ -410,10 +410,91 @@ export const clientDbService = {
       senderAccount: payload.senderAccount,
       notes: payload.notes,
       confirmedAt: new Date().toISOString(),
-      verifiedByServer: true
+      verifiedByServer: false,
+      adminApprovalStatus: 'pending',
+      adminRejectionReason: undefined
     };
-    if (order.transferSteps[0]) order.transferSteps[0].completed = true;
+    if (order.transferSteps[0]) {
+      order.transferSteps[0].completed = false;
+    }
     order.updatedAt = new Date().toISOString();
+    saveClientDb(db);
+    return { order };
+  },
+
+  async adminApprovePayment(orderId: string): Promise<{ order: Order }> {
+    const db = getClientDb();
+    const order = db.orders.find((o) => o.id === orderId);
+    if (!order) throw new Error('Order not found');
+
+    if (!order.paymentDetails) {
+      throw new Error('No payment details found');
+    }
+
+    order.status = 'transfer_in_progress';
+    order.paymentDetails.verifiedByServer = true;
+    order.paymentDetails.adminApprovalStatus = 'approved';
+    order.paymentDetails.adminReviewedAt = new Date().toISOString();
+    order.paymentDetails.adminRejectionReason = undefined;
+
+    if (order.transferSteps[0]) {
+      order.transferSteps[0].completed = true;
+      order.transferSteps[0].completedAt = new Date().toISOString();
+    }
+
+    const channel = db.channels.find((c) => c.id === order.channelId);
+    if (channel) channel.status = 'paused';
+
+    order.updatedAt = new Date().toISOString();
+
+    db.messages.unshift({
+      id: `msg_${Date.now()}`,
+      orderId: order.id,
+      senderId: 'system',
+      senderName: 'ChannelTrust Escrow Management',
+      senderRole: 'admin',
+      recipientId: order.buyerId,
+      text: `✅ পেমেন্ট এডমিন দ্বারা যাচাই ও অনুমোদিত হয়েছে। ডিপোজিট এস্ক্রো ভল্টে লক করা হয়েছে। হস্তান্তরের পরবর্তী ধাপগুলো সক্রিয় করা হয়েছে।`,
+      createdAt: new Date().toISOString()
+    });
+
+    saveClientDb(db);
+    return { order };
+  },
+
+  async adminRejectPayment(orderId: string, reason?: string): Promise<{ order: Order }> {
+    const db = getClientDb();
+    const order = db.orders.find((o) => o.id === orderId);
+    if (!order) throw new Error('Order not found');
+
+    const rejectionReason = reason?.trim() || 'ভুল বা ভুয়া পেমেন্ট তথ্য (Invalid or unverified Transaction Reference / Screenshot proof).';
+
+    if (order.paymentDetails) {
+      order.paymentDetails.verifiedByServer = false;
+      order.paymentDetails.adminApprovalStatus = 'rejected';
+      order.paymentDetails.adminRejectionReason = rejectionReason;
+      order.paymentDetails.adminReviewedAt = new Date().toISOString();
+    }
+
+    order.status = 'pending';
+    if (order.transferSteps[0]) {
+      order.transferSteps[0].completed = false;
+      order.transferSteps[0].completedAt = undefined;
+    }
+
+    order.updatedAt = new Date().toISOString();
+
+    db.messages.unshift({
+      id: `msg_${Date.now()}`,
+      orderId: order.id,
+      senderId: 'system',
+      senderName: 'ChannelTrust Security Alert',
+      senderRole: 'admin',
+      recipientId: order.buyerId,
+      text: `⚠️ পেমেন্ট বাতিল ও রিসেট করা হয়েছে: ${rejectionReason}। সঠিক পেমেন্ট তথ্য ছাড়া পরবর্তী ধাপে যাওয়া যাবে না।`,
+      createdAt: new Date().toISOString()
+    });
+
     saveClientDb(db);
     return { order };
   },

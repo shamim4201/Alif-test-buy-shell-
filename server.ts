@@ -9,6 +9,7 @@ import { messagesRouter } from './server/routes/messages';
 import { reviewsRouter } from './server/routes/reviews';
 import { adminRouter } from './server/routes/admin';
 import { uploadRouter } from './server/routes/upload';
+import { db } from './server/db';
 
 async function startServer() {
   const app = express();
@@ -34,6 +35,11 @@ async function startServer() {
   app.use('/api/reviews', reviewsRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/upload', uploadRouter);
+
+  // Public settings endpoint (for payment gateways, commission rates, escrow details)
+  app.get('/api/settings', (_req, res) => {
+    res.json({ settings: db.getSettings() });
+  });
 
   // Health check
   app.get('/api/health', (_req, res) => {

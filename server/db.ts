@@ -1570,6 +1570,76 @@ class Database {
   }
 
   private ensureEnrichedAdminData() {
+    const defaultGateways: any[] = [
+      {
+        id: 'gw_bkash_merchant',
+        name: 'বিকাশ মার্চেন্ট (bKash Merchant)',
+        type: 'bdt',
+        category: 'mobile_banking',
+        accountNumber: '01712345678',
+        accountHolderName: 'Alif Trust Media Escrow',
+        instructions: "বিকাশ অ্যাপে 'Payment' অপশনে গিয়ে মার্চেন্ট নম্বরে টাকা পাঠান। রেফারেন্সে Order ID লিখুন।",
+        isActive: true
+      },
+      {
+        id: 'gw_nagad_merchant',
+        name: 'নগদ অনলাইন (Nagad Escrow)',
+        type: 'bdt',
+        category: 'mobile_banking',
+        accountNumber: '01812345678',
+        accountHolderName: 'Alif Trust Media Escrow',
+        instructions: "নগদ অ্যাপ থেকে Send Money বা Merchant Pay সম্পন্ন করে ট্রানজেকশন আইডি দিন।",
+        isActive: true
+      },
+      {
+        id: 'gw_city_bank',
+        name: 'সিটি ব্যাংক (City Bank PLC)',
+        type: 'bdt',
+        category: 'bank',
+        bankName: 'City Bank PLC',
+        accountHolderName: 'Alif Sheen Media Group Ltd',
+        accountNumber: '120349817201',
+        branchName: 'Gulshan-2 Branch, Dhaka',
+        routingNumber: '225261839',
+        swiftCode: 'CIBLBDDH',
+        instructions: "অনলাইন ব্যাংকিং (NPSB / BEFTN) বা যেকোনো ব্রাঞ্চ থেকে ডিপোজিট করে ডিপোজিট স্লিপের ছবি ও রেফারেন্স দিন।",
+        isActive: true
+      },
+      {
+        id: 'gw_islami_bank',
+        name: 'ইসলামী ব্যাংক বাংলাদেশ (Islami Bank)',
+        type: 'bdt',
+        category: 'bank',
+        bankName: 'Islami Bank Bangladesh PLC',
+        accountHolderName: 'Alif Trust Tech Escrow',
+        accountNumber: '2050145020199201',
+        branchName: 'Motijheel Corporate Branch',
+        routingNumber: '125273199',
+        instructions: "Cellfin, i-Banking অথবা ব্রাঞ্চ ডিপোজিট করে ট্রানজেকশন স্লিপের স্ক্রিনশট আপলোড করুন।",
+        isActive: true
+      },
+      {
+        id: 'gw_usdt_trc20',
+        name: 'USDT - Tron Network (TRC-20)',
+        type: 'usdt',
+        category: 'crypto',
+        accountNumber: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+        accountHolderName: 'Official Escrow Vault (Tron)',
+        instructions: "শুধুমাত্র Tron (TRC-20) নেটওয়ার্কে USDT ট্রান্সফার করুন। পাঠানোর পর ব্লকচেইন TxID দিন।",
+        isActive: true
+      },
+      {
+        id: 'gw_usdt_bep20',
+        name: 'USDT - BNB Smart Chain (BEP-20)',
+        type: 'usdt',
+        category: 'crypto',
+        accountNumber: '0x55d398326f99059fF775485246999027B3197955',
+        accountHolderName: 'Official BSC Vault',
+        instructions: "শুধুমাত্র BNB Smart Chain (BEP-20) নেটওয়ার্কে পাঠান।",
+        isActive: true
+      }
+    ];
+
     if (!this.data.settings) {
       this.data.settings = {
         siteName: 'Alif Trust Escrow & Marketplace',
@@ -1586,12 +1656,26 @@ class Database {
         bkashMerchantNumber: '01712345678',
         nagadMerchantNumber: '01812345678',
         bankDetails: 'City Bank Ltd, Account: 120349817201, Branch: Gulshan 2, Dhaka',
+        usdtTrc20Address: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+        usdtBep20Address: '0x55d398326f99059fF775485246999027B3197955',
+        bdtConversionRate: 122,
+        customGateways: defaultGateways,
         enable2FA: true,
         termsOfService: 'আলিফ ট্রাস্ট এসক্রো প্ল্যাটফর্মে সকল লেনদেন ডিজিটাল এসক্রো চুক্তির অধীন। বায়ার কর্তৃক পুরো পেমেন্ট জমার পর সেলার ৭ দিনের মধ্যে প্রাইমারি ওনারশিপ হস্তান্তর করবে।',
         privacyPolicy: 'ব্যবহারকারীদের সমস্ত ব্যক্তিগত তথ্য, এনআইডি ও পেমেন্ট ক্রেডেনশিয়াল কঠোর এনক্রিপশনে সংরক্ষিত থাকে।',
         refundPolicy: 'সেলার ব্যর্থ হলে বা চ্যানেলে ভুল তথ্য থাকলে বায়ার শতভাগ মানিব্যাক রিফান্ড পাবে।',
         safetyProtocol: '১. ৭ দিনের ওনারশিপ ট্রায়াল ২. টু-ফ্যাক্টর অথেনটিকেশন ৩. এসক্রো ভল্ট ডিপোজিট।'
       };
+    } else {
+      if (!this.data.settings.customGateways || this.data.settings.customGateways.length === 0) {
+        this.data.settings.customGateways = defaultGateways;
+      }
+      if (!this.data.settings.bdtConversionRate) {
+        this.data.settings.bdtConversionRate = 122;
+      }
+      if (!this.data.settings.usdtTrc20Address) {
+        this.data.settings.usdtTrc20Address = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+      }
     }
 
     if (!this.data.coupons || this.data.coupons.length === 0) {

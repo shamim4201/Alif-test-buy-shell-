@@ -120,6 +120,11 @@ export interface Order {
     transactionRef: string;
     confirmedAt: string;
     verifiedByServer: boolean;
+    screenshotUrl?: string;
+    senderAccount?: string;
+    adminApprovalStatus?: 'pending' | 'approved' | 'rejected';
+    adminRejectionReason?: string;
+    adminReviewedAt?: string;
   };
   transferSteps: OrderTransferStep[];
   disputeReason?: string;
@@ -245,6 +250,21 @@ export interface FraudAlert {
   createdAt: string;
 }
 
+export interface CustomPaymentGateway {
+  id: string;
+  name: string;
+  type: 'bdt' | 'usdt';
+  category: 'mobile_banking' | 'bank' | 'crypto';
+  bankName?: string;
+  accountHolderName?: string;
+  accountNumber: string;
+  branchName?: string;
+  routingNumber?: string;
+  swiftCode?: string;
+  instructions?: string;
+  isActive: boolean;
+}
+
 export interface WebsiteSettings {
   siteName: string;
   siteTagline: string;
@@ -270,6 +290,10 @@ export interface WebsiteSettings {
   securityStandardDescription?: string;
   securityStandardBadge?: string;
   footerDisclaimer?: string;
+  customGateways?: CustomPaymentGateway[];
+  bdtConversionRate?: number;
+  usdtTrc20Address?: string;
+  usdtBep20Address?: string;
 }
 
 export interface NotificationItem {
