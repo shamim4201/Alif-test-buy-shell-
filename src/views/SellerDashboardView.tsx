@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChannelListing, Order, User, PlatformType } from '../types';
+import { ChannelListing, Order, User, PlatformType, CustomCategory } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -52,6 +52,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
   const [myChannels, setMyChannels] = useState<ChannelListing[]>([]);
   const [mySales, setMySales] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [availableCategories, setAvailableCategories] = useState<CustomCategory[]>([]);
 
   // Create Listing Form State
   const [platform, setPlatform] = useState<PlatformType>('facebook');
@@ -95,6 +96,11 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
 
   useEffect(() => {
     loadSellerData();
+    api.getWebsiteSettings().then(res => {
+      if (res?.settings?.customCategories && Array.isArray(res.settings.customCategories)) {
+        setAvailableCategories(res.settings.customCategories.filter((c: any) => c.isActive));
+      }
+    }).catch(() => {});
   }, [user]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -524,20 +530,38 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
                   </label>
                   <select
                     value={accountType}
-                    onChange={(e) => setAccountType(e.target.value)}
+                    onChange={(e) => {
+                      const selectedVal = e.target.value;
+                      setAccountType(selectedVal);
+                      const matchCat = availableCategories.find((c) => c.id === selectedVal);
+                      if (matchCat) {
+                        setNiche(matchCat.nameEn);
+                      }
+                    }}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-hidden"
                   >
-                    <option value="facebook_page">{t('📄 ফেসবুক মনিটাইজড পেজ (In-Stream Ads)', '📄 Facebook In-Stream Ads Monetized')}</option>
-                    <option value="tiktok_viral">{t('⚡ টিকটক ক্রিয়েটর রিওয়ার্ডস ও শপ (TikTok)', '⚡ TikTok Creator Rewards & Shop')}</option>
-                    <option value="instagram_theme">{t('🎨 ইনস্টাগ্রাম থিম পেজ (Instagram)', '🎨 Instagram Theme Page')}</option>
-                    <option value="cooking_lifestyle">{t('👩‍🍳 আন্টির রান্না ও ফুড রেসিপি (Cooking & Lifestyle)', '👩‍🍳 Cooking & Lifestyle')}</option>
-                    <option value="faceless_cash_cow">{t('🤖 ফেসলেস ক্যাশ কাউ (Faceless Cash Cow)', '🤖 Faceless Cash Cow')}</option>
-                    <option value="shorts_creator">{t('⚡ ভাইরাল শর্টস চ্যানেল (Shorts Creator)', '⚡ Viral Shorts Creator')}</option>
-                    <option value="gaming_stream">{t('🎮 গেমিং ও টেক চ্যানেল (Gaming & Tech)', '🎮 Gaming & Tech Channel')}</option>
-                    <option value="vintage_aged">{t('🏛️ ভিন্টেজ পুরানো একাউন্ট (Vintage 2012-2018)', '🏛️ Vintage Aged Account (2012-2018)')}</option>
-                    <option value="high_cpm_finance">{t('💰 হাই CPM ফিন্যান্স ও বিজনেস (Finance)', '💰 High CPM Finance & Business')}</option>
-                    <option value="vlog_personal">{t('📹 পার্সোনাল ভ্লগ ও লাইফস্টাইল (Personal Vlog)', '📹 Personal Vlog & Lifestyle')}</option>
-                    <option value="education_tech">{t('📚 এডুকেশন ও সফটওয়্যার টিউটোরিয়াল', '📚 Education & Software Tutorials')}</option>
+                    {availableCategories.length > 0 ? (
+                      availableCategories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.icon || '🏷️'} {c.name} ({c.nameEn})
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="facebook_page">{t('📄 ফেসবুক মনিটাইজড পেজ (In-Stream Ads)', '📄 Facebook In-Stream Ads Monetized')}</option>
+                        <option value="tiktok_viral">{t('⚡ টিকটক ক্রিয়েটর রিওয়ার্ডস ও শপ (TikTok)', '⚡ TikTok Creator Rewards & Shop')}</option>
+                        <option value="instagram_theme">{t('🎨 ইনস্টাগ্রাম থিম পেজ (Instagram)', '🎨 Instagram Theme Page')}</option>
+                        <option value="cooking_lifestyle">{t('👩‍🍳 আন্টির রান্না ও ফুড রেসিপি (Cooking & Lifestyle)', '👩‍🍳 Cooking & Lifestyle')}</option>
+                        <option value="faceless_cash_cow">{t('🤖 ফেসলেস ক্যাশ কাউ (Faceless Cash Cow)', '🤖 Faceless Cash Cow')}</option>
+                        <option value="shorts_creator">{t('⚡ ভাইরাল শর্টস চ্যানেল (Shorts Creator)', '⚡ Viral Shorts Creator')}</option>
+                        <option value="gaming_stream">{t('🎮 গেমিং ও টেক চ্যানেল (Gaming & Tech)', '🎮 Gaming & Tech Channel')}</option>
+                        <option value="vintage_aged">{t('🏛️ ভিন্টেজ পুরানো একাউন্ট (Vintage 2012-2018)', '🏛️ Vintage Aged Account (2012-2018)')}</option>
+                        <option value="high_cpm_finance">{t('💰 হাই CPM ফিন্যান্স ও বিজনেস (Finance)', '💰 High CPM Finance & Business')}</option>
+                        <option value="vlog_personal">{t('📹 পার্সোনাল ভ্লগ ও লাইফস্টাইল (Personal Vlog)', '📹 Personal Vlog & Lifestyle')}</option>
+                        <option value="education_tech">{t('📚 এডুকেশন ও সফটওয়্যার টিউটোরিয়াল', '📚 Education & Software Tutorials')}</option>
+                        <option value="islamic_media">{t('🕌 ইসলামিক আলোচনা ও ওয়াজ (Islamic Media)', '🕌 Islamic Media & Lectures')}</option>
+                      </>
+                    )}
                   </select>
                 </div>
 

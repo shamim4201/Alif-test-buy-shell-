@@ -122,6 +122,24 @@ export const api = {
     );
   },
 
+  async loginWithGoogle(payload: { email: string; name?: string; avatar?: string }): Promise<{ user: User; token: string }> {
+    return callWithFallback(
+      async () => {
+        const data = await fetchWithAuth('/api/auth/google', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        setStoredToken(data.token);
+        return data;
+      },
+      async () => {
+        const data = await clientDbService.loginWithGoogle(payload);
+        setStoredToken(data.token);
+        return data;
+      }
+    );
+  },
+
   async getCurrentUser(): Promise<{ user: User }> {
     return callWithFallback(
       () => fetchWithAuth('/api/auth/me'),

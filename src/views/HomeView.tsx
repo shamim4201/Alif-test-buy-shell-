@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChannelListing, AccountType, PlatformType } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ChannelListing, AccountType, PlatformType, CustomCategory } from '../types';
 import { api } from '../services/api';
 import { ChannelCard } from '../components/ChannelCard';
 import { ReviewSlider } from '../components/ReviewSlider';
@@ -96,10 +96,33 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const { currency, setCurrency, formatPrice, formatUsd, formatBdt, language, t, openCurrencyModal } = useCurrency();
   const [channels, setChannels] = useState<ChannelListing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
 
   const PLATFORMS = getPlatforms(t);
-  const ACCOUNT_TYPES = getAccountTypes(t);
   const BUDGET_PRESETS = getBudgetPresets(t);
+
+  const ACCOUNT_TYPES = useMemo(() => {
+    const list: Array<{ id: string; label: string; icon?: string; iconUrl?: string }> = [
+      { id: 'all', label: t('সকল ক্যাটাগরি', 'All Categories') }
+    ];
+    if (customCategories && customCategories.length > 0) {
+      customCategories
+        .filter((c) => c.isActive)
+        .forEach((c) => {
+          list.push({
+            id: c.id,
+            label: language === 'BN' ? c.name : c.nameEn,
+            icon: c.icon,
+            iconUrl: c.iconUrl
+          });
+        });
+    } else {
+      getAccountTypes(t).forEach((type) => {
+        if (type.id !== 'all') list.push(type);
+      });
+    }
+    return list;
+  }, [customCategories, language, t]);
 
   // Filters State
   const [selectedPlatform, setSelectedPlatform] = useState<string>(propSelectedPlatform || 'all');
@@ -133,20 +156,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [buyerFeeRate, setBuyerFeeRate] = useState<number>(2.5);
 
   useEffect(() => {
-    api.getWebsiteSettings().then(res => {
-      const st = res?.settings || {};
-      const target = st.feeDeductionTarget || 'both';
-      const total = Number(st.commissionRate) || 5;
-      const bRate = target === 'seller' ? 0 : (st.buyerFeePercent !== undefined && st.buyerFeePercent !== null ? Number(st.buyerFeePercent) : (target === 'both' ? total / 2 : total));
-      setBuyerFeeRate(bRate);
-    }).catch(() => {});
+    const loadSettings = () => {
+      api.getWebsiteSettings().then(res => {
+        const st = res?.settings || {};
+        if (st.customCategories && Array.isArray(st.customCategories)) {
+          setCustomCategories(st.customCategories);
+        }
+        const target = st.feeDeductionTarget || 'both';
+        const total = Number(st.commissionRate) || 5;
+        const bRate = target === 'seller' ? 0 : (st.buyerFeePercent !== undefined && st.buyerFeePercent !== null ? Number(st.buyerFeePercent) : (target === 'both' ? total / 2 : total));
+        setBuyerFeeRate(bRate);
+      }).catch(() => {});
+    };
+
+    loadSettings();
 
     const handleSettingsUpdate = (e: any) => {
-      const st = e?.detail || {};
-      const target = st.feeDeductionTarget || 'both';
-      const total = Number(st.commissionRate) || 5;
-      const bRate = target === 'seller' ? 0 : (st.buyerFeePercent !== undefined && st.buyerFeePercent !== null ? Number(st.buyerFeePercent) : (target === 'both' ? total / 2 : total));
-      setBuyerFeeRate(bRate);
+      loadSettings();
     };
     window.addEventListener('website-settings-updated', handleSettingsUpdate);
     return () => window.removeEventListener('website-settings-updated', handleSettingsUpdate);
@@ -341,7 +367,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               }`}
             >
               <span className="flex items-center gap-2 truncate">
-                <CategoryLogo categoryId={type.id} className="w-4 h-4 shrink-0" />
+                <CategoryLogo categoryId={type.id} customIcon={type.icon} className="w-4 h-4 shrink-0" />
                 <span className="truncate">{type.label}</span>
               </span>
               {selectedAccountType === type.id && (
@@ -730,7 +756,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 shadow-xs'
                 }`}
               >
-                <CategoryLogo categoryId={type.id} className="w-4 h-4 shrink-0" />
+                <CategoryLogo categoryId={type.id} customIcon={type.icon} customIconUrl={type.iconUrl} className="w-4 h-4 shrink-0" />
                 <span>{type.label}</span>
               </button>
             ))}

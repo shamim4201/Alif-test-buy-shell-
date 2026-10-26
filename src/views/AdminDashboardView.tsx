@@ -23,6 +23,7 @@ import { BrandLogo } from '../components/BrandLogo';
 import {
   FileText,
   LayoutDashboard,
+  LayoutGrid,
   Tv,
   Users,
   ShoppingBag,
@@ -487,6 +488,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const navMenuItems = [
     { id: 'overview', label: t('ড্যাশবোর্ড', 'Dashboard'), icon: LayoutDashboard },
     { id: 'channels', label: t('চ্যানেল লিস্টিং', 'Channels'), icon: Tv, badge: pendingApprovals.length, badgeColor: 'bg-amber-500' },
+    { id: 'categories', label: t('ক্যাটাগরি কন্ট্রোল', 'Categories'), icon: LayoutGrid, badge: settingsData?.customCategories ? settingsData.customCategories.filter(c => c.isActive).length : 14, badgeColor: 'bg-emerald-600' },
     { id: 'users', label: t('ইউজার কন্ট্রোল', 'Users'), icon: Users, badge: usersList.length, badgeColor: 'bg-slate-700' },
     { id: 'orders', label: t('অর্ডার ও এসক্রো', 'Orders & Escrow'), icon: ShoppingBag, badge: activeEscrowOrders.length, badgeColor: 'bg-emerald-500' },
     { id: 'payments', label: t('পেমেন্ট ও কমিশন', 'Payments'), icon: CreditCard },
@@ -757,6 +759,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       ? t('আলিফ ট্রাস্ট এসক্রো ও লজিস্টিক্স ড্যাশবোর্ড', 'Alif Trust Escrow & Channel Dashboard')
                       : activeTab === 'channels'
                       ? t('চ্যানেল লিস্টিং ও অনুমোদন কেন্দ্র', 'Channel Listings & Verification')
+                      : activeTab === 'categories'
+                      ? t('ক্যাটাগরি ও নিশ ম্যানেজমেন্ট কনসোল', 'Category & Niche Management Console')
                       : activeTab === 'users'
                       ? t('ইউজার ম্যানেজমেন্ট ও একাউন্ট কন্ট্রোল', 'User Access & Account Regulation')
                       : activeTab === 'orders'

@@ -109,6 +109,43 @@ authRouter.post('/login', (req: Request, res: Response) => {
   return res.json({ user: userSafe, token });
 });
 
+authRouter.post('/google', (req: Request, res: Response) => {
+  const { email, name, avatar } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Google email is required' });
+  }
+
+  const cleanEmail = String(email).trim().toLowerCase();
+  let user = db.getUserByEmail(cleanEmail);
+
+  if (!user) {
+    const isAdmin = cleanEmail === 'alifsheenshopping@gmail.com';
+    user = {
+      id: `usr_g_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: name?.trim() || cleanEmail.split('@')[0],
+      email: cleanEmail,
+      passwordHash: hashPassword(Math.random().toString(36) + 'GAuthSecret2026!'),
+      role: isAdmin ? 'admin' : 'buyer',
+      avatar: avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name || cleanEmail)}`,
+      isVerifiedSeller: isAdmin ? true : undefined,
+      dealsCount: 0,
+      rating: 5.0,
+      createdAt: new Date().toISOString()
+    };
+    db.createUser(user);
+  } else if (cleanEmail === 'alifsheenshopping@gmail.com' && user.role !== 'admin') {
+    user = db.updateUser(user.id, { role: 'admin' })!;
+  }
+
+  if (user.isBanned) {
+    return res.status(403).json({ error: 'এই অ্যাকাউন্টটি অ্যাডমিন দ্বারা সাময়িকভাবে স্থগিত রয়েছে (Account suspended)' });
+  }
+
+  const token = generateToken(user);
+  const { passwordHash, ...userSafe } = user;
+  return res.json({ user: userSafe, token });
+});
+
 authRouter.get('/me', authenticate, (req: Request, res: Response) => {
   const user = (req as any).user as User;
   const { passwordHash, ...userSafe } = user;

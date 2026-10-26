@@ -41,6 +41,11 @@ async function startServer() {
     res.json({ settings: db.getSettings() });
   });
 
+  app.put('/api/settings', (req, res) => {
+    const updated = db.updateSettings(req.body);
+    res.json({ settings: updated, message: 'Settings successfully updated' });
+  });
+
   // Health check
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });

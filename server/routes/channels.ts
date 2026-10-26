@@ -39,9 +39,14 @@ channelsRouter.get('/', (req: Request, res: Response) => {
     channels = channels.filter(c => (c.platform || 'youtube') === platform);
   }
 
-  // Account Type filter
+  // Account Type / Category filter
   if (accountType && typeof accountType === 'string' && accountType !== 'all') {
-    channels = channels.filter(c => c.accountType === accountType);
+    const at = accountType.toLowerCase();
+    channels = channels.filter(c =>
+      c.accountType === accountType ||
+      (c.niche && c.niche.toLowerCase().includes(at)) ||
+      (c.tags && c.tags.some(t => t.toLowerCase() === at))
+    );
   }
 
   // Search keyword in title, handle, description, niche, tags, accountType, platform

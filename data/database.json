@@ -1581,7 +1581,7 @@
     }
   ],
   "settings": {
-    "siteName": "Alif Trust Escrow & Marketplace",
+    "siteName": "Alif Sheen Escrow",
     "siteTagline": "নিরাপদ ইউটিউব ও সোশ্যাল মিডিয়া চ্যানেল কেনাবেচার বিশ্বস্ত মাধ্যম",
     "logoUrl": "",
     "primaryColor": "#e11d48",
@@ -1604,7 +1604,206 @@
     "securityStandardTitle": "সুরক্ষিত এস্ক্রো কাস্টডি",
     "securityStandardDescription": "বায়ারের পেমেন্ট সুরক্ষিত থাকে এবং বায়ার নিজে প্রাইমারি ওনারশিপ গ্রহণ নিশ্চিত করার পরই সেলারের কাছে টাকা রিলিজ হয়।",
     "securityStandardBadge": "স্ট্রিক্ট ৭-দিনের অফিসিয়াল কুলডাউন রুলস",
-    "footerDisclaimer": "Alif Trust (alif sheen group) একটি স্বাধীন সোশ্যাল ও মিডিয়া একাউন্ট মার্কেটপ্লেস। কোনো প্ল্যাটফর্মের গোপন পাসওয়ার্ড কখনো শেয়ার করা হয় না; সম্পূর্ণ প্রক্রিয়া অফিসিয়াল অ্যাডমিন/ওনারশিপ হস্তান্তরের মাধ্যমে সুরক্ষিতভাবে সম্পন্ন হয়।"
+    "footerDisclaimer": "Alif Trust (alif sheen group) একটি স্বাধীন সোশ্যাল ও মিডিয়া একাউন্ট মার্কেটপ্লেস। কোনো প্ল্যাটফর্মের গোপন পাসওয়ার্ড কখনো শেয়ার করা হয় না; সম্পূর্ণ প্রক্রিয়া অফিসিয়াল অ্যাডমিন/ওনারশিপ হস্তান্তরের মাধ্যমে সুরক্ষিতভাবে সম্পন্ন হয়।",
+    "customGateways": [
+      {
+        "id": "gw_bkash_merchant",
+        "name": "বিকাশ মার্চেন্ট (bKash Merchant)",
+        "type": "bdt",
+        "category": "mobile_banking",
+        "accountNumber": "01712345678",
+        "accountHolderName": "Alif Trust Media Escrow",
+        "instructions": "বিকাশ অ্যাপে 'Payment' অপশনে গিয়ে মার্চেন্ট নম্বরে টাকা পাঠান। রেফারেন্সে Order ID লিখুন।",
+        "isActive": true
+      },
+      {
+        "id": "gw_nagad_merchant",
+        "name": "নগদ অনলাইন (Nagad Escrow)",
+        "type": "bdt",
+        "category": "mobile_banking",
+        "accountNumber": "01812345678",
+        "accountHolderName": "Alif Trust Media Escrow",
+        "instructions": "নগদ অ্যাপ থেকে Send Money বা Merchant Pay সম্পন্ন করে ট্রানজেকশন আইডি দিন।",
+        "isActive": true
+      },
+      {
+        "id": "gw_city_bank",
+        "name": "সিটি ব্যাংক (City Bank PLC)",
+        "type": "bdt",
+        "category": "bank",
+        "bankName": "City Bank PLC",
+        "accountHolderName": "Alif Sheen Media Group Ltd",
+        "accountNumber": "120349817201",
+        "branchName": "Gulshan-2 Branch, Dhaka",
+        "routingNumber": "225261839",
+        "swiftCode": "CIBLBDDH",
+        "instructions": "অনলাইন ব্যাংকিং (NPSB / BEFTN) বা যেকোনো ব্রাঞ্চ থেকে ডিপোজিট করে ডিপোজিট স্লিপের ছবি ও রেফারেন্স দিন।",
+        "isActive": true
+      },
+      {
+        "id": "gw_islami_bank",
+        "name": "ইসলামী ব্যাংক বাংলাদেশ (Islami Bank)",
+        "type": "bdt",
+        "category": "bank",
+        "bankName": "Islami Bank Bangladesh PLC",
+        "accountHolderName": "Alif Trust Tech Escrow",
+        "accountNumber": "2050145020199201",
+        "branchName": "Motijheel Corporate Branch",
+        "routingNumber": "125273199",
+        "instructions": "Cellfin, i-Banking অথবা ব্রাঞ্চ ডিপোজিট করে ট্রানজেকশন স্লিপের স্ক্রিনশট আপলোড করুন।",
+        "isActive": true
+      },
+      {
+        "id": "gw_usdt_trc20",
+        "name": "USDT - Tron Network (TRC-20)",
+        "type": "usdt",
+        "category": "crypto",
+        "accountNumber": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "accountHolderName": "Official Escrow Vault (Tron)",
+        "instructions": "শুধুমাত্র Tron (TRC-20) নেটওয়ার্কে USDT ট্রান্সফার করুন। পাঠানোর পর ব্লকচেইন TxID দিন।",
+        "isActive": true
+      },
+      {
+        "id": "gw_usdt_bep20",
+        "name": "USDT - BNB Smart Chain (BEP-20)",
+        "type": "usdt",
+        "category": "crypto",
+        "accountNumber": "0x55d398326f99059fF775485246999027B3197955",
+        "accountHolderName": "Official BSC Vault",
+        "instructions": "শুধুমাত্র BNB Smart Chain (BEP-20) নেটওয়ার্কে পাঠান।",
+        "isActive": true
+      }
+    ],
+    "bdtConversionRate": 122,
+    "usdtTrc20Address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+    "customCategories": [
+      {
+        "id": "facebook_page",
+        "name": "ফেসবুক পেজ ও গ্রুপ",
+        "nameEn": "Facebook Pages & Groups",
+        "platform": "facebook",
+        "icon": "📄",
+        "description": "ইনস্ট্রিম বিজ্ঞাপন, পেজ কোয়ালিটি গ্রিন ও মনিটাইজড পেজ",
+        "isActive": true
+      },
+      {
+        "id": "tiktok_viral",
+        "name": "টিকটক ভাইরাল অ্যাকাউন্ট",
+        "nameEn": "TikTok Viral Accounts",
+        "platform": "tiktok",
+        "icon": "⚡",
+        "description": "ক্রিয়েটর রিওয়ার্ডস ও টিকটক শপ অ্যাফিলিয়েট অ্যাকাউন্ট",
+        "isActive": true
+      },
+      {
+        "id": "instagram_theme",
+        "name": "ইনস্টাগ্রাম থিম পেজ",
+        "nameEn": "Instagram Theme Pages",
+        "platform": "instagram",
+        "icon": "🎨",
+        "description": "অর্গানিক ইনফ্লুয়েন্সার ও থিম পেজ",
+        "isActive": true
+      },
+      {
+        "id": "cooking_lifestyle",
+        "name": "রান্না ও ফুড রেসিপি",
+        "nameEn": "Cooking & Lifestyle",
+        "platform": "youtube",
+        "icon": "🍳",
+        "description": "আন্টির রান্না, দেশি-বিদেশি খাবার ও লাইফস্টাইল রেসিপি চ্যানেল",
+        "isActive": true
+      },
+      {
+        "id": "faceless_cash_cow",
+        "name": "ফেসলেস ক্যাশ কাউ",
+        "nameEn": "Faceless Cash Cow",
+        "platform": "youtube",
+        "icon": "🤖",
+        "description": "অটোমেশন ও এআই জেনারেটেড হাই রেভিনিউ ক্যাশ কাউ চ্যানেল",
+        "isActive": true
+      },
+      {
+        "id": "shorts_creator",
+        "name": "ভাইরাল শর্টস চ্যানেল",
+        "nameEn": "Viral Shorts Creators",
+        "platform": "youtube",
+        "icon": "⚡",
+        "description": "মিলিয়ন ভিউজ সমৃদ্ধ ভাইরাল শর্টস ও রিলস চ্যানেল",
+        "isActive": true
+      },
+      {
+        "id": "gaming_stream",
+        "name": "গেমিং ও টেক চ্যানেল",
+        "nameEn": "Gaming & Tech Stream",
+        "platform": "all",
+        "icon": "🎮",
+        "description": "লাইভ স্ট্রিম, পিসি রিভিউ, মোবাইল ও কনসোল গেমিং",
+        "isActive": true
+      },
+      {
+        "id": "vintage_aged",
+        "name": "পুরানো ভিন্টেজ অ্যাকাউন্ট",
+        "nameEn": "Aged Vintage Accounts",
+        "platform": "all",
+        "icon": "🏛️",
+        "description": "২০১২-২০১৮ সালের ওল্ড ট্রাস্টেড ভিন্টেজ অ্যাকাউন্ট",
+        "isActive": true
+      },
+      {
+        "id": "high_cpm_finance",
+        "name": "উচ্চ আয় ফিন্যান্স ও বিজনেস",
+        "nameEn": "High CPM Finance & Business",
+        "platform": "all",
+        "icon": "💰",
+        "description": "শেয়ার বাজার, ক্রিপ্টো, অনলাইন বিজনেস ও হাই CPM চ্যানেল",
+        "isActive": true
+      },
+      {
+        "id": "vlog_personal",
+        "name": "পার্সোনাল ভ্লগ ও লাইফস্টাইল",
+        "nameEn": "Personal Vlog & Lifestyle",
+        "platform": "youtube",
+        "icon": "📹",
+        "description": "দৈনন্দিন ভ্লগ, ট্রাভেল ও পার্সোনাল ব্র্যান্ড একাউন্ট",
+        "isActive": true
+      },
+      {
+        "id": "education_tech",
+        "name": "এডুকেশন ও টেক টিউটোরিয়াল",
+        "nameEn": "Education & Tech Tutorials",
+        "platform": "all",
+        "icon": "📚",
+        "description": "সফটওয়্যার, ফ্রিল্যান্সিং ও স্কিল ডেভেলপমেন্ট চ্যানেল",
+        "isActive": true
+      },
+      {
+        "id": "telegram_signal",
+        "name": "টেলিগ্রাম সিগন্যাল ও চ্যানেল",
+        "nameEn": "Telegram Signals & Community",
+        "platform": "telegram",
+        "icon": "✈️",
+        "description": "ট্রেডিং সিগন্যাল, ক্রিপ্টো কমিউনিটি ও মেম্বার চ্যানেল",
+        "isActive": true
+      },
+      {
+        "id": "twitter_crypto",
+        "name": "এক্স / টুইটার ক্রিপ্টো ও নিউজ",
+        "nameEn": "Twitter / X Crypto & News",
+        "platform": "twitter",
+        "icon": "🐦",
+        "description": "ব্লু ভেরিফাইড ও এড রেভিনিউ শেয়ারিং এক্স একাউন্ট",
+        "isActive": true
+      },
+      {
+        "id": "islamic_media",
+        "name": "ইসলামিক আলোচনা ও ওয়াজ",
+        "nameEn": "Islamic Media & Lectures",
+        "platform": "all",
+        "icon": "🕌",
+        "description": "কোরআন তেলাওয়াত, ওয়াজ মাহফিল ও ইসলামিক স্কলার বক্তব্য",
+        "isActive": true
+      }
+    ]
   },
   "coupons": [
     {

@@ -7,6 +7,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, pass: string) => Promise<User>;
   register: (payload: { name: string; email: string; password: string; role: 'buyer' | 'seller'; bio?: string }) => Promise<User>;
+  loginWithGoogle: (payload: { email: string; name?: string; avatar?: string }) => Promise<User>;
   logout: () => void;
   quickSwitch: (role: 'admin' | 'seller' | 'buyer') => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -82,6 +83,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res.user;
   };
 
+  const loginWithGoogle = async (payload: { email: string; name?: string; avatar?: string }): Promise<User> => {
+    const res = await api.loginWithGoogle(payload);
+    setUser(res.user);
+    setAuthModal({ isOpen: false, mode: 'login' });
+    showToast(`Google দিয়ে সফলভাবে সাইন ইন হয়েছে! স্বাগতম, ${res.user.name}`, 'success');
+    return res.user;
+  };
+
   const logout = () => {
     setStoredToken(null);
     setUser(null);
@@ -118,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         login,
         register,
+        loginWithGoogle,
         logout,
         quickSwitch,
         refreshUser,

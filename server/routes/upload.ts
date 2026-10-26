@@ -26,11 +26,11 @@ const upload = multer({
   storage,
   limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB limit
   fileFilter: (_req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'];
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only PNG, JPG, WEBP, and PDF files are allowed for analytics verification.'));
+      cb(new Error('Only PNG, JPG, WEBP, SVG, and PDF files are allowed.'));
     }
   }
 });

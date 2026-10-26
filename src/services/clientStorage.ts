@@ -1,5 +1,6 @@
 import { SEED_DATA } from './seedData';
 import { User, ChannelListing, Order, Review, Message, AdminStats } from '../types';
+import { DEFAULT_CUSTOM_CATEGORIES } from '../data/defaultCategories';
 
 const STORAGE_KEY = 'channeltrust_client_db';
 
@@ -35,6 +36,9 @@ export function getClientDb(): LocalDbData {
       } else if (!parsed.settings.customGateways || parsed.settings.customGateways.length === 0) {
         parsed.settings.customGateways = SEED_DATA.settings.customGateways;
       }
+      if (!parsed.settings.customCategories || parsed.settings.customCategories.length === 0) {
+        parsed.settings.customCategories = DEFAULT_CUSTOM_CATEGORIES;
+      }
       return parsed;
     }
   } catch (e) {
@@ -43,6 +47,9 @@ export function getClientDb(): LocalDbData {
 
   // Clone seed data
   const initial = JSON.parse(JSON.stringify(SEED_DATA)) as LocalDbData;
+  if (!initial.settings.customCategories) {
+    initial.settings.customCategories = DEFAULT_CUSTOM_CATEGORIES;
+  }
   saveClientDb(initial);
   return initial;
 }
@@ -161,6 +168,35 @@ export const clientDbService = {
 
     const token = btoa(JSON.stringify({ id: newUser.id, email: newUser.email, role: newUser.role, time: Date.now() }));
     return { user: newUser, token };
+  },
+
+  async loginWithGoogle(payload: { email: string; name?: string; avatar?: string }): Promise<{ user: User; token: string }> {
+    const db = getClientDb();
+    const cleanEmail = payload.email.trim().toLowerCase();
+    const isAdmin = cleanEmail === 'alifsheenshopping@gmail.com';
+
+    let user = db.users.find((u) => u.email.toLowerCase() === cleanEmail);
+    if (!user) {
+      user = {
+        id: `usr_g_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        name: payload.name?.trim() || cleanEmail.split('@')[0],
+        email: cleanEmail,
+        role: isAdmin ? 'admin' : 'buyer',
+        avatar: payload.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(payload.name || cleanEmail)}`,
+        createdAt: new Date().toISOString(),
+        isVerifiedSeller: isAdmin ? true : undefined,
+        rating: 5.0,
+        dealsCount: 0,
+        bio: ''
+      };
+      db.users.push(user);
+    } else if (isAdmin && user.role !== 'admin') {
+      user.role = 'admin';
+    }
+
+    saveClientDb(db);
+    const token = btoa(JSON.stringify({ id: user.id, email: user.email, role: user.role, time: Date.now() }));
+    return { user, token };
   },
 
   async getCurrentUser(token: string | null): Promise<{ user: User }> {

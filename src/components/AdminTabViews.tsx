@@ -8,6 +8,7 @@ import {
   Transaction,
   WebsiteSettings,
   CustomPaymentGateway,
+  CustomCategory,
   AdminAuditLog,
   SupportTicket,
   Coupon,
@@ -17,6 +18,7 @@ import {
 import { CategoryLogo, PlatformLogo } from './CategoryIcons';
 import { ORDER_STATUS_TRANSLATIONS } from '../translations/translations';
 import { DEFAULT_POLICIES } from '../data/defaultPolicies';
+import { DEFAULT_CUSTOM_CATEGORIES } from '../data/defaultCategories';
 import {
   Tv,
   Users,
@@ -51,12 +53,18 @@ import {
   Edit2,
   Image as ImageIcon,
   ZoomIn,
-  X
+  X,
+  LayoutGrid,
+  FolderPlus,
+  Search,
+  Tag,
+  Upload
 } from 'lucide-react';
 
 export type TabType =
   | 'overview'
   | 'channels'
+  | 'categories'
   | 'users'
   | 'orders'
   | 'payments'
@@ -279,6 +287,219 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
       const updated = prev.customGateways.filter((g) => g.id !== id);
       api.updateWebsiteSettings({ customGateways: updated }).catch(console.error);
       return { ...prev, customGateways: updated };
+    });
+  };
+
+  // Category Management States & Handlers
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [categoryPlatformFilter, setCategoryPlatformFilter] = useState<string>('all');
+  const [categoryIconUploading, setCategoryIconUploading] = useState(false);
+  const [categoryIconMode, setCategoryIconMode] = useState<'upload' | 'emoji'>('upload');
+  const [categoryForm, setCategoryForm] = useState<Partial<CustomCategory>>({
+    name: '',
+    nameEn: '',
+    id: '',
+    platform: 'all',
+    icon: '🏷️',
+    iconUrl: undefined,
+    description: '',
+    isActive: true
+  });
+
+  const getCategoriesList = (): CustomCategory[] => {
+    return settingsData?.customCategories && settingsData.customCategories.length > 0
+      ? settingsData.customCategories
+      : DEFAULT_CUSTOM_CATEGORIES;
+  };
+
+  const handleCategoryIconFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCategoryIconUploading(true);
+    try {
+      const res = await api.uploadFile(file);
+      setCategoryForm((prev) => ({
+        ...prev,
+        iconUrl: res.url,
+        icon: res.url
+      }));
+    } catch (err: any) {
+      console.warn('Backend upload fallback to base64 reader:', err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setCategoryForm((prev) => ({
+          ...prev,
+          iconUrl: dataUrl,
+          icon: dataUrl
+        }));
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setCategoryIconUploading(false);
+    }
+  };
+
+  const handleOpenAddCategory = () => {
+    setEditingCategoryId(null);
+    setCategoryIconMode('upload');
+    setCategoryForm({
+      name: '',
+      nameEn: '',
+      id: '',
+      platform: 'all',
+      icon: '🏷️',
+      iconUrl: undefined,
+      description: '',
+      isActive: true
+    });
+    setCategoryModalOpen(true);
+  };
+
+  const handleOpenEditCategory = (cat: CustomCategory) => {
+    setEditingCategoryId(cat.id);
+    setCategoryIconMode(cat.iconUrl ? 'upload' : 'emoji');
+    setCategoryForm({ ...cat });
+    setCategoryModalOpen(true);
+  };
+
+  const handleSaveCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryForm.name?.trim() || !categoryForm.nameEn?.trim()) return;
+
+    const slug =
+      (categoryForm.id?.trim() ||
+        categoryForm.nameEn
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '')) ||
+      `cat_${Date.now()}`;
+
+    setSettingsData((prev) => {
+      const base = prev || ({
+        siteName: 'Alif Trust',
+        siteTagline: '',
+        commissionRate: 5,
+        minimumListingPrice: 50,
+        featuredListingFee: 25,
+        maintenanceMode: false,
+        contactEmail: '',
+        contactPhone: '',
+        whatsappSupport: '',
+        bkashMerchantNumber: '',
+        nagadMerchantNumber: '',
+        bankDetails: '',
+        enable2FA: true,
+        termsOfService: '',
+        privacyPolicy: '',
+        refundPolicy: '',
+        safetyProtocol: ''
+      } as WebsiteSettings);
+
+      const currentCats =
+        base.customCategories && base.customCategories.length > 0
+          ? [...base.customCategories]
+          : [...DEFAULT_CUSTOM_CATEGORIES];
+
+      let updated: CustomCategory[];
+      if (editingCategoryId) {
+        updated = currentCats.map((c) =>
+          c.id === editingCategoryId
+            ? ({
+                ...c,
+                ...categoryForm,
+                id: c.id,
+                name: categoryForm.name!.trim(),
+                nameEn: categoryForm.nameEn!.trim(),
+                platform: categoryForm.platform || 'all',
+                icon: categoryForm.icon || '🏷️',
+                iconUrl: categoryForm.iconUrl || undefined,
+                description: categoryForm.description?.trim() || '',
+                isActive: categoryForm.isActive ?? true
+              } as CustomCategory)
+            : c
+        );
+      } else {
+        const newCat: CustomCategory = {
+          id: slug,
+          name: categoryForm.name!.trim(),
+          nameEn: categoryForm.nameEn!.trim(),
+          platform: categoryForm.platform || 'all',
+          icon: categoryForm.icon || '🏷️',
+          iconUrl: categoryForm.iconUrl || undefined,
+          description: categoryForm.description?.trim() || '',
+          isActive: categoryForm.isActive ?? true,
+          createdAt: new Date().toISOString()
+        };
+        updated = [newCat, ...currentCats];
+      }
+
+      api.updateWebsiteSettings({ customCategories: updated }).catch(console.error);
+      window.dispatchEvent(new CustomEvent('website-settings-updated'));
+      return { ...base, customCategories: updated };
+    });
+
+    setCategoryModalOpen(false);
+  };
+
+  const handleToggleCategoryStatus = (id: string) => {
+    setSettingsData((prev) => {
+      if (!prev) return prev;
+      const currentCats =
+        prev.customCategories && prev.customCategories.length > 0
+          ? [...prev.customCategories]
+          : [...DEFAULT_CUSTOM_CATEGORIES];
+      const updated = currentCats.map((c) => (c.id === id ? { ...c, isActive: !c.isActive } : c));
+      api.updateWebsiteSettings({ customCategories: updated }).catch(console.error);
+      window.dispatchEvent(new CustomEvent('website-settings-updated'));
+      return { ...prev, customCategories: updated };
+    });
+  };
+
+  const handleDeleteCategory = (id: string, name: string) => {
+    if (
+      !window.confirm(
+        t(
+          `আপনি কি নিশ্চিত যে "${name}" ক্যাটাগরি মুছে ফেলতে চান?`,
+          `Are you sure you want to delete "${name}" category?`
+        )
+      )
+    ) {
+      return;
+    }
+    setSettingsData((prev) => {
+      if (!prev) return prev;
+      const currentCats =
+        prev.customCategories && prev.customCategories.length > 0
+          ? [...prev.customCategories]
+          : [...DEFAULT_CUSTOM_CATEGORIES];
+      const updated = currentCats.filter((c) => c.id !== id);
+      api.updateWebsiteSettings({ customCategories: updated }).catch(console.error);
+      window.dispatchEvent(new CustomEvent('website-settings-updated'));
+      return { ...prev, customCategories: updated };
+    });
+  };
+
+  const handleResetDefaultCategories = () => {
+    if (
+      !window.confirm(
+        t(
+          'সকল ক্যাটাগরি কি পূর্বাবস্থায় (ডিফল্ট) ফিরিয়ে আনতে চান?',
+          'Reset all categories to platform defaults?'
+        )
+      )
+    ) {
+      return;
+    }
+    setSettingsData((prev) => {
+      if (!prev) return prev;
+      const updated = [...DEFAULT_CUSTOM_CATEGORIES];
+      api.updateWebsiteSettings({ customCategories: updated }).catch(console.error);
+      window.dispatchEvent(new CustomEvent('website-settings-updated'));
+      return { ...prev, customCategories: updated };
     });
   };
 
@@ -694,6 +915,277 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
           </div>
         </div>
       )}
+
+      {/* ============================================================== */}
+      {/* 2.5. CATEGORY & NICHE MANAGEMENT TAB */}
+      {/* ============================================================== */}
+      {activeTab === 'categories' && (() => {
+        const categoriesList = getCategoriesList();
+        const filteredCategories = categoriesList.filter((cat) => {
+          if (categoryPlatformFilter !== 'all') {
+            if (cat.platform && cat.platform !== 'all' && cat.platform !== categoryPlatformFilter) {
+              return false;
+            }
+          }
+          if (categorySearch.trim()) {
+            const q = categorySearch.toLowerCase().trim();
+            const matchName = cat.name.toLowerCase().includes(q);
+            const matchNameEn = cat.nameEn.toLowerCase().includes(q);
+            const matchSlug = cat.id.toLowerCase().includes(q);
+            const matchDesc = cat.description ? cat.description.toLowerCase().includes(q) : false;
+            if (!matchName && !matchNameEn && !matchSlug && !matchDesc) return false;
+          }
+          return true;
+        });
+
+        const activeCount = categoriesList.filter((c) => c.isActive).length;
+        const inactiveCount = categoriesList.length - activeCount;
+
+        return (
+          <div className="space-y-6">
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-700 text-white rounded-3xl p-6 shadow-md border border-emerald-500/30">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white text-2xl shadow-lg shrink-0 border border-white/20">
+                    <LayoutGrid className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-emerald-200 uppercase tracking-widest">
+                        {t('ক্যাটাগরি আর্কিটেকচার', 'Category Architecture')}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold">
+                        {t('লাইভ মার্কেটপ্লেস সিঙ্ক', 'Live Marketplace Sync')}
+                      </span>
+                    </div>
+                    <h2 className="text-lg sm:text-xl font-black text-white tracking-tight mt-0.5">
+                      {t('ক্যাটাগরি ও নিশ ম্যানেজমেন্ট', 'Category & Niche Control Center')}
+                    </h2>
+                    <p className="text-xs text-emerald-50 mt-1 max-w-2xl">
+                      {t(
+                        'মার্কেটপ্লেসের সমস্ত সোশ্যাল অ্যাকাউন্ট ও চ্যানেল ক্যাটাগরি এখান থেকে যোগ, এডিট বা নিষ্ক্রিয় করুন। নতুন ক্যাটাগরি তৈরি করলে তা বায়ার ফিল্টার এবং সেলার লিস্টিং ফর্মে সরাসরি যুক্ত হবে।',
+                        'Add, edit, and organize marketplace categories and niches. New categories immediately sync to homepage buyer filters and seller listing forms.'
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleResetDefaultCategories}
+                    className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition cursor-pointer"
+                    title={t('ডিফল্ট ক্যাটাগরি রিস্টোর', 'Restore Default Categories')}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{t('ডিফল্ট রিস্টোর', 'Reset Defaults')}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenAddCategory}
+                    className="px-5 py-2.5 rounded-xl bg-white text-emerald-800 hover:bg-emerald-50 font-black text-xs shadow-md transition cursor-pointer flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4 text-emerald-700" />
+                    <span>{t('+ নতুন ক্যাটাগরি যোগ করুন', '+ Add Category')}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-white/15 text-white">
+                <div className="bg-black/15 backdrop-blur-xs rounded-2xl p-3 border border-white/10">
+                  <span className="text-[11px] text-emerald-200 block font-semibold">{t('সর্বমোট ক্যাটাগরি', 'Total Categories')}</span>
+                  <span className="text-xl sm:text-2xl font-black mt-0.5 block">{categoriesList.length}</span>
+                </div>
+                <div className="bg-black/15 backdrop-blur-xs rounded-2xl p-3 border border-white/10">
+                  <span className="text-[11px] text-emerald-200 block font-semibold">{t('সক্রিয় ক্যাটাগরি', 'Active Categories')}</span>
+                  <span className="text-xl sm:text-2xl font-black mt-0.5 block text-emerald-300">{activeCount}</span>
+                </div>
+                <div className="bg-black/15 backdrop-blur-xs rounded-2xl p-3 border border-white/10">
+                  <span className="text-[11px] text-emerald-200 block font-semibold">{t('নিষ্ক্রিয় ক্যাটাগরি', 'Inactive Categories')}</span>
+                  <span className="text-xl sm:text-2xl font-black mt-0.5 block text-amber-200">{inactiveCount}</span>
+                </div>
+                <div className="bg-black/15 backdrop-blur-xs rounded-2xl p-3 border border-white/10">
+                  <span className="text-[11px] text-emerald-200 block font-semibold">{t('প্ল্যাটফর্ম সাপোর্ট', 'Supported Platforms')}</span>
+                  <span className="text-xl sm:text-2xl font-black mt-0.5 block">6+ Platforms</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Search input */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={categorySearch}
+                  onChange={(e) => setCategorySearch(e.target.value)}
+                  placeholder={t('ক্যাটাগরির নাম, ইংরেজি নাম বা স্লাগ খুঁজুন...', 'Search by category name, slug, or keywords...')}
+                  className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:outline-hidden"
+                />
+                {categorySearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCategorySearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Platform Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                {[
+                  { id: 'all', label: t('সকল', 'All') },
+                  { id: 'youtube', label: 'YouTube' },
+                  { id: 'facebook', label: 'Facebook' },
+                  { id: 'tiktok', label: 'TikTok' },
+                  { id: 'instagram', label: 'Instagram' },
+                  { id: 'telegram', label: 'Telegram' },
+                  { id: 'twitter', label: 'X (Twitter)' }
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setCategoryPlatformFilter(p.id)}
+                    className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+                      categoryPlatformFilter === p.id
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Categories Table */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-emerald-400" />
+                  <span className="font-black text-sm tracking-wide">
+                    {t('বিদ্যমান ক্যাটাগরি তালিকা (Category Database)', 'Active Category Database')}
+                  </span>
+                </div>
+                <span className="text-xs text-emerald-400 font-mono font-bold">
+                  {filteredCategories.length} {t('টি ক্যাটাগরি প্রদর্শিত', 'categories showing')}
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
+                    <tr>
+                      <th className="px-5 py-3.5">{t('আইকন ও ক্যাটাগরি', 'Icon & Category Name')}</th>
+                      <th className="px-4 py-3.5">{t('ইংরেজি নাম ও স্লাগ (ID)', 'English & Slug')}</th>
+                      <th className="px-4 py-3.5">{t('প্রযোজ্য প্ল্যাটফর্ম', 'Platform')}</th>
+                      <th className="px-4 py-3.5">{t('বিবরণ', 'Description')}</th>
+                      <th className="px-4 py-3.5">{t('স্ট্যাটাস', 'Status')}</th>
+                      <th className="px-5 py-3.5 text-right">{t('অ্যাকশন', 'Actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium">
+                    {filteredCategories.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-10 text-center text-slate-400">
+                          <LayoutGrid className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                          <p className="font-bold text-slate-600 text-sm">{t('কোনো ক্যাটাগরি খুঁজে পাওয়া যায়নি', 'No categories match your search')}</p>
+                          <p className="text-xs text-slate-400 mt-1">{t('উপরে "+ নতুন ক্যাটাগরি যোগ করুন" বাটনে ক্লিক করে নতুন ক্যাটাগরি তৈরি করুন।', 'Click "+ Add Category" button above to create a new category.')}</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredCategories.map((cat) => (
+                        <tr key={cat.id} className="hover:bg-slate-50/80 transition">
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-3">
+                              {cat.iconUrl ? (
+                                <img
+                                  src={cat.iconUrl}
+                                  alt={cat.name}
+                                  className="w-9 h-9 rounded-xl bg-white border border-slate-200 object-contain p-1 shrink-0 shadow-2xs"
+                                />
+                              ) : (
+                                <span className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-lg shrink-0 shadow-2xs">
+                                  {cat.icon || '🏷️'}
+                                </span>
+                              )}
+                              <div>
+                                <span className="font-bold text-slate-900 text-sm block">{cat.name}</span>
+                                <span className="text-[10px] text-slate-400 font-mono">ID: {cat.id}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className="font-semibold text-slate-800 block">{cat.nameEn}</span>
+                            <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 inline-block mt-0.5">
+                              {cat.id}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-1.5">
+                              {cat.platform && cat.platform !== 'all' ? (
+                                <>
+                                  <PlatformLogo platform={cat.platform as any} className="w-4 h-4" />
+                                  <span className="capitalize font-bold text-slate-700">{cat.platform}</span>
+                                </>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-200">
+                                  {t('সকল প্ল্যাটফর্ম', 'All Platforms')}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-slate-500 max-w-xs truncate">
+                            {cat.description || '—'}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCategoryStatus(cat.id)}
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                                cat.isActive
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
+                                  : 'bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200'
+                              }`}
+                              title={t('স্ট্যাটাস পরিবর্তন করুন', 'Click to toggle active status')}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${cat.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                              <span>{cat.isActive ? t('সক্রিয়', 'Active') : t('নিষ্ক্রিয়', 'Inactive')}</span>
+                            </button>
+                          </td>
+                          <td className="px-5 py-3.5 text-right space-x-1.5 whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditCategory(cat)}
+                              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                              title={t('ক্যাটাগরি সম্পাদনা', 'Edit Category')}
+                            >
+                              <Edit2 className="w-3.5 h-3.5 text-blue-600" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                              className="p-1.5 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 transition cursor-pointer"
+                              title={t('ক্যাটাগরি মুছুন', 'Delete Category')}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ============================================================== */}
       {/* 3. USERS TAB */}
@@ -3533,6 +4025,307 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                   {editingGatewayId
                     ? t('পরিবর্তন সংরক্ষণ করুন', 'Update Gateway')
                     : t('গেটওয়ে ও ব্যাংক সংরক্ষণ করুন', 'Save Gateway & Bank')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: ADD / EDIT CATEGORY */}
+      {/* ============================================================== */}
+      {categoryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="relative max-w-lg w-full bg-white rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 animate-fade-in text-slate-900 border border-slate-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                  <LayoutGrid className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">
+                    {editingCategoryId
+                      ? t('ক্যাটাগরি সম্পাদনা করুন', 'Edit Category')
+                      : t('নতুন ক্যাটাগরি যোগ করুন', 'Add New Category')}
+                  </h3>
+                  <span className="text-xs text-slate-500">
+                    {t('সোশ্যাল চ্যানেল ও অ্যাকাউন্ট ক্যাটাগরি কনফিগারেশন', 'Social channel & account category configuration')}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCategoryModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCategory} className="space-y-4 text-xs">
+              {/* Bengali Name */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('ক্যাটাগরির বাংলা নাম *', 'Bengali Category Name *')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={categoryForm.name || ''}
+                  onChange={(e) => setCategoryForm((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder={t('যেমন: ইসলামিক আলোচনা ও ওয়াজ, রান্না ও রেসিপি, ক্রিপ্টো', 'e.g. রান্না ও রেসিপি, ইসলামিক আলোচনা')}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              {/* English Name & Slug */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    {t('ক্যাটাগরির ইংরেজি নাম *', 'English Category Name *')}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={categoryForm.nameEn || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCategoryForm((prev) => ({
+                        ...prev,
+                        nameEn: val,
+                        id: editingCategoryId
+                          ? prev?.id
+                          : val.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+                      }));
+                    }}
+                    placeholder="e.g. Islamic Media, Cooking & Lifestyle"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    {t('ক্যাটাগরি আইডি / স্লাগ (Unique Slug)', 'Category ID / Slug')}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    disabled={!!editingCategoryId}
+                    value={categoryForm.id || ''}
+                    onChange={(e) => setCategoryForm((prev) => ({ ...prev, id: e.target.value }))}
+                    placeholder="e.g. islamic_media"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono text-slate-900 focus:border-emerald-500 focus:outline-hidden disabled:bg-slate-100 disabled:text-slate-500"
+                  />
+                </div>
+              </div>
+
+              {/* Platform Selector */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('প্রযোজ্য প্ল্যাটফর্ম', 'Applicable Platform')}
+                </label>
+                <select
+                  value={categoryForm.platform || 'all'}
+                  onChange={(e) => setCategoryForm((prev) => ({ ...prev, platform: e.target.value as any }))}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden bg-white"
+                >
+                  <option value="all">{t('সকল প্ল্যাটফর্ম (All Platforms)', 'All Platforms')}</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="telegram">Telegram</option>
+                  <option value="twitter">X (Twitter)</option>
+                </select>
+              </div>
+
+              {/* Category Icon Mode: Upload Image vs Emoji */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block font-black text-slate-800 text-xs">
+                    {t('ক্যাটাগরি আইকন নির্ধারণ করুন (Category Icon)', 'Choose Category Icon')}
+                  </label>
+                  <div className="flex items-center gap-1 bg-slate-200/80 p-0.5 rounded-lg text-[11px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setCategoryIconMode('upload')}
+                      className={`px-2.5 py-1 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
+                        categoryIconMode === 'upload'
+                          ? 'bg-white text-emerald-800 shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Upload className="w-3 h-3" />
+                      <span>{t('ছবি আপলোড', 'Upload File')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCategoryIconMode('emoji')}
+                      className={`px-2.5 py-1 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
+                        categoryIconMode === 'emoji'
+                          ? 'bg-white text-emerald-800 shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>{t('ইমোজি', 'Emoji')}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {categoryIconMode === 'upload' ? (
+                  <div className="space-y-2.5">
+                    {categoryForm.iconUrl ? (
+                      <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                        <img
+                          src={categoryForm.iconUrl}
+                          alt="Uploaded Icon Preview"
+                          className="w-12 h-12 object-contain rounded-xl bg-white border border-emerald-300 p-1.5 shadow-xs shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-black text-emerald-950 block">
+                            {t('কাস্টম আইকন ছবি আপলোড করা হয়েছে', 'Custom icon image uploaded')}
+                          </span>
+                          <span className="text-[10px] text-emerald-700 font-semibold block truncate">
+                            {categoryForm.iconUrl.startsWith('data:') ? 'Local Image File' : categoryForm.iconUrl}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <label
+                            htmlFor="catIconInput"
+                            className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold transition cursor-pointer"
+                          >
+                            {t('পরিবর্তন', 'Change')}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCategoryForm((prev) => ({
+                                ...prev,
+                                iconUrl: undefined,
+                                icon: '🏷️'
+                              }))
+                            }
+                            className="px-2.5 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold transition cursor-pointer"
+                          >
+                            {t('মুছুন', 'Remove')}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label
+                          htmlFor="catIconInput"
+                          className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-emerald-300 hover:border-emerald-500 rounded-xl bg-white hover:bg-emerald-50/30 transition cursor-pointer group"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2 group-hover:scale-105 transition">
+                            <Upload className="w-5 h-5" />
+                          </div>
+                          <span className="text-xs font-black text-slate-800">
+                            {categoryIconUploading
+                              ? t('আপলোড হচ্ছে...', 'Uploading icon...')
+                              : t('ক্লিক করে আইকন / লোগো আপলোড করুন', 'Click to upload category icon')}
+                          </span>
+                          <span className="text-[11px] text-slate-500 mt-0.5">
+                            PNG, SVG, WebP, JPG (সর্বোচ্চ ৮ MB)
+                          </span>
+                        </label>
+                      </div>
+                    )}
+                    <input
+                      id="catIconInput"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+                      onChange={handleCategoryIconFileUpload}
+                      className="hidden"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                        {t('ইমোজি লিখুন বা পেস্ট করুন', 'Type or paste emoji')}
+                      </label>
+                      <input
+                        type="text"
+                        value={categoryForm.icon || '🏷️'}
+                        onChange={(e) => setCategoryForm((prev) => ({ ...prev, icon: e.target.value }))}
+                        placeholder="e.g. 🕌, 🍳, 🎮, 📱"
+                        className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-center font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden bg-white"
+                      />
+                    </div>
+
+                    {/* Quick Emoji Picker Pills */}
+                    <div>
+                      <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                        {t('দ্রুত ইমোজি সিলেক্ট করুন (Quick Emoji Picker):', 'Quick Emoji Picker:')}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['🕌', '🍳', '⚡', '🎮', '🤖', '🏛️', '💰', '📹', '📚', '✈️', '🐦', '🎨', '📱', '🎬', '📈', '⚽', '🩺', '📰', '🛒', '🎙️'].map((em) => (
+                          <button
+                            key={em}
+                            type="button"
+                            onClick={() => setCategoryForm((prev) => ({ ...prev, icon: em }))}
+                            className={`w-7 h-7 rounded-lg text-sm flex items-center justify-center border transition cursor-pointer ${
+                              categoryForm.icon === em
+                                ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-400/20'
+                                : 'border-slate-200 bg-white hover:bg-slate-100'
+                            }`}
+                          >
+                            {em}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('সংক্ষিপ্ত বিবরণ (Description)', 'Short Description')}
+                </label>
+                <textarea
+                  rows={2}
+                  value={categoryForm.description || ''}
+                  onChange={(e) => setCategoryForm((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder={t('ক্যাটাগরি সম্পর্কিত সংক্ষিপ্ত তথ্য...', 'Short summary about this category...')}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden resize-none"
+                />
+              </div>
+
+              {/* Active Checkbox */}
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="cat_isActive"
+                  checked={categoryForm.isActive ?? true}
+                  onChange={(e) => setCategoryForm((prev) => ({ ...prev, isActive: e.target.checked }))}
+                  className="w-4 h-4 text-emerald-600 rounded-md focus:ring-emerald-500 border-slate-300 cursor-pointer"
+                />
+                <label htmlFor="cat_isActive" className="text-xs font-bold text-slate-800 cursor-pointer">
+                  {t('এই ক্যাটাগরি অবিলম্বে ওয়েবসাইটে ও ফিল্টারে সক্রিয় রাখুন', 'Keep this category active on marketplace and filter pills')}
+                </label>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex items-center gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setCategoryModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer text-center"
+                >
+                  {t('বাতিল', 'Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black transition cursor-pointer text-center shadow-xs"
+                >
+                  {editingCategoryId
+                    ? t('পরিবর্তন সংরক্ষণ করুন', 'Update Category')
+                    : t('ক্যাটাগরি সংরক্ষণ করুন', 'Save Category')}
                 </button>
               </div>
             </form>

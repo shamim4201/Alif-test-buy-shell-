@@ -172,13 +172,53 @@ export const PlatformLogo: React.FC<{
   }
 };
 
+const isImageUrl = (val?: string): boolean => {
+  if (!val) return false;
+  const str = val.trim();
+  return (
+    str.startsWith('http://') ||
+    str.startsWith('https://') ||
+    str.startsWith('/') ||
+    str.startsWith('data:image/') ||
+    /\.(png|jpe?g|svg|webp|gif)($|\?)/i.test(str)
+  );
+};
+
 /** Universal Category / Niche Logo Selector */
 export const CategoryLogo: React.FC<{
   categoryId: string;
+  customIcon?: string;
+  customIconUrl?: string;
   className?: string;
-}> = ({ categoryId, className = 'w-4 h-4' }) => {
+}> = ({ categoryId, customIcon, customIconUrl, className = 'w-4 h-4' }) => {
+  const imageSource = customIconUrl || (isImageUrl(customIcon) ? customIcon : undefined);
+  if (imageSource) {
+    return (
+      <img
+        src={imageSource}
+        alt=""
+        className={`object-contain shrink-0 rounded-xs ${className}`}
+        loading="lazy"
+      />
+    );
+  }
+
+  if (customIcon) {
+    return (
+      <span className={`inline-flex items-center justify-center shrink-0 leading-none ${className}`}>
+        {customIcon}
+      </span>
+    );
+  }
+
   const id = (categoryId || '').toLowerCase();
   switch (id) {
+    case 'islamic_media':
+      return (
+        <span className={`inline-flex items-center justify-center rounded-md bg-emerald-700 text-white shrink-0 shadow-2xs ${className}`}>
+          <span className="text-[11px] leading-none">🕌</span>
+        </span>
+      );
     case 'facebook_page':
     case 'facebook':
       return <FacebookLogo className={className} />;

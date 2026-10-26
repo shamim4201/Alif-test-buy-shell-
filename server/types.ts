@@ -265,6 +265,18 @@ export interface CustomPaymentGateway {
   isActive: boolean;
 }
 
+export interface CustomCategory {
+  id: string; // unique slug e.g. "cooking_lifestyle", "islamic_media"
+  name: string; // Bengali name e.g. "রান্না ও রেসিপি"
+  nameEn: string; // English name e.g. "Cooking & Recipes"
+  platform?: PlatformType | 'all';
+  icon?: string; // Emoji e.g. 🕌, 🍳, 🎮, 📱
+  iconUrl?: string; // Uploaded custom icon / logo URL
+  description?: string;
+  isActive: boolean;
+  createdAt?: string;
+}
+
 export interface WebsiteSettings {
   siteName: string;
   siteTagline: string;
@@ -291,9 +303,13 @@ export interface WebsiteSettings {
   securityStandardBadge?: string;
   footerDisclaimer?: string;
   customGateways?: CustomPaymentGateway[];
+  customCategories?: CustomCategory[];
   bdtConversionRate?: number;
   usdtTrc20Address?: string;
   usdtBep20Address?: string;
+  feeDeductionTarget?: 'both' | 'buyer' | 'seller';
+  buyerFeePercent?: number;
+  sellerFeePercent?: number;
 }
 
 export interface NotificationItem {

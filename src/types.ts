@@ -289,6 +289,18 @@ export interface CustomPaymentGateway {
   createdAt?: string;
 }
 
+export interface CustomCategory {
+  id: string; // unique slug e.g. "cooking_lifestyle", "islamic_media"
+  name: string; // Bengali name e.g. "রান্না ও রেসিপি", "ইসলামিক আলোচনা ও ওয়াজ"
+  nameEn: string; // English name e.g. "Cooking & Recipes", "Islamic Media"
+  platform?: PlatformType | 'all';
+  icon?: string; // Emoji e.g. 🕌, 🍳, 🎮, 📱
+  iconUrl?: string; // Uploaded custom icon / logo URL (PNG, SVG, JPG, WebP)
+  description?: string;
+  isActive: boolean;
+  createdAt?: string;
+}
+
 export interface WebsiteSettings {
   siteName: string;
   siteTagline: string;
@@ -298,6 +310,7 @@ export interface WebsiteSettings {
   buyerFeePercent?: number; // e.g., 2.5%
   sellerFeePercent?: number; // e.g., 2.5%
   customGateways?: CustomPaymentGateway[]; // ডায়নামিক পেমেন্ট গেটওয়ে ও ব্যাংক একাউন্ট তালিকা
+  customCategories?: CustomCategory[]; // এডমিন প্যানেল থেকে যোগ করা কাস্টম ক্যাটাগরি তালিকা
   minimumListingPrice: number;
   featuredListingFee: number;
   maintenanceMode: boolean;
