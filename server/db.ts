@@ -73,26 +73,34 @@ class Database {
   }
 
   private init() {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+    } catch (e) {
+      console.warn('Cannot create DATA_DIR (read-only filesystem):', e);
     }
 
-    if (fs.existsSync(DB_FILE)) {
-      try {
+    try {
+      if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         this.data = JSON.parse(raw);
         this.ensureEnrichedChannels();
         this.ensureEnrichedAdminData();
         return;
-      } catch (e) {
-        console.error('Failed to parse database.json, re-initializing seed data', e);
       }
+    } catch (e) {
+      console.error('Failed to parse database.json, re-initializing seed data', e);
     }
 
     this.seed();
     this.ensureEnrichedChannels();
     this.ensureEnrichedAdminData();
-    this.save();
+    try {
+      this.save();
+    } catch (e) {
+      console.warn('Cannot save seed database:', e);
+    }
   }
 
   private ensureEnrichedChannels() {

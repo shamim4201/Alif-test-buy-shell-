@@ -39,9 +39,16 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
   }
 
   const fullUrl = API_BASE_URL ? `${API_BASE_URL.replace(/\/$/, '')}${url}` : url;
-  const res = await fetch(fullUrl, { ...options, headers });
-  
-  if (res.status === 404 || res.status === 502 || res.status === 503) {
+  let res: Response;
+  try {
+    res = await fetch(fullUrl, { ...options, headers });
+  } catch (netErr: any) {
+    isOfflineFallbackActive = true;
+    throw new Error(netErr?.message || 'Network request failed');
+  }
+
+  // If server returns serverless 500 error, 404 missing backend, or gateway error (502/503/504)
+  if (res.status === 500 || res.status === 404 || res.status === 502 || res.status === 503 || res.status === 504) {
     isOfflineFallbackActive = true;
     throw new Error(`Request failed with status ${res.status}`);
   }
@@ -55,7 +62,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
   return data;
 }
 
-// Automatically fallback to client storage if server returns 404 (static hosting / unconfigured backend) or is offline
+// Automatically fallback to client storage if server returns 500, 404 (static hosting / unconfigured backend) or is offline
 async function callWithFallback<T>(
   apiCall: () => Promise<T>,
   fallbackCall: () => Promise<T>
@@ -69,16 +76,23 @@ async function callWithFallback<T>(
     const msg = String(err?.message || '');
     if (
       isOfflineFallbackActive ||
-      msg.includes('status 404') ||
+      msg.includes('status 500') ||
       msg.includes('status 502') ||
       msg.includes('status 503') ||
+      msg.includes('status 504') ||
+      msg.includes('status 404') ||
+      msg.includes('500') ||
+      msg.includes('404') ||
       msg.includes('Failed to fetch') ||
       msg.includes('NetworkError') ||
-      msg.includes('Load failed') ||
-      msg.includes('404')
+      msg.includes('Load failed')
     ) {
       isOfflineFallbackActive = true;
-      return await fallbackCall();
+      try {
+        return await fallbackCall();
+      } catch (fallbackErr: any) {
+        throw fallbackErr;
+      }
     }
     throw err;
   }
