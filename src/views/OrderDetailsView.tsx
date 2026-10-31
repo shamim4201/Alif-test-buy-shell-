@@ -36,8 +36,17 @@ import {
   FileCheck,
   XCircle,
   AlertOctagon,
-  RotateCcw
+  RotateCcw,
+  MessageCircle,
+  Mail,
+  CheckCircle
 } from 'lucide-react';
+import {
+  getWhatsAppUrl,
+  getEmailMailtoUrl,
+  buildOrderWhatsAppMessage,
+  buildOrderEmailContent
+} from '../services/notificationService';
 
 interface OrderDetailsViewProps {
   orderId: string;
@@ -127,6 +136,24 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
   const [adminRejectModalOpen, setAdminRejectModalOpen] = useState(false);
   const [adminRejectReason, setAdminRejectReason] = useState('');
   const [isProcessingAdminAction, setIsProcessingAdminAction] = useState(false);
+
+  const handleNotifyAdminWhatsApp = () => {
+    if (!order) return;
+    const whatsappNumber = settings?.whatsappSupport || settings?.contactPhone || '+8801700000000';
+    const msg = buildOrderWhatsAppMessage(order);
+    const url = getWhatsAppUrl(whatsappNumber, msg);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    showToast(t('WhatsApp ওপেন হচ্ছে... এডমিনকে অর্ডার মেসেজ পাঠান', 'Opening WhatsApp to notify admin...'), 'success');
+  };
+
+  const handleNotifyAdminEmail = () => {
+    if (!order) return;
+    const adminEmail = settings?.contactEmail || 'alifsheenshopping@gmail.com';
+    const { subject, body } = buildOrderEmailContent(order);
+    const url = getEmailMailtoUrl(adminEmail, subject, body);
+    window.location.href = url;
+    showToast(t('ইমেইল ওপেন হচ্ছে... এডমিনকে অর্ডারের তথ্য পাঠান', 'Opening email to notify admin...'), 'success');
+  };
 
   const loadOrderData = async () => {
     try {
@@ -594,6 +621,74 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                 )}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* ============================================================== */}
+        {/* FREE WHATSAPP & EMAIL INSTANT ADMIN NOTIFICATION CARD */}
+        {/* ============================================================== */}
+        <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 border border-emerald-700/60 rounded-3xl p-6 sm:p-7 text-white shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shadow-inner shrink-0">
+                <MessageCircle className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/30 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/40">
+                    {t('১০০% ফ্রি ইনস্ট্যান্ট নোটিফিকেশন', 'Free Instant Notification')}
+                  </span>
+                  <span className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
+                    ⚡ {t('সরাসরি এডমিন কানেক্ট', 'Direct Admin Connect')}
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-white mt-1">
+                  {t('অর্ডার সংক্রান্ত তথ্যের জন্য এডমিনকে সরাসরি জানান', 'Notify Admin Directly via WhatsApp or Email')}
+                </h3>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  {t(
+                    'পেমেন্ট দ্রুত ভেরিফাই করতে বা যেকোনো জিজ্ঞাসায় নিচে ক্লিক করলেই অর্ডারের সব বিবরণ সহ সরাসরি মেসেজ চলে যাবে।',
+                    'Click below to instantly send full order details to Admin for priority verification and support.'
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+              {/* WhatsApp Button */}
+              <button
+                type="button"
+                onClick={handleNotifyAdminWhatsApp}
+                className="py-3 px-4 sm:px-5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg hover:shadow-emerald-500/25 transition cursor-pointer active:scale-95 group"
+              >
+                <MessageCircle className="w-4 h-4 text-slate-950 transition-transform group-hover:scale-110" />
+                <span>{t('WhatsApp-এ জানান', 'Notify on WhatsApp')}</span>
+              </button>
+
+              {/* Email Button */}
+              <button
+                type="button"
+                onClick={handleNotifyAdminEmail}
+                className="py-3 px-4 sm:px-5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer active:scale-95"
+              >
+                <Mail className="w-4 h-4 text-rose-400" />
+                <span>{t('ইমেইলে জানান', 'Notify via Email')}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-emerald-800/60 flex flex-wrap items-center justify-between gap-3 text-[11px] text-emerald-200/90 font-mono">
+            <div className="flex items-center gap-4">
+              <span>
+                📱 WhatsApp: <strong className="text-white font-bold">{settings?.whatsappSupport || '+8801700000000'}</strong>
+              </span>
+              <span>
+                ✉️ Email: <strong className="text-white font-bold">{settings?.contactEmail || 'alifsheenshopping@gmail.com'}</strong>
+              </span>
+            </div>
+            <span className="text-emerald-400 font-sans font-semibold">
+              🔒 {t('Alif Sheen Group - নিরাপদ এসক্রো ভল্ট', 'Alif Sheen Group - Secure Escrow Vault')}
+            </span>
           </div>
         </div>
 

@@ -2968,28 +2968,56 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {t('সাপোর্ট ইমেইল (Support Email)', 'Support Email')}
-                </label>
-                <input
-                  type="email"
-                  value={settingsData?.contactEmail || ''}
-                  onChange={(e) => setSettingsData(prev => prev ? { ...prev, contactEmail: e.target.value } : null)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono focus:outline-hidden focus:border-sky-500"
-                />
-              </div>
+              <div className="p-4 rounded-2xl bg-emerald-50/80 border-2 border-emerald-300 col-span-1 sm:col-span-2 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-emerald-950 font-black text-xs">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>{t('এডমিন ফ্রি নোটিফিকেশন ও সাপোর্ট চ্যানেল (WhatsApp ও Email)', 'Admin Free Notification & Support Channels (WhatsApp & Email)')}</span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
+                    ১০০% ফ্রি
+                  </span>
+                </div>
+                <p className="text-[11px] text-emerald-900 leading-relaxed">
+                  {t(
+                    'যেকোনো নতুন অর্ডার আসলে বা কোনো কাস্টমার যোগাযোগ করতে চাইলে নিচের WhatsApp নম্বর ও ইমেইলে সরাসরি সম্পূর্ণ অর্ডারের বিবরণ চলে যাবে।',
+                    'Whenever an order arrives or a customer contacts, full order notifications go directly to this WhatsApp number and Email.'
+                  )}
+                </p>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {t('হোয়াটসঅ্যাপ হটলাইন (WhatsApp Hotline)', 'WhatsApp Hotline')}
-                </label>
-                <input
-                  type="text"
-                  value={settingsData?.whatsappSupport || ''}
-                  onChange={(e) => setSettingsData(prev => prev ? { ...prev, whatsappSupport: e.target.value } : null)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono focus:outline-hidden focus:border-sky-500"
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 mb-1">
+                      {t('এডমিন WhatsApp নম্বর (অর্ডার নোটিফিকেশন)', 'Admin WhatsApp Number')}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 017xxxxxxxx বা +88017xxxxxxxx"
+                      value={settingsData?.whatsappSupport || ''}
+                      onChange={(e) => setSettingsData(prev => prev ? { ...prev, whatsappSupport: e.target.value } : null)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-emerald-300 bg-white text-xs font-mono font-bold text-slate-900 focus:outline-hidden focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    />
+                    <span className="text-[10px] text-slate-500 mt-1 block">
+                      {t('আপনার পার্সোনাল WhatsApp নম্বর দিন। অর্ডারের সব বিবরণ এই নম্বরে আসবে।', 'Enter your WhatsApp number to receive order alerts.')}
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 mb-1">
+                      {t('এডমিন অফিসিয়াল ইমেইল (অর্ডার রসিদ গ্রহণ)', 'Admin Official Email')}
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="alifsheenshopping@gmail.com"
+                      value={settingsData?.contactEmail || ''}
+                      onChange={(e) => setSettingsData(prev => prev ? { ...prev, contactEmail: e.target.value } : null)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-emerald-300 bg-white text-xs font-mono font-bold text-slate-900 focus:outline-hidden focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    />
+                    <span className="text-[10px] text-slate-500 mt-1 block">
+                      {t('ডিফল্ট: alifsheenshopping@gmail.com (সমস্ত অর্ডার কপি এখানে যাবে)', 'Default: alifsheenshopping@gmail.com (All order alerts go here)')}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 

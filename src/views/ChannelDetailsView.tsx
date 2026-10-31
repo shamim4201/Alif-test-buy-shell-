@@ -23,8 +23,16 @@ import {
   Lock,
   Star,
   Globe,
-  Share2
+  Share2,
+  MessageCircle,
+  Mail
 } from 'lucide-react';
+import {
+  getWhatsAppUrl,
+  getEmailMailtoUrl,
+  buildGeneralInquiryWhatsAppMessage,
+  buildGeneralInquiryEmail
+} from '../services/notificationService';
 
 import {
   getLocalizedChannelTitle,
@@ -61,6 +69,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
   const [offerPrice, setOfferPrice] = useState<number | string>('');
   const [buyerGoogleEmail, setBuyerGoogleEmail] = useState('');
   const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [websiteSettings, setWebsiteSettings] = useState<any>(null);
   const [feeSettings, setFeeSettings] = useState<{
     target: 'both' | 'buyer' | 'seller';
     buyerRate: number;
@@ -87,6 +96,7 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
         setOfferPrice(res.channel.askingPrice);
 
         const st = settingsRes?.settings || {};
+        setWebsiteSettings(st);
         const target = (st.feeDeductionTarget as 'both' | 'buyer' | 'seller') || 'both';
         const total = Number(st.commissionRate) || 5;
         const buyer = target === 'seller' ? 0 : (st.buyerFeePercent !== undefined && st.buyerFeePercent !== null ? Number(st.buyerFeePercent) : (target === 'both' ? total / 2 : total));
@@ -627,6 +637,35 @@ export const ChannelDetailsView: React.FC<ChannelDetailsViewProps> = ({
                   <MessageSquare className="w-4 h-4 text-slate-600" />
                   <span>{t("সেলারকে মেসেজ দিন / জিজ্ঞাসা করুন", "Message Seller / Inquire")}</span>
                 </button>
+
+                {/* Free Direct WhatsApp & Email Admin Support */}
+                <div className="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const phone = websiteSettings?.whatsappSupport || websiteSettings?.contactPhone || '+8801700000000';
+                      const msg = buildGeneralInquiryWhatsAppMessage(channel.title);
+                      window.open(getWhatsAppUrl(phone, msg), '_blank', 'noopener,noreferrer');
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs group"
+                  >
+                    <MessageCircle className="w-4 h-4 text-emerald-600 transition-transform group-hover:scale-110" />
+                    <span>WhatsApp</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const email = websiteSettings?.contactEmail || 'alifsheenshopping@gmail.com';
+                      const { subject, body } = buildGeneralInquiryEmail(channel.title);
+                      window.location.href = getEmailMailtoUrl(email, subject, body);
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
+                  >
+                    <Mail className="w-4 h-4 text-rose-500" />
+                    <span>{t('ইমেইল', 'Email')}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Safety notice banner */}

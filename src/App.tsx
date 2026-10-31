@@ -11,6 +11,7 @@ import { OrderDetailsView } from './views/OrderDetailsView';
 import { SellerDashboardView } from './views/SellerDashboardView';
 import { BuyerDashboardView } from './views/BuyerDashboardView';
 import { AdminDashboardView } from './views/AdminDashboardView';
+import { FloatingContactWidget } from './components/FloatingContactWidget';
 
 function MainApp() {
   const { user, loading } = useAuth();
@@ -173,6 +174,9 @@ function MainApp() {
         onClose={() => setLegalModalOpen(false)}
         initialTab={legalInitialTab}
       />
+
+      {/* Floating Free WhatsApp & Email Admin Support Widget */}
+      <FloatingContactWidget />
     </div>
   );
 }

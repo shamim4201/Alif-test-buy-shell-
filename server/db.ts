@@ -1675,7 +1675,7 @@ class Database {
         minimumListingPrice: 50,
         featuredListingFee: 25,
         maintenanceMode: false,
-        contactEmail: 'support@aliftrust.com',
+        contactEmail: 'alifsheenshopping@gmail.com',
         contactPhone: '+8801700000000',
         whatsappSupport: '+8801700000000',
         bkashMerchantNumber: '01712345678',
