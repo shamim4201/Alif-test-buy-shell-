@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { db } from '../db';
 import { authenticate } from './auth';
 import { Message, User } from '../types';
+import { sendAutomatedAdminNotification } from '../notifier';
 
 export const messagesRouter = express.Router();
 
@@ -69,6 +70,18 @@ messagesRouter.post('/', authenticate, (req: Request, res: Response) => {
   };
 
   db.createMessage(newMessage);
+
+  // Automated notification to Admin if message is from buyer or seller
+  if (user.role !== 'admin') {
+    sendAutomatedAdminNotification({
+      event: 'new_message',
+      title: `💬 চ্যাটে নতুন বার্তা (${user.name})`,
+      details: `${orderId ? `অর্ডার #${orderId}: ` : ''}"${text.trim().substring(0, 100)}"`,
+      orderId,
+      customerName: user.name,
+      customerEmail: user.email
+    });
+  }
 
   // If suspicious pattern detected, inject security reminder
   if (hasWarning) {

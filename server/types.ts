@@ -310,6 +310,12 @@ export interface WebsiteSettings {
   feeDeductionTarget?: 'both' | 'buyer' | 'seller';
   buyerFeePercent?: number;
   sellerFeePercent?: number;
+  callmebotApiKey?: string;
+  telegramBotToken?: string;
+  telegramChatId?: string;
+  autoNotifyOnOrder?: boolean;
+  autoNotifyOnPayment?: boolean;
+  autoNotifyOnMessage?: boolean;
 }
 
 export interface NotificationItem {

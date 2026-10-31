@@ -45,7 +45,8 @@ import {
   getWhatsAppUrl,
   getEmailMailtoUrl,
   buildOrderWhatsAppMessage,
-  buildOrderEmailContent
+  buildOrderEmailContent,
+  triggerClientSideAutoNotification
 } from '../services/notificationService';
 
 interface OrderDetailsViewProps {
@@ -266,6 +267,18 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
       });
       setOrder(res.order);
       setPaymentSectionOpen(false);
+
+      // Automated Hands-Free background alert to Admin
+      triggerClientSideAutoNotification({
+        title: `💰 বায়ার পেমেন্ট সাবমিট করেছে! (#${order.id})`,
+        details: `মেথড: ${selectedMethodName} | TrxID: ${fullRef} | চ্যানেল: ${order.channelTitle}`,
+        orderId: order.id,
+        amount: order.totalAmount,
+        paymentMethod: selectedMethodName,
+        trxId: fullRef,
+        customerName: order.buyerName
+      }, settings);
+
       showToast(t('পেমেন্ট ট্রানজেকশন আইডি ও স্ক্রিনশট এডমিন অডিট ভল্টে জমা হয়েছে! এডমিন যাচাই শেষে হস্তান্তর ধাপ শুরু হবে।', 'Payment proof submitted to Admin Audit Vault! Handover steps will unlock once Admin verifies.'), 'success');
       loadChat();
     } catch (err: any) {

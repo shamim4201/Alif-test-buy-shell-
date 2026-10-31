@@ -336,6 +336,14 @@ export interface WebsiteSettings {
   trustBadgeText?: string;
   footerDisclaimer?: string;
 
+  // Hands-free automated alerts
+  callmebotApiKey?: string;
+  telegramBotToken?: string;
+  telegramChatId?: string;
+  autoNotifyOnOrder?: boolean;
+  autoNotifyOnPayment?: boolean;
+  autoNotifyOnMessage?: boolean;
+
   // Header Titles
   policiesMenuTitle?: string;
   marketplaceMenuTitle?: string;

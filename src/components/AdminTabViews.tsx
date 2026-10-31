@@ -3018,6 +3018,41 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                     </span>
                   </div>
                 </div>
+
+                {/* Optional 100% Free Telegram Instant Ringtone Alerts */}
+                <div className="pt-3 border-t border-emerald-200/80 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-800 mb-0.5">
+                      {t('টেলিগ্রাম বট টোকেন (Telegram Bot Token - ১০০% ফ্রি পুশ)', 'Telegram Bot Token (Optional)')}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 7123456789:AAH..."
+                      value={settingsData?.telegramBotToken || ''}
+                      onChange={(e) => setSettingsData(prev => prev ? { ...prev, telegramBotToken: e.target.value } : null)}
+                      className="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-mono text-slate-800 focus:outline-hidden focus:border-emerald-500"
+                    />
+                    <span className="text-[9px] text-slate-500 mt-0.5 block">
+                      {t('টেলিগ্রামে @BotFather দিয়ে ১ মিনিটে ফ্রি বট বানিয়ে টোকেন দিন', 'Create free bot via @BotFather in 1 minute')}
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-800 mb-0.5">
+                      {t('টেলিগ্রাম চ্যাট আইডি (Telegram Chat ID)', 'Telegram Chat ID (Optional)')}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 123456789"
+                      value={settingsData?.telegramChatId || ''}
+                      onChange={(e) => setSettingsData(prev => prev ? { ...prev, telegramChatId: e.target.value } : null)}
+                      className="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-mono text-slate-800 focus:outline-hidden focus:border-emerald-500"
+                    />
+                    <span className="text-[9px] text-slate-500 mt-0.5 block">
+                      {t('অর্ডার আসলে আপনার টেলিগ্রামে রিংটোন বেজে উঠবে', 'Receive audio push notifications instantly on phone')}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 

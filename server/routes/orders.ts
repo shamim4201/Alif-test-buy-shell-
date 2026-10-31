@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { db } from '../db';
 import { authenticate } from './auth';
 import { Order, OrderStatus, OrderTransferStep, User } from '../types';
+import { sendAutomatedAdminNotification } from '../notifier';
 
 export const ordersRouter = express.Router();
 
@@ -131,6 +132,17 @@ ordersRouter.post('/', authenticate, (req: Request, res: Response) => {
 
   db.createOrder(newOrder);
 
+  // Trigger automated hands-free notification to Admin
+  sendAutomatedAdminNotification({
+    event: 'new_order',
+    title: `নতুন অর্ডার ক্রিয়েট হয়েছে (#${newOrder.id})`,
+    details: `চ্যানেল: ${newOrder.channelTitle}। মূল্য: $${newOrder.totalAmount} (≈ ৳${(newOrder.totalAmount * 122).toLocaleString('en-US')})।`,
+    orderId: newOrder.id,
+    amount: newOrder.totalAmount,
+    customerName: newOrder.buyerName,
+    customerEmail: newOrder.buyerEmail
+  });
+
   // Send an automated system message in chat
   db.createMessage({
     id: `msg_${Date.now()}`,
@@ -180,6 +192,19 @@ ordersRouter.post('/:id/confirm-payment', authenticate, (req: Request, res: Resp
   const updated = db.updateOrder(order.id, {
     status: 'pending',
     paymentDetails
+  });
+
+  // Trigger automated hands-free notification to Admin on Payment Submission
+  sendAutomatedAdminNotification({
+    event: 'payment_submitted',
+    title: `💰 বায়ার পেমেন্ট সাবমিট করেছে! (#${order.id})`,
+    details: `মেথড: ${paymentMethod} | TrxID: ${ref} ${senderAccount ? `| প্রেরক: ${senderAccount}` : ''} | চ্যানেল: ${order.channelTitle}`,
+    orderId: order.id,
+    amount: order.totalAmount,
+    paymentMethod,
+    trxId: ref,
+    customerName: order.buyerName,
+    customerEmail: order.buyerEmail
   });
 
   // Post system notice to escrow audit

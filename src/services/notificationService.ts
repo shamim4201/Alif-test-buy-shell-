@@ -137,3 +137,48 @@ ${channelTitle ? `আমি "${channelTitle}" অ্যাকাউন্টট�
 
   return { subject, body };
 }
+
+/**
+ * Automatically dispatches background Telegram or CallMeBot alerts directly from browser
+ */
+export async function triggerClientSideAutoNotification(
+  payload: {
+    title: string;
+    details: string;
+    orderId?: string;
+    amount?: number;
+    paymentMethod?: string;
+    trxId?: string;
+    customerName?: string;
+  },
+  settings?: WebsiteSettings | null
+) {
+  try {
+    const st = settings || (typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('channeltrust_settings') || '{}') : null);
+    const formattedText = `🔔 *[Alif Trust অটোমেটিক নোটিফিকেশন]* 🔔\n\n📌 *${payload.title}*\n📝 ${payload.details}\n${payload.orderId ? `📋 অর্ডার আইডি: #${payload.orderId}\n` : ''}${payload.amount ? `💰 মূল্য: $${payload.amount} (≈ ৳${(payload.amount * 122).toLocaleString('en-US')})\n` : ''}${payload.paymentMethod ? `🏦 মেথড: ${payload.paymentMethod}\n` : ''}${payload.trxId ? `🔖 TrxID: ${payload.trxId}\n` : ''}${payload.customerName ? `👤 কাস্টমার: ${payload.customerName}\n` : ''}\n⏰ সময়: ${new Date().toLocaleTimeString('bn-BD')}`;
+
+    // 1. Telegram Push Alert (Instant ringtone & push)
+    if (st?.telegramBotToken && st?.telegramChatId) {
+      const tgUrl = `https://api.telegram.org/bot${st.telegramBotToken}/sendMessage`;
+      fetch(tgUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: st.telegramChatId,
+          text: formattedText,
+          parse_mode: 'Markdown'
+        })
+      }).catch(() => {});
+    }
+
+    // 2. Automated WhatsApp Push (CallMeBot)
+    if (st?.callmebotApiKey && st?.whatsappSupport) {
+      let phone = st.whatsappSupport.replace(/[^0-9]/g, '');
+      if (phone.startsWith('0')) phone = '88' + phone;
+      const callMeBotUrl = `https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${encodeURIComponent(formattedText)}&apikey=${st.callmebotApiKey}`;
+      fetch(callMeBotUrl, { mode: 'no-cors' }).catch(() => {});
+    }
+  } catch (e) {
+    // Silent fail
+  }
+}
