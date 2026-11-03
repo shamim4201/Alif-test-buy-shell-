@@ -172,6 +172,7 @@ function MainApp() {
         {currentView === 'buyer-dashboard' && (
           <BuyerDashboardView
             onSelectOrder={(orderId) => handleNavigate('order-details', { id: orderId })}
+            onSelectChannel={(channelId) => handleNavigate('channel-details', { id: channelId })}
             onBrowseChannels={() => handleNavigate('home')}
             onOpenLegal={handleOpenLegal}
           />
