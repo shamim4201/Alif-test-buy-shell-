@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { Navbar } from './components/Navbar';
@@ -49,24 +49,71 @@ function MainApp() {
     }
   };
 
+  // Parse URL on load and handle deep links like /checkout, /cart, /channel/:id, or ?product_id=...
+  useEffect(() => {
+    try {
+      const pathname = window.location.pathname;
+      const searchParams = new URLSearchParams(window.location.search);
+      const productId = searchParams.get('product_id') || searchParams.get('id') || searchParams.get('channel_id');
+      const orderId = searchParams.get('order_id');
+
+      if (pathname === '/checkout' || pathname === '/cart' || searchParams.has('checkout')) {
+        if (productId) {
+          setSelectedChannelId(productId);
+          setCurrentView('channel-details');
+        } else {
+          setCurrentView('home');
+        }
+      } else if (pathname.startsWith('/channel/') || pathname.startsWith('/product/')) {
+        const parts = pathname.split('/');
+        const id = parts[2];
+        if (id) {
+          setSelectedChannelId(id);
+          setCurrentView('channel-details');
+        }
+      } else if (pathname.startsWith('/order/')) {
+        const parts = pathname.split('/');
+        const id = parts[2];
+        if (id) {
+          setSelectedOrderId(id);
+          setCurrentView('order-details');
+        }
+      } else if (orderId) {
+        setSelectedOrderId(orderId);
+        setCurrentView('order-details');
+      } else if (productId) {
+        setSelectedChannelId(productId);
+        setCurrentView('channel-details');
+      }
+    } catch (e) {
+      // Ignore URL parse error
+    }
+  }, []);
+
   const handleNavigate = (view: string, params?: any) => {
     if (view === 'home') {
       setSelectedChannelId(null);
       setSelectedOrderId(null);
       setCurrentView('home');
+      try { window.history.pushState({}, '', '/'); } catch {}
     } else if (view === 'channel-details' && params?.id) {
       setSelectedChannelId(params.id);
       setCurrentView('channel-details');
+      try { window.history.pushState({}, '', `/channel/${params.id}`); } catch {}
     } else if (view === 'order-details' && params?.id) {
       setSelectedOrderId(params.id);
       setCurrentView('order-details');
+      try { window.history.pushState({}, '', `/order/${params.id}`); } catch {}
     } else if (view === 'seller-dashboard') {
       if (params?.tab) setSellerDashboardTab(params.tab);
       setCurrentView('seller-dashboard');
+      try { window.history.pushState({}, '', '/seller-dashboard'); } catch {}
     } else if (view === 'buyer-dashboard') {
       setCurrentView('buyer-dashboard');
+      try { window.history.pushState({}, '', '/buyer-dashboard'); } catch {}
     } else if (view === 'admin-dashboard') {
       setCurrentView('admin-dashboard');
+      try { window.history.pushState({}, '', '/admin-dashboard'); } catch {}
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

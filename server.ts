@@ -51,6 +51,11 @@ async function startServer() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
+  // Google AdSense ads.txt verification route
+  app.get('/ads.txt', (_req, res) => {
+    res.type('text/plain').send('google.com, pub-5838132584781260, DIRECT, f08c47fec0942fa0\n');
+  });
+
   if (!isProduction) {
     // Mount Vite middlewares in development
     const vite = await createViteServer({
