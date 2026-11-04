@@ -1792,7 +1792,18 @@ class Database {
         termsOfService: 'আলিফ ট্রাস্ট এসক্রো প্ল্যাটফর্মে সকল লেনদেন ডিজিটাল এসক্রো চুক্তির অধীন। বায়ার কর্তৃক পুরো পেমেন্ট জমার পর সেলার ৭ দিনের মধ্যে প্রাইমারি ওনারশিপ হস্তান্তর করবে।',
         privacyPolicy: 'ব্যবহারকারীদের সমস্ত ব্যক্তিগত তথ্য, এনআইডি ও পেমেন্ট ক্রেডেনশিয়াল কঠোর এনক্রিপশনে সংরক্ষিত থাকে।',
         refundPolicy: 'সেলার ব্যর্থ হলে বা চ্যানেলে ভুল তথ্য থাকলে বায়ার শতভাগ মানিব্যাক রিফান্ড পাবে।',
-        safetyProtocol: '১. ৭ দিনের ওনারশিপ ট্রায়াল ২. টু-ফ্যাক্টর অথেনটিকেশন ৩. এসক্রো ভল্ট ডিপোজিট।'
+        safetyProtocol: '১. ৭ দিনের ওনারশিপ ট্রায়াল ২. টু-ফ্যাক্টর অথেনটিকেশন ৩. এসক্রো ভল্ট ডিপোজিট।',
+        // Default SEO Settings
+        seoMetaTitle: 'Alif Trust - ভেরিফাইড সোশ্যাল মিডিয়া ও চ্যানেল মার্কেটপ্লেস | Buy & Sell Verified Channels',
+        seoMetaDescription: 'Alif Trust (alif sheen group) - ১০০% বিশ্বস্ত ও ভেরিফাইড ফেসবুক পেজ, ইউটিউব চ্যানেল, টিকটক ও ইনস্টাগ্রাম অ্যাকাউন্ট কেনাবেচার ডিজিটাল এসক্রো মার্কেটপ্লেস।',
+        seoFocusKeywords: 'facebook page buy sell, buy youtube channel bangladesh, monetized channel marketplace, alif sheen group, alif trust escrow, ফেসবুক পেজ বিক্রি, ইউটিউব চ্যানেল কেনাবেচা, বিকাশ নগদ চ্যানেল ক্রয়',
+        seoCanonicalUrl: 'https://official1.online',
+        seoOgImageUrl: 'https://official1.online/assets/aistudio/Screenshot_20261101-222202_aa9017f6.png',
+        seoRobotsIndex: true,
+        seoGoogleSearchConsoleCode: '',
+        seoBingWebmasterCode: '',
+        seoFacebookPixelId: '',
+        seoEnableSchemaJsonLd: true
       };
     } else {
       if (!this.data.settings.customGateways || this.data.settings.customGateways.length === 0) {
@@ -1809,6 +1820,24 @@ class Database {
       }
       if (!this.data.settings.usdtTrc20Address) {
         this.data.settings.usdtTrc20Address = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+      }
+      if (this.data.settings.seoRobotsIndex === undefined) {
+        this.data.settings.seoRobotsIndex = true;
+      }
+      if (!this.data.settings.seoMetaTitle) {
+        this.data.settings.seoMetaTitle = 'Alif Trust - ভেরিফাইড সোশ্যাল মিডিয়া ও চ্যানেল মার্কেটপ্লেস | Buy & Sell Verified Channels';
+      }
+      if (!this.data.settings.seoMetaDescription) {
+        this.data.settings.seoMetaDescription = 'Alif Trust (alif sheen group) - ১০০% বিশ্বস্ত ও ভেরিফাইড ফেসবুক পেজ, ইউটিউব চ্যানেল, টিকটক ও ইনস্টাগ্রাম অ্যাকাউন্ট কেনাবেচার ডিজিটাল এসক্রো মার্কেটপ্লেস।';
+      }
+      if (!this.data.settings.seoFocusKeywords) {
+        this.data.settings.seoFocusKeywords = 'facebook page buy sell, buy youtube channel bangladesh, monetized channel marketplace, alif sheen group, alif trust escrow, ফেসবুক পেজ বিক্রি, ইউটিউব চ্যানেল কেনাবেচা, বিকাশ নগদ চ্যানেল ক্রয়';
+      }
+      if (!this.data.settings.seoCanonicalUrl) {
+        this.data.settings.seoCanonicalUrl = 'https://official1.online';
+      }
+      if (this.data.settings.seoEnableSchemaJsonLd === undefined) {
+        this.data.settings.seoEnableSchemaJsonLd = true;
       }
     }
 

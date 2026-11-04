@@ -378,6 +378,19 @@ export interface WebsiteSettings {
   policyLinkPrivacy?: string;
   policyLinkRefund?: string;
   policyLinkSafety?: string;
+
+  // SEO & Google Search Ranking Settings
+  seoMetaTitle?: string;
+  seoMetaDescription?: string;
+  seoFocusKeywords?: string;
+  seoCanonicalUrl?: string;
+  seoOgImageUrl?: string;
+  seoRobotsIndex?: boolean; // true = "index, follow", false = "noindex, nofollow"
+  seoGoogleSearchConsoleCode?: string; // google-site-verification token or code
+  seoBingWebmasterCode?: string; // msvalidate.01 token
+  seoFacebookPixelId?: string; // Meta Pixel ID for Facebook Shop/Commerce
+  seoEnableSchemaJsonLd?: boolean;
+  seoStructuredDataOverride?: string;
 }
 
 export interface NotificationItem {

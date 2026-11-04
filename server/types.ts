@@ -334,6 +334,19 @@ export interface WebsiteSettings {
   autoNotifyOnOrder?: boolean;
   autoNotifyOnPayment?: boolean;
   autoNotifyOnMessage?: boolean;
+
+  // SEO & Google Search Ranking Settings
+  seoMetaTitle?: string;
+  seoMetaDescription?: string;
+  seoFocusKeywords?: string;
+  seoCanonicalUrl?: string;
+  seoOgImageUrl?: string;
+  seoRobotsIndex?: boolean;
+  seoGoogleSearchConsoleCode?: string;
+  seoBingWebmasterCode?: string;
+  seoFacebookPixelId?: string;
+  seoEnableSchemaJsonLd?: boolean;
+  seoStructuredDataOverride?: string;
 }
 
 export interface NotificationItem {

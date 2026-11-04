@@ -497,6 +497,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     { id: 'disputes', label: t('বিরোধ ও আরবিট্রেশন', 'Disputes'), icon: Scale, badge: disputedOrders.length, badgeColor: 'bg-rose-500 animate-pulse' },
     { id: 'policies', label: t('পলিসি ও ফুটার কন্ট্রোল', 'Policies & Legal Center'), icon: FileText, badge: 'লাইভ', badgeColor: 'bg-emerald-600' },
     { id: 'settings', label: t('ওয়েবসাইট সেটিংস', 'Settings'), icon: Settings },
+    { id: 'seo', label: t('SEO ও গুগল র‍্যাংকিং', 'SEO & Google Ranking'), icon: Globe, badge: settingsData?.seoRobotsIndex !== false ? 'র‍্যাংকিং ON' : 'OFF', badgeColor: settingsData?.seoRobotsIndex !== false ? 'bg-emerald-600' : 'bg-rose-600' },
     { id: 'security', label: t('নিরাপত্তা ও রোল', 'Security & Roles'), icon: ShieldCheck },
     { id: 'reports', label: t('রিপোর্ট ও অ্যানালিটিক্স', 'Reports'), icon: TrendingUp },
     { id: 'coupons', label: t('কুপন ও অফার', 'Coupons'), icon: Percent },

@@ -1792,7 +1792,17 @@ export const SEED_DATA = {
     "policyLinkTos": "টার্মস অফ সার্ভিস ও সেলার ওয়ারেন্টি",
     "policyLinkPrivacy": "প্রাইভেসি পলিসি ও তথ্য সুরক্ষা",
     "policyLinkRefund": "রিফান্ড, বিরোধ ও পরিদর্শন নীতি",
-    "policyLinkSafety": "অ্যান্টি-স্ক্যাম ও সুরক্ষা নীতি"
+    "policyLinkSafety": "অ্যান্টি-স্ক্যাম ও সুরক্ষা নীতি",
+    "seoMetaTitle": "Alif Trust - ভেরিফাইড সোশ্যাল মিডিয়া ও চ্যানেল মার্কেটপ্লেস | Buy & Sell Verified Channels",
+    "seoMetaDescription": "Alif Trust (alif sheen group) - ১০০% বিশ্বস্ত ও ভেরিফাইড ফেসবুক পেজ, ইউটিউব চ্যানেল, টিকটক ও ইনস্টাগ্রাম অ্যাকাউন্ট কেনাবেচার ডিজিটাল এসক্রো মার্কেটপ্লেস।",
+    "seoFocusKeywords": "facebook page buy sell, buy youtube channel bangladesh, monetized channel marketplace, alif sheen group, alif trust escrow, ফেসবুক পেজ বিক্রি, ইউটিউব চ্যানেল কেনাবেচা, বিকাশ নগদ চ্যানেল ক্রয়",
+    "seoCanonicalUrl": "https://official1.online",
+    "seoOgImageUrl": "https://official1.online/assets/aistudio/Screenshot_20261101-222202_aa9017f6.png",
+    "seoRobotsIndex": true,
+    "seoGoogleSearchConsoleCode": "",
+    "seoBingWebmasterCode": "",
+    "seoFacebookPixelId": "",
+    "seoEnableSchemaJsonLd": true
   },
   "coupons": [
     {

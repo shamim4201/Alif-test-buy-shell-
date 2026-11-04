@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin-dashboard
+Disallow: /api/admin/
+
+# Search Engine Sitemaps
+Sitemap: https://official1.online/sitemap.xml

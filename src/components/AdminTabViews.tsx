@@ -62,7 +62,11 @@ import {
   FolderPlus,
   Search,
   Tag,
-  Upload
+  Upload,
+  Globe,
+  Laptop,
+  Share2,
+  Key
 } from 'lucide-react';
 
 export type TabType =
@@ -81,7 +85,8 @@ export type TabType =
   | 'coupons'
   | 'notifications'
   | 'tickets'
-  | 'fraud';
+  | 'fraud'
+  | 'seo';
 
 interface AdminTabViewsProps {
   activeTab: TabType;
@@ -209,6 +214,11 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
   });
   const [gatewayFilterType, setGatewayFilterType] = useState<'all' | 'bdt' | 'usdt'>('all');
   const [adminProofModalUrl, setAdminProofModalUrl] = useState<string | null>(null);
+
+  // SEO Control Suite States
+  const [serpPreviewMode, setSerpPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [savingSeo, setSavingSeo] = useState(false);
+  const [seoSaveMsg, setSeoSaveMsg] = useState('');
 
   const handleOpenAddGateway = (defaultType: 'bdt' | 'usdt' = 'bdt', defaultCategory: 'bank' | 'mobile_banking' | 'crypto' = 'bank') => {
     setEditingGatewayId(null);
@@ -4118,6 +4128,722 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* 13. SEO & GOOGLE SEARCH ENGINE RANKING MANAGER TAB */}
+      {/* ============================================================== */}
+      {activeTab === 'seo' && (
+        <div className="space-y-6">
+          {/* Header Banner with Ranking Indicator */}
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-6 rounded-3xl border border-slate-700 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>SEO & Search Engine Automation</span>
+                  </span>
+
+                  {settingsData?.seoRobotsIndex !== false ? (
+                    <span className="px-3 py-1 rounded-full bg-emerald-500 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md">
+                      <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" />
+                      <span>{t('গুগল র‍্যাংকিং সচল (Ranking Active)', 'Google Ranking Active: INDEX, FOLLOW')}</span>
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-black flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>{t('ইনডেক্সিং বন্ধ (NoIndex)', 'Ranking Paused: NOINDEX')}</span>
+                    </span>
+                  )}
+                </div>
+
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                  {t('SEO ও গুগল সার্চ র‍্যাংকিং কন্ট্রোল সেন্টার', 'SEO & Search Engine Ranking Command Center')}
+                </h2>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {t(
+                    'গুগল (Google), বিং (Bing), এবং সোশ্যাল মিডিয়া সার্চে আপনার ওয়েবসাইটের র‍্যাংকিং অন রাখা, মেটা ট্যাগ, গুগল সার্চ কনসোল ভেরিফিকেশন ও এক্সএমএল সাইটম্যাপ পরিচালনা করুন।',
+                    'Maintain high search engine rankings on Google & Bing with real-time meta tag management, Google Search Console verification, and automated dynamic XML sitemaps.'
+                  )}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <a
+                  href="/sitemap.xml"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>sitemap.xml</span>
+                </a>
+
+                <a
+                  href="/robots.txt"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-sky-400" />
+                  <span>robots.txt</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!settingsData) return;
+                    try {
+                      setSavingSeo(true);
+                      await api.updateWebsiteSettings(settingsData);
+                      setSeoSaveMsg(t('SEO ও গুগল র‍্যাংকিং সেটিংস সফলভাবে সংরক্ষিত হয়েছে!', 'SEO settings saved successfully!'));
+                      setTimeout(() => setSeoSaveMsg(''), 4000);
+                    } catch (err: any) {
+                      alert(err.message || 'Failed to save SEO settings');
+                    } finally {
+                      setSavingSeo(false);
+                    }
+                  }}
+                  disabled={savingSeo}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                >
+                  {savingSeo ? (
+                    <RotateCcw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  <span>{savingSeo ? t('সংরক্ষণ হচ্ছে...', 'Saving...') : t('SEO সেটিংস সেভ করুন', 'Save SEO Settings')}</span>
+                </button>
+              </div>
+            </div>
+
+            {seoSaveMsg && (
+              <div className="mt-4 p-3 rounded-2xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-xs font-bold flex items-center gap-2 animate-fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{seoSaveMsg}</span>
+              </div>
+            )}
+          </div>
+
+          {/* SEO Health Audit Score & Checklist */}
+          {(() => {
+            const titleLen = (settingsData?.seoMetaTitle || '').length;
+            const descLen = (settingsData?.seoMetaDescription || '').length;
+            const keywordsCount = (settingsData?.seoFocusKeywords || '').split(',').map((s) => s.trim()).filter(Boolean).length;
+            const isIndexed = settingsData?.seoRobotsIndex !== false;
+            const hasGsc = !!(settingsData?.seoGoogleSearchConsoleCode && settingsData.seoGoogleSearchConsoleCode.trim());
+            const hasOgImage = !!settingsData?.seoOgImageUrl;
+            const hasSchema = settingsData?.seoEnableSchemaJsonLd !== false;
+
+            let score = 0;
+            if (titleLen >= 30 && titleLen <= 70) score += 20;
+            else if (titleLen > 0) score += 10;
+
+            if (descLen >= 80 && descLen <= 170) score += 20;
+            else if (descLen > 0) score += 10;
+
+            if (keywordsCount >= 3) score += 15;
+            else if (keywordsCount > 0) score += 8;
+
+            if (isIndexed) score += 20;
+            if (hasGsc) score += 15;
+            if (hasSchema) score += 10;
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Score Card */}
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                      {t('SEO হেলথ ও অপ্টিমাইজেশন স্কোর', 'SEO Health Score')}
+                    </span>
+                    <div className="flex items-baseline gap-2 mt-2">
+                      <span className={`text-4xl font-black ${score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-amber-500' : 'text-rose-600'}`}>
+                        {score}%
+                      </span>
+                      <span className="text-xs text-slate-500 font-bold">/ 100</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                        style={{ width: `${score}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-semibold block mt-1.5">
+                      {score >= 85 ? t('🏆 চমৎকার! গুগল সার্চের জন্য সম্পূর্ণ রেডি', 'Optimal! Ready for Top Google Ranking') : t('⚠️ কিছু মানদণ্ড পূরণ বাকি রয়েছে', 'Needs more optimization')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Audit Checklist (Span 3) */}
+                <div className="md:col-span-3 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                    {t('সার্চ ইঞ্জিন র‍্যাংকিং অডিট চেকলিস্ট (Google Ranking Checklist)', 'Google Ranking Audit Checklist')}
+                  </span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                      {isIndexed ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                      )}
+                      <div>
+                        <span className="font-bold text-slate-800 block">{t('গুগল ইনডেক্সিং সচল', 'Indexing: ON')}</span>
+                        <span className="text-[10px] text-slate-500">robots.txt: Allow /</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                      {titleLen >= 30 && titleLen <= 70 ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                      )}
+                      <div>
+                        <span className="font-bold text-slate-800 block">{t('মেটা টাইটেল দৈর্ঘ্য', 'Meta Title Length')}</span>
+                        <span className="text-[10px] text-slate-500">{titleLen} {t('অক্ষর (আদর্শ: ৫০-৬০)', 'chars (ideal: 50-60)')}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                      {descLen >= 80 && descLen <= 170 ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                      )}
+                      <div>
+                        <span className="font-bold text-slate-800 block">{t('মেটা ডেসক্রিপশন', 'Meta Description')}</span>
+                        <span className="text-[10px] text-slate-500">{descLen} {t('অক্ষর (আদর্শ: ১২০-১৬০)', 'chars (ideal: 120-160)')}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                      {keywordsCount >= 3 ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                      )}
+                      <div>
+                        <span className="font-bold text-slate-800 block">{t('ফোকাস কিওয়ার্ডস', 'Focus Keywords')}</span>
+                        <span className="text-[10px] text-slate-500">{keywordsCount} {t('টি কিওয়ার্ড যুক্ত', 'keywords added')}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                      {hasGsc ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <span className="w-4 h-4 rounded-full border-2 border-slate-300 text-slate-400 shrink-0 flex items-center justify-center text-[10px]">!</span>
+                      )}
+                      <div>
+                        <span className="font-bold text-slate-800 block">{t('গুগল সার্চ কনসোল', 'Google Search Console')}</span>
+                        <span className="text-[10px] text-slate-500">{hasGsc ? t('ভেরিফিকেশন সংযুক্ত', 'Verified') : t('কোড দিন', 'Code needed')}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                      {hasSchema ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                      )}
+                      <div>
+                        <span className="font-bold text-slate-800 block">{t('Schema.org রিচ রেজাল্ট', 'Schema.org JSON-LD')}</span>
+                        <span className="text-[10px] text-slate-500">{t('স্বয়ংক্রিয়ভাবে সক্রিয়', 'Active Rich Snippets')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Live SERP & Social Card Simulator */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 1. Google SERP Simulator */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 font-black text-xs">
+                    G
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-slate-900 block">
+                      {t('গুগল সার্চ রেজাল্ট প্রিভিউ (Google Search SERP Preview)', 'Google Search SERP Preview')}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {t('গুগলে সার্চ করলে ঠিক যেভাবে প্রদর্শিত হবে', 'Live simulation of Google Search listing')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-lg text-[10px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setSerpPreviewMode('desktop')}
+                    className={`px-2 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${
+                      serpPreviewMode === 'desktop' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600'
+                    }`}
+                  >
+                    <Laptop className="w-3 h-3" />
+                    <span>Desktop</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSerpPreviewMode('mobile')}
+                    className={`px-2 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${
+                      serpPreviewMode === 'mobile' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600'
+                    }`}
+                  >
+                    <Smartphone className="w-3 h-3" />
+                    <span>Mobile</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* SERP Card Box */}
+              <div
+                className={`p-4 rounded-xl border border-slate-200 bg-[#f8f9fa] space-y-1.5 font-sans ${
+                  serpPreviewMode === 'mobile' ? 'max-w-sm mx-auto shadow-sm' : ''
+                }`}
+              >
+                {/* Google URL Line */}
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-black shrink-0">
+                    A
+                  </div>
+                  <div className="text-[12px] text-slate-800 leading-tight">
+                    <span className="font-medium text-slate-900 block truncate">Alif Trust</span>
+                    <span className="text-slate-500 text-[11px] font-mono block truncate">
+                      {settingsData?.seoCanonicalUrl || 'https://official1.online'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Google Blue Link Title */}
+                <h3 className="text-base sm:text-lg font-normal text-[#1a0dab] hover:underline cursor-pointer leading-snug line-clamp-2">
+                  {settingsData?.seoMetaTitle || 'Alif Trust - ভেরিফাইড সোশ্যাল মিডিয়া ও চ্যানেল মার্কেটপ্লেস'}
+                </h3>
+
+                {/* Google Snippet Description */}
+                <p className="text-xs sm:text-sm text-[#4d5156] leading-relaxed line-clamp-3">
+                  {settingsData?.seoMetaDescription ||
+                    'Alif Trust (alif sheen group) - ১০০% বিশ্বস্ত ও ভেরিফাইড ফেসবুক পেজ, ইউটিউব চ্যানেল, টিকটক ও ইনস্টাগ্রাম অ্যাকাউন্ট কেনাবেচার ডিজিটাল এসক্রো মার্কেটপ্লেস।'}
+                </p>
+
+                {/* Google Rich Badges */}
+                <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-600">
+                  <span className="text-emerald-700 font-bold">★ 4.95 (158 রিভিউ)</span>
+                  <span>•</span>
+                  <span>দাম: $50 - $50,000</span>
+                  <span>•</span>
+                  <span>এসক্রো ভল্ট</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Facebook / Social Share Card Simulator */}
+            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 font-black text-xs">
+                    <Share2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-slate-900 block">
+                      {t('ফেসবুক ও সোশ্যাল কার্ড প্রিভিউ (Social OpenGraph Preview)', 'Social Share OpenGraph Card Preview')}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {t('ফেসবুক, হোয়াটসঅ্যাপ বা টুইটারে লিংক শেয়ার করলে যেরূপ দেখাবে', 'How your link appears on Facebook and WhatsApp')}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] text-indigo-700 bg-indigo-50 font-bold px-2 py-0.5 rounded-md">
+                  OG 1200x630
+                </span>
+              </div>
+
+              {/* Social Card Box */}
+              <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-2xs">
+                <div className="h-40 bg-slate-900 overflow-hidden relative">
+                  <img
+                    src={
+                      settingsData?.seoOgImageUrl ||
+                      'https://official1.online/assets/aistudio/Screenshot_20261101-222202_aa9017f6.png'
+                    }
+                    alt="Social Share Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-2 left-2 right-2 text-white text-xs font-bold truncate">
+                    {settingsData?.siteName || 'Alif Trust Escrow & Marketplace'}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 space-y-1">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+                    OFFICIAL1.ONLINE
+                  </span>
+                  <h4 className="text-xs font-bold text-slate-900 line-clamp-1">
+                    {settingsData?.seoMetaTitle || 'Alif Trust - ভেরিফাইড ফেসবুক পেজ ও চ্যানেল মার্কেটপ্লেস'}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                    {settingsData?.seoMetaDescription || '১০০% বিশ্বস্ত ও ভেরিফাইড চ্যানেল কেনাবেচার ডিজিটাল এসক্রো মার্কেটপ্লেস।'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SEO Settings Form */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-black text-sm text-slate-900">
+                  {t('সার্চ ইঞ্জিন র‍্যাংকিং কনফিগারেশন ফরম', 'Search Engine Configuration Form')}
+                </h3>
+              </div>
+              <span className="text-xs text-slate-400 font-mono">official1.online</span>
+            </div>
+
+            {/* 1. Ranking ON/OFF Toggle */}
+            <div className="p-4 rounded-2xl bg-emerald-50/70 border-2 border-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="font-black text-xs text-emerald-950 block">
+                  {t('গুগল ও সার্চ ইঞ্জিনে ইনডেক্সিং এবং র‍্যাংকিং স্ট্যাটাস (Google Search Indexing)', 'Google Search Indexing Status')}
+                </span>
+                <p className="text-[11px] text-emerald-800 mt-0.5">
+                  {settingsData?.seoRobotsIndex !== false
+                    ? t('সচল: গুগল ও অন্যান্য সার্চ ইঞ্জিন রোবট আপনার সাইটের সব চ্যানেল ও পেজ ক্রল করে সার্চ রেজাল্টে দেখাবে (সুপারিশকৃত)।', 'Active: Google will crawl and index your channel listings on search results.')
+                    : t('বন্ধ: সার্চ ইঞ্জিন আপনার সাইট সার্চ রেজাল্টে দেখাবে না (NoIndex)।', 'Paused: Search engines will not index the website.')}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSettingsData((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            seoRobotsIndex: !(prev.seoRobotsIndex !== false)
+                          }
+                        : null
+                    )
+                  }
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-2 shadow-xs ${
+                    settingsData?.seoRobotsIndex !== false
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                      : 'bg-rose-600 text-white hover:bg-rose-700'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                  <span>
+                    {settingsData?.seoRobotsIndex !== false
+                      ? t('গুগল র‍্যাংকিং: সচল (ON)', 'Google Ranking: ON')
+                      : t('গুগল র‍্যাংকিং: বন্ধ (OFF)', 'Google Ranking: OFF')}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Meta Title & Description */}
+            <div className="grid grid-cols-1 gap-4">
+              {/* Meta Title */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-800">
+                    {t('গুগল এসইও টাইটেল (SEO Meta Title) *', 'Google SEO Meta Title *')}
+                  </label>
+                  <span
+                    className={`text-[11px] font-mono font-bold ${
+                      (settingsData?.seoMetaTitle || '').length > 70
+                        ? 'text-rose-600'
+                        : (settingsData?.seoMetaTitle || '').length >= 40
+                        ? 'text-emerald-600'
+                        : 'text-amber-600'
+                    }`}
+                  >
+                    {(settingsData?.seoMetaTitle || '').length} / 60 {t('অক্ষর', 'chars')}
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={settingsData?.seoMetaTitle || ''}
+                  onChange={(e) =>
+                    setSettingsData((prev) => (prev ? { ...prev, seoMetaTitle: e.target.value } : null))
+                  }
+                  placeholder="e.g. Alif Trust - ভেরিফাইড সোশ্যাল মিডিয়া ও চ্যানেল মার্কেটপ্লেস"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                />
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  {t('গুগল সার্চের শিরোনাম। ৫০ থেকে ৬০ অক্ষরের মধ্যে রাখা সবচেয়ে ভালো।', 'The clickable headline in Google results. 50-60 characters recommended.')}
+                </span>
+              </div>
+
+              {/* Meta Description */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-800">
+                    {t('গুগল এসইও ডেসক্রিপশন (SEO Meta Description) *', 'Google SEO Meta Description *')}
+                  </label>
+                  <span
+                    className={`text-[11px] font-mono font-bold ${
+                      (settingsData?.seoMetaDescription || '').length > 165
+                        ? 'text-rose-600'
+                        : (settingsData?.seoMetaDescription || '').length >= 100
+                        ? 'text-emerald-600'
+                        : 'text-amber-600'
+                    }`}
+                  >
+                    {(settingsData?.seoMetaDescription || '').length} / 160 {t('অক্ষর', 'chars')}
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={settingsData?.seoMetaDescription || ''}
+                  onChange={(e) =>
+                    setSettingsData((prev) => (prev ? { ...prev, seoMetaDescription: e.target.value } : null))
+                  }
+                  placeholder="e.g. Alif Trust (alif sheen group) - ১০০% বিশ্বস্ত ও ভেরিফাইড ফেসবুক পেজ, ইউটিউব চ্যানেল, টিকটক ও ইনস্টাগ্রাম অ্যাকাউন্ট কেনাবেচার ডিজিটাল এসক্রো মার্কেটপ্লেস।"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden resize-none"
+                />
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  {t('গুগল সার্চের নিচে প্রদর্শিত সংক্ষিপ্ত বিবরণ। ১২০ থেকে ১৬০ অক্ষরের মধ্যে রাখুন।', 'Appears beneath the headline in Google search snippets. 120-160 characters recommended.')}
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Focus Keywords */}
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-1">
+                {t('ফোকাস কিওয়ার্ডস (Focus Search Keywords - কমা দিয়ে লিখুন)', 'Focus Keywords (Comma-separated)')}
+              </label>
+              <input
+                type="text"
+                value={settingsData?.seoFocusKeywords || ''}
+                onChange={(e) =>
+                  setSettingsData((prev) => (prev ? { ...prev, seoFocusKeywords: e.target.value } : null))
+                }
+                placeholder="facebook page buy sell, buy youtube channel bangladesh, alif sheen group, চ্যানেল কেনাবেচা"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+              />
+              {/* Keyword Pills Display */}
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {(settingsData?.seoFocusKeywords || '')
+                  .split(',')
+                  .map((k) => k.trim())
+                  .filter(Boolean)
+                  .map((kw, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold flex items-center gap-1"
+                    >
+                      <Tag className="w-3 h-3 text-emerald-600" />
+                      <span>{kw}</span>
+                    </span>
+                  ))}
+              </div>
+            </div>
+
+            {/* 4. Canonical URL & OG Banner Image URL */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  {t('ক্যানোনিকাল ওয়েব অ্যাড্রেস (Canonical URL)', 'Canonical Domain URL')}
+                </label>
+                <input
+                  type="url"
+                  value={settingsData?.seoCanonicalUrl || 'https://official1.online'}
+                  onChange={(e) =>
+                    setSettingsData((prev) => (prev ? { ...prev, seoCanonicalUrl: e.target.value } : null))
+                  }
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                />
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  {t('ডিফল্ট: https://official1.online (ডুপ্লিকেট কনটেন্ট প্রতিরোধে ব্যবহৃত)', 'Primary indexing domain')}
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  {t('সোশ্যাল শেয়ার ব্যানার ছবি (OpenGraph Image URL)', 'Social Share Banner Image URL')}
+                </label>
+                <input
+                  type="text"
+                  value={settingsData?.seoOgImageUrl || ''}
+                  onChange={(e) =>
+                    setSettingsData((prev) => (prev ? { ...prev, seoOgImageUrl: e.target.value } : null))
+                  }
+                  placeholder="https://official1.online/assets/..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-mono text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                />
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  {t('ফেসবুক ও হোয়াটসঅ্যাপে লিংক শেয়ার করলে যে ছবি দেখাবে', 'Recommended: 1200x630 ratio image')}
+                </span>
+              </div>
+            </div>
+
+            {/* 5. Google Search Console & Bing Webmaster Verification */}
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+              <div className="flex items-center gap-2">
+                <Key className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                  {t('সার্চ ইঞ্জিন ওনারশিপ ভেরিফিকেশন (Google & Bing Verification Tokens)', 'Search Engine Ownership Verification')}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Google Search Console */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-800">
+                      {t('গুগল সার্চ কনসোল কোড (Google Site Verification)', 'Google Search Console Verification Token')}
+                    </label>
+                    <a
+                      href="https://search.google.com/search-console"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-emerald-700 hover:underline font-bold flex items-center gap-1"
+                    >
+                      <span>{t('কোড আনুন', 'Get Code')}</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                  <input
+                    type="text"
+                    value={settingsData?.seoGoogleSearchConsoleCode || ''}
+                    onChange={(e) =>
+                      setSettingsData((prev) =>
+                        prev ? { ...prev, seoGoogleSearchConsoleCode: e.target.value } : null
+                      )
+                    }
+                    placeholder='google-site-verification token or <meta ...>'
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden bg-white"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    {t('Google Search Console-এ HTML Tag মেথড থেকে কোডটি এখানে দিন।', 'Paste your Google Search Console verification token here.')}
+                  </span>
+                </div>
+
+                {/* Bing Webmaster Tools */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-800">
+                      {t('বিং ওয়েবমাস্টার কোড (Bing msvalidate.01)', 'Bing Webmaster Tools Token')}
+                    </label>
+                    <a
+                      href="https://www.bing.com/webmasters"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-emerald-700 hover:underline font-bold flex items-center gap-1"
+                    >
+                      <span>{t('বিং কনসোল', 'Bing Console')}</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                  <input
+                    type="text"
+                    value={settingsData?.seoBingWebmasterCode || ''}
+                    onChange={(e) =>
+                      setSettingsData((prev) =>
+                        prev ? { ...prev, seoBingWebmasterCode: e.target.value } : null
+                      )
+                    }
+                    placeholder="e.g. 524A698F..."
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden bg-white"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    {t('Bing সার্চ ইঞ্জিনে ওয়েবসাইট ভেরিফিকেশনের জন্য', 'Used to verify site with Bing search engine')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Facebook Pixel ID (Bonus for Meta Commerce) */}
+              <div className="pt-3 border-t border-slate-200">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  {t('ফেসবুক / মেটা পিক্সেল আইডি (Meta Pixel ID for Facebook Shop)', 'Meta Pixel ID (Facebook Commerce & Ads)')}
+                </label>
+                <input
+                  type="text"
+                  value={settingsData?.seoFacebookPixelId || ''}
+                  onChange={(e) =>
+                    setSettingsData((prev) =>
+                      prev ? { ...prev, seoFacebookPixelId: e.target.value } : null
+                    )
+                  }
+                  placeholder="e.g. 123456789012345"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden bg-white"
+                />
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  {t('ফেসবুক শপ ও কমার্স ম্যানেজার ট্র্যাকিংয়ের জন্য মেটা পিক্সেল আইডি দিন।', 'Enter Meta Pixel ID for event tracking.')}
+                </span>
+              </div>
+            </div>
+
+            {/* 6. Schema.org JSON-LD Structured Data */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="text-xs font-black text-slate-900 block">
+                  {t('Schema.org JSON-LD রিচ রেজাল্ট ডেটা (Rich Results)', 'Schema.org JSON-LD Structured Data')}
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  {t(
+                    'গুগল সার্চে স্টার রেটিং, প্রোডাক্ট প্রাইস ও অর্গানাইজেশন নলেজ প্যানেল সক্রিয় রাখবে।',
+                    'Automatically enables Google search rich snippets, ratings, and knowledge graph data.'
+                  )}
+                </p>
+              </div>
+
+              <input
+                type="checkbox"
+                id="schema_toggle"
+                checked={settingsData?.seoEnableSchemaJsonLd !== false}
+                onChange={(e) =>
+                  setSettingsData((prev) =>
+                    prev ? { ...prev, seoEnableSchemaJsonLd: e.target.checked } : null
+                  )
+                }
+                className="w-5 h-5 text-emerald-600 rounded-md focus:ring-emerald-500 border-slate-300 cursor-pointer"
+              />
+            </div>
+
+            {/* Submit Action */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!settingsData) return;
+                  try {
+                    setSavingSeo(true);
+                    await api.updateWebsiteSettings(settingsData);
+                    setSeoSaveMsg(t('SEO ও গুগল র‍্যাংকিং সেটিংস সফলভাবে সংরক্ষিত হয়েছে!', 'SEO settings saved successfully!'));
+                    setTimeout(() => setSeoSaveMsg(''), 4000);
+                  } catch (err: any) {
+                    alert(err.message || 'Failed to save SEO settings');
+                  } finally {
+                    setSavingSeo(false);
+                  }
+                }}
+                disabled={savingSeo}
+                className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              >
+                {savingSeo ? <RotateCcw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                <span>{savingSeo ? t('সংরক্ষণ হচ্ছে...', 'Saving...') : t('SEO সেটিংস সেভ করুন', 'Save SEO Settings')}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

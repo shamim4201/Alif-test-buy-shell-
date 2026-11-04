@@ -56,6 +56,38 @@ async function startServer() {
     res.type('text/plain').send('google.com, pub-5838132584781260, DIRECT, f08c47fec0942fa0\n');
   });
 
+  // Dynamic robots.txt & Google Ranking Engine
+  app.get('/robots.txt', (_req, res) => {
+    const settings = db.getSettings();
+    const canIndex = settings.seoRobotsIndex !== false;
+    const robots = canIndex
+      ? `User-agent: *\nAllow: /\nDisallow: /admin-dashboard\nDisallow: /api/admin/\n\nSitemap: https://official1.online/sitemap.xml\n`
+      : `User-agent: *\nDisallow: /\n`;
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.send(robots);
+  });
+
+  // Dynamic sitemap.xml for Google Search Console & Ranking
+  app.get('/sitemap.xml', (_req, res) => {
+    const channels = db.getChannels().filter(c => c.status === 'active' && c.verificationStatus === 'approved');
+    const now = new Date().toISOString().slice(0, 10);
+    const domain = 'https://official1.online';
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+    xml += `  <url><loc>${domain}/</loc><lastmod>${now}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>\n`;
+    xml += `  <url><loc>${domain}/checkout</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
+    xml += `  <url><loc>${domain}/seller-dashboard</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
+    xml += `  <url><loc>${domain}/buyer-dashboard</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
+
+    channels.forEach(ch => {
+      xml += `  <url><loc>${domain}/channel/${ch.id}</loc><lastmod>${ch.updatedAt?.slice(0, 10) || now}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>\n`;
+    });
+
+    xml += `</urlset>`;
+    res.type('application/xml').send(xml);
+  });
+
   if (!isProduction) {
     // Mount Vite middlewares in development
     const vite = await createViteServer({

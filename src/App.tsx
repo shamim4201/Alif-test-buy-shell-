@@ -12,15 +12,26 @@ import { SellerDashboardView } from './views/SellerDashboardView';
 import { BuyerDashboardView } from './views/BuyerDashboardView';
 import { AdminDashboardView } from './views/AdminDashboardView';
 import { FloatingContactWidget } from './components/FloatingContactWidget';
+import { SeoHead } from './components/SeoHead';
+import { MetaCheckoutView } from './components/MetaCheckoutView';
+import { api } from './services/api';
+import { WebsiteSettings } from './types';
 
 function MainApp() {
   const { user, loading } = useAuth();
-  const [currentView, setCurrentView] = useState<'home' | 'channel-details' | 'order-details' | 'seller-dashboard' | 'buyer-dashboard' | 'admin-dashboard'>('home');
+  const [currentView, setCurrentView] = useState<
+    'home' | 'channel-details' | 'order-details' | 'seller-dashboard' | 'buyer-dashboard' | 'admin-dashboard' | 'checkout-preview'
+  >('home');
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [sellerDashboardTab, setSellerDashboardTab] = useState<'listings' | 'create' | 'sales'>('listings');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
+  const [websiteSettings, setWebsiteSettings] = useState<WebsiteSettings | null>(null);
+
+  useEffect(() => {
+    api.getWebsiteSettings().then((res) => setWebsiteSettings(res?.settings || null)).catch(console.error);
+  }, []);
 
   // Legal Modal State
   const [legalModalOpen, setLegalModalOpen] = useState(false);
@@ -57,13 +68,18 @@ function MainApp() {
       const productId = searchParams.get('product_id') || searchParams.get('id') || searchParams.get('channel_id');
       const orderId = searchParams.get('order_id');
 
-      if (pathname === '/checkout' || pathname === '/cart' || searchParams.has('checkout')) {
+      if (
+        pathname === '/checkout' ||
+        pathname === '/cart' ||
+        pathname.endsWith('/checkout') ||
+        pathname.endsWith('/cart') ||
+        pathname.includes('/checkout') ||
+        searchParams.has('checkout')
+      ) {
         if (productId) {
           setSelectedChannelId(productId);
-          setCurrentView('channel-details');
-        } else {
-          setCurrentView('home');
         }
+        setCurrentView('checkout-preview');
       } else if (pathname.startsWith('/channel/') || pathname.startsWith('/product/')) {
         const parts = pathname.split('/');
         const id = parts[2];
@@ -100,6 +116,10 @@ function MainApp() {
       setSelectedChannelId(params.id);
       setCurrentView('channel-details');
       try { window.history.pushState({}, '', `/channel/${params.id}`); } catch {}
+    } else if (view === 'checkout-preview') {
+      if (params?.id) setSelectedChannelId(params.id);
+      setCurrentView('checkout-preview');
+      try { window.history.pushState({}, '', '/checkout'); } catch {}
     } else if (view === 'order-details' && params?.id) {
       setSelectedOrderId(params.id);
       setCurrentView('order-details');
@@ -120,6 +140,8 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-red-600 selection:text-white w-full max-w-full overflow-x-hidden">
+      {/* Dynamic SEO, Google Bots, and Schema.org Structured Data */}
+      <SeoHead settings={websiteSettings} />
       <Navbar
         currentView={currentView}
         onNavigate={handleNavigate}
@@ -149,6 +171,14 @@ function MainApp() {
             onBack={() => handleNavigate('home')}
             onOrderCreated={(orderId) => handleNavigate('order-details', { id: orderId })}
             onOpenLegal={handleOpenLegal}
+          />
+        )}
+
+        {currentView === 'checkout-preview' && (
+          <MetaCheckoutView
+            onGoHome={() => handleNavigate('home')}
+            onSelectChannel={(channelId) => handleNavigate('channel-details', { id: channelId })}
+            targetChannelId={selectedChannelId}
           />
         )}
 
