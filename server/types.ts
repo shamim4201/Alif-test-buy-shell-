@@ -265,6 +265,23 @@ export interface CustomPaymentGateway {
   isActive: boolean;
 }
 
+export interface SellerPaymentGateway {
+  id: string;
+  name: string;
+  type: 'bdt' | 'usdt';
+  category?: 'mobile_banking' | 'bank' | 'crypto' | 'other';
+  accountTypeLabel?: string;
+  instructions?: string;
+  processingTime?: string;
+  minWithdrawal?: number;
+  maxWithdrawal?: number;
+  chargePercent?: number;
+  fixedCharge?: number;
+  isActive: boolean;
+  logoType?: 'bkash' | 'nagad' | 'rocket' | 'bank' | 'usdt' | 'binance' | 'upay' | 'other';
+  createdAt?: string;
+}
+
 export interface CustomCategory {
   id: string; // unique slug e.g. "cooking_lifestyle", "islamic_media"
   name: string; // Bengali name e.g. "রান্না ও রেসিপি"
@@ -303,6 +320,7 @@ export interface WebsiteSettings {
   securityStandardBadge?: string;
   footerDisclaimer?: string;
   customGateways?: CustomPaymentGateway[];
+  sellerGateways?: SellerPaymentGateway[];
   customCategories?: CustomCategory[];
   bdtConversionRate?: number;
   usdtTrc20Address?: string;

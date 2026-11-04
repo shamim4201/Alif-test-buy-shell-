@@ -8,6 +8,7 @@ import {
   Transaction,
   WebsiteSettings,
   CustomPaymentGateway,
+  SellerPaymentGateway,
   CustomCategory,
   AdminAuditLog,
   SupportTicket,
@@ -19,11 +20,14 @@ import { CategoryLogo, PlatformLogo } from './CategoryIcons';
 import { ORDER_STATUS_TRANSLATIONS } from '../translations/translations';
 import { DEFAULT_POLICIES } from '../data/defaultPolicies';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../data/defaultCategories';
+import { DEFAULT_SELLER_GATEWAYS } from '../data/defaultSellerGateways';
 import {
   Tv,
   Users,
   ShoppingBag,
   CreditCard,
+  Wallet,
+  Clock,
   Scale,
   Settings,
   ShieldCheck,
@@ -68,6 +72,7 @@ export type TabType =
   | 'users'
   | 'orders'
   | 'payments'
+  | 'seller_gateways'
   | 'disputes'
   | 'policies'
   | 'settings'
@@ -287,6 +292,127 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
       const updated = prev.customGateways.filter((g) => g.id !== id);
       api.updateWebsiteSettings({ customGateways: updated }).catch(console.error);
       return { ...prev, customGateways: updated };
+    });
+  };
+
+  // ==============================================================
+  // Seller Payment Gateways (সেলার পেআউট গেটওয়ে ব্যবস্থাপনা)
+  // ==============================================================
+  const [sellerGatewayModalOpen, setSellerGatewayModalOpen] = useState(false);
+  const [editingSellerGatewayId, setEditingSellerGatewayId] = useState<string | null>(null);
+  const [sellerGatewayFilterType, setSellerGatewayFilterType] = useState<'all' | 'bdt' | 'usdt'>('all');
+  const [sellerGatewayForm, setSellerGatewayForm] = useState<Partial<SellerPaymentGateway>>({
+    name: '',
+    type: 'bdt',
+    category: 'mobile_banking',
+    accountTypeLabel: '',
+    instructions: '',
+    processingTime: '১-২ ঘণ্টার মধ্যে',
+    minWithdrawal: 10,
+    chargePercent: 0,
+    isActive: true,
+    logoType: 'bkash'
+  });
+
+  const getSellerGatewaysList = (): SellerPaymentGateway[] => {
+    return settingsData?.sellerGateways && settingsData.sellerGateways.length > 0
+      ? settingsData.sellerGateways
+      : DEFAULT_SELLER_GATEWAYS;
+  };
+
+  const handleOpenAddSellerGateway = (defaultType: 'bdt' | 'usdt' = 'bdt', defaultCategory: 'mobile_banking' | 'bank' | 'crypto' | 'other' = 'mobile_banking') => {
+    setEditingSellerGatewayId(null);
+    setSellerGatewayForm({
+      name: '',
+      type: defaultType,
+      category: defaultCategory,
+      accountTypeLabel: defaultType === 'bdt' ? 'পার্সোনাল মোবাইল ব্যাংকিং নম্বর (১১ ডিজিট)' : 'Wallet Address / Pay ID',
+      instructions: '',
+      processingTime: defaultType === 'bdt' ? '১-২ ঘণ্টার মধ্যে' : '১৫-৩০ মিনিটের মধ্যে',
+      minWithdrawal: defaultType === 'bdt' ? 10 : 20,
+      chargePercent: 0,
+      isActive: true,
+      logoType: defaultType === 'bdt' ? 'bkash' : 'usdt'
+    });
+    setSellerGatewayModalOpen(true);
+  };
+
+  const handleOpenEditSellerGateway = (gw: SellerPaymentGateway) => {
+    setEditingSellerGatewayId(gw.id);
+    setSellerGatewayForm({ ...gw });
+    setSellerGatewayModalOpen(true);
+  };
+
+  const handleSaveSellerGateway = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sellerGatewayForm.name?.trim()) return;
+
+    setSettingsData((prev) => {
+      if (!prev) return prev;
+      const currentList = prev.sellerGateways && prev.sellerGateways.length > 0 ? [...prev.sellerGateways] : [...DEFAULT_SELLER_GATEWAYS];
+      let updated: SellerPaymentGateway[];
+      if (editingSellerGatewayId) {
+        updated = currentList.map((g) =>
+          g.id === editingSellerGatewayId ? ({ ...g, ...sellerGatewayForm, id: g.id } as SellerPaymentGateway) : g
+        );
+      } else {
+        const newGw: SellerPaymentGateway = {
+          id: `sgw_${Date.now()}`,
+          name: (sellerGatewayForm.name || '').trim(),
+          type: sellerGatewayForm.type || 'bdt',
+          category: sellerGatewayForm.category || 'mobile_banking',
+          accountTypeLabel: sellerGatewayForm.accountTypeLabel?.trim() || '',
+          instructions: sellerGatewayForm.instructions?.trim() || '',
+          processingTime: sellerGatewayForm.processingTime?.trim() || '১-২ ঘণ্টার মধ্যে',
+          minWithdrawal: Number(sellerGatewayForm.minWithdrawal) || 10,
+          chargePercent: Number(sellerGatewayForm.chargePercent) || 0,
+          isActive: sellerGatewayForm.isActive ?? true,
+          logoType: sellerGatewayForm.logoType || (sellerGatewayForm.type === 'bdt' ? 'bkash' : 'usdt'),
+          createdAt: new Date().toISOString()
+        };
+        updated = [newGw, ...currentList];
+      }
+      api.updateWebsiteSettings({ sellerGateways: updated }).catch(console.error);
+      return { ...prev, sellerGateways: updated };
+    });
+
+    setSellerGatewayModalOpen(false);
+  };
+
+  const handleToggleSellerGatewayStatus = (id: string) => {
+    setSettingsData((prev) => {
+      if (!prev) return prev;
+      const currentList = prev.sellerGateways && prev.sellerGateways.length > 0 ? [...prev.sellerGateways] : [...DEFAULT_SELLER_GATEWAYS];
+      const updated = currentList.map((g) =>
+        g.id === id ? { ...g, isActive: !g.isActive } : g
+      );
+      api.updateWebsiteSettings({ sellerGateways: updated }).catch(console.error);
+      return { ...prev, sellerGateways: updated };
+    });
+  };
+
+  const handleDeleteSellerGateway = (id: string, name: string) => {
+    if (!window.confirm(t(`আপনি কি নিশ্চিত যে "${name}" সেলার পেআউট গেটওয়েটি মুছে ফেলতে চান?`, `Are you sure you want to delete "${name}" payout gateway?`))) {
+      return;
+    }
+    setSettingsData((prev) => {
+      if (!prev) return prev;
+      const currentList = prev.sellerGateways && prev.sellerGateways.length > 0 ? [...prev.sellerGateways] : [...DEFAULT_SELLER_GATEWAYS];
+      const updated = currentList.filter((g) => g.id !== id);
+      api.updateWebsiteSettings({ sellerGateways: updated }).catch(console.error);
+      return { ...prev, sellerGateways: updated };
+    });
+  };
+
+  const handleResetSellerGateways = () => {
+    if (!window.confirm(t('ডিফল্ট সেলার গেটওয়ে তালিকা রিস্টোর করতে চান? (বিকাশ, নগদ, রকেট, ব্যাংক, USDT, বাইন্যান্স পে)', 'Reset to default seller payout gateways?'))) {
+      return;
+    }
+    setSettingsData((prev) => {
+      if (!prev) return prev;
+      const updated = [...DEFAULT_SELLER_GATEWAYS];
+      api.updateWebsiteSettings({ sellerGateways: updated }).catch(console.error);
+      return { ...prev, sellerGateways: updated };
     });
   };
 
@@ -1743,6 +1869,299 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* 5.5 SELLER PAYMENT GATEWAYS TAB (সেলার পেমেন্ট গেটওয়ে) */}
+      {/* ============================================================== */}
+      {activeTab === 'seller_gateways' && (
+        <div className="space-y-5">
+          {/* Hero Header Card */}
+          <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white rounded-3xl p-6 sm:p-7 shadow-lg relative overflow-hidden border border-emerald-900/40">
+            <div className="absolute -right-12 -top-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
+                  <Wallet className="w-3.5 h-3.5" />
+                  <span>{t('সেলার পেআউট গেটওয়ে কন্ট্রোল', 'Seller Payout Gateways Manager')}</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2.5">
+                  <span>{t('সেলার পেমেন্ট গেটওয়ে ব্যবস্থাপনা', 'Seller Payment Gateways')}</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  {t(
+                    'সেলার যখন ড্যাশবোর্ড থেকে টাকা উত্তোলনের (উইথড্রয়াল) আবেদন পাঠাবে, সে শুধুমাত্র এখানে আপনার চালু করা (Active) গেটওয়েগুলো পাবে। বিকাশ, নগদ, রকেট, ব্যাংক কিংবা USDT ক্রিপ্টো গেটওয়ে কাস্টমাইজ করুন।',
+                    'Configure all payout gateways available to sellers when requesting fund disbursements. Only activated gateways appear on the seller withdrawal page.'
+                  )}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleResetSellerGateways}
+                  className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                  title={t('ডিফল্ট গেটওয়ে তালিকা রিস্টোর করুন', 'Reset to default gateways')}
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>{t('ডিফল্ট রিস্টোর', 'Reset Defaults')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenAddSellerGateway('bdt', 'mobile_banking')}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md hover:shadow-emerald-500/20 transition cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{t('+ নতুন সেলার গেটওয়ে যোগ করুন', '+ Add Seller Gateway')}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-emerald-800/50">
+              {(() => {
+                const list = getSellerGatewaysList();
+                const total = list.length;
+                const activeCount = list.filter(g => g.isActive).length;
+                const bdtActive = list.filter(g => g.isActive && g.type === 'bdt').length;
+                const usdtActive = list.filter(g => g.isActive && g.type === 'usdt').length;
+
+                return (
+                  <>
+                    <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">{t('মোট গেটওয়ে', 'Total Gateways')}</span>
+                      <span className="text-xl font-black text-white block mt-0.5">{total}</span>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                      <span className="text-[10px] text-emerald-400 font-bold uppercase block">{t('সক্রিয় পেআউট', 'Active Gateways')}</span>
+                      <span className="text-xl font-black text-emerald-300 block mt-0.5">{activeCount}</span>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20">
+                      <span className="text-[10px] text-blue-300 font-bold uppercase block">{t('🇧🇩 BDT গেটওয়ে', 'BDT Gateways')}</span>
+                      <span className="text-xl font-black text-blue-200 block mt-0.5">{bdtActive} active</span>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                      <span className="text-[10px] text-amber-300 font-bold uppercase block">{t('🪙 USDT / ডলার', 'USD / USDT')}</span>
+                      <span className="text-xl font-black text-amber-200 block mt-0.5">{usdtActive} active</span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Filter & Submenu Navigation */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-1.5 w-full sm:w-auto">
+              {(['all', 'bdt', 'usdt'] as const).map((ft) => {
+                const count = getSellerGatewaysList().filter(g => ft === 'all' || g.type === ft).length;
+                return (
+                  <button
+                    key={ft}
+                    type="button"
+                    onClick={() => setSellerGatewayFilterType(ft)}
+                    className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                      sellerGatewayFilterType === ft
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <span>
+                      {ft === 'all'
+                        ? t('সকল সেলার গেটওয়ে', 'All Gateways')
+                        : ft === 'bdt'
+                        ? t('🇧🇩 বিডিটি গেটওয়ে (BDT)', 'BDT Gateways')
+                        : t('🪙 ইউএসডি / ক্রিপ্টো (USDT)', 'USDT Gateways')}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                      sellerGatewayFilterType === ft ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="text-xs text-slate-500 font-medium">
+              <span>{t('টগল বাটনে ক্লিক করে সরাসরি চালু বা বন্ধ করুন', 'Click toggle to activate or deactivate instantly')}</span>
+            </div>
+          </div>
+
+          {/* Gateways Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {getSellerGatewaysList()
+              .filter(gw => sellerGatewayFilterType === 'all' || gw.type === sellerGatewayFilterType)
+              .map((gw) => {
+                const isBdt = gw.type === 'bdt';
+                return (
+                  <div
+                    key={gw.id}
+                    className={`rounded-3xl border-2 p-5 transition flex flex-col justify-between shadow-xs ${
+                      gw.isActive
+                        ? isBdt
+                          ? 'bg-gradient-to-b from-white to-emerald-50/20 border-emerald-200 hover:border-emerald-300'
+                          : 'bg-gradient-to-b from-white to-amber-50/20 border-amber-200 hover:border-amber-300'
+                        : 'bg-slate-50/80 border-slate-200 opacity-75'
+                    }`}
+                  >
+                    <div className="space-y-3.5">
+                      {/* Top Header of Card */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          {/* Visual Logo / Badge */}
+                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-2xs ${
+                            gw.logoType === 'bkash'
+                              ? 'bg-pink-600 text-white'
+                              : gw.logoType === 'nagad'
+                              ? 'bg-amber-600 text-white'
+                              : gw.logoType === 'rocket'
+                              ? 'bg-purple-600 text-white'
+                              : gw.logoType === 'bank'
+                              ? 'bg-blue-600 text-white'
+                              : gw.logoType === 'binance'
+                              ? 'bg-yellow-500 text-slate-950 font-black'
+                              : gw.type === 'usdt'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-slate-700 text-white'
+                          }`}>
+                            {gw.logoType === 'bkash' ? (
+                              <span>bKash</span>
+                            ) : gw.logoType === 'nagad' ? (
+                              <span>নগদ</span>
+                            ) : gw.logoType === 'rocket' ? (
+                              <span>DBBL</span>
+                            ) : gw.logoType === 'bank' ? (
+                              <Building2 className="w-5 h-5" />
+                            ) : gw.logoType === 'binance' ? (
+                              <span>BINANCE</span>
+                            ) : gw.type === 'usdt' ? (
+                              <Coins className="w-5 h-5" />
+                            ) : (
+                              <Wallet className="w-5 h-5" />
+                            )}
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                                isBdt ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
+                              }`}>
+                                {isBdt ? '🇧🇩 BDT (টাকা)' : '🪙 USD / USDT'}
+                              </span>
+                              {gw.category && (
+                                <span className="text-[10px] font-semibold text-slate-500 capitalize">
+                                  {gw.category.replace('_', ' ')}
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="font-black text-sm text-slate-900 mt-1">{gw.name}</h4>
+                          </div>
+                        </div>
+
+                        {/* Status Toggle Switch */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSellerGatewayStatus(gw.id)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                            gw.isActive ? 'bg-emerald-600' : 'bg-slate-300'
+                          }`}
+                          title={gw.isActive ? t('নিষ্ক্রিয় করতে ক্লিক করুন', 'Click to deactivate') : t('সক্রিয় করতে ক্লিক করুন', 'Click to activate')}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-xs ${
+                              gw.isActive ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Chips Bar */}
+                      <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                        <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                          <span className="text-[10px] text-slate-400 font-bold block">{t('প্রসেসিং সময়', 'Time')}</span>
+                          <span className="font-bold text-slate-800 flex items-center gap-1 mt-0.5">
+                            <Clock className="w-3 h-3 text-slate-500" />
+                            <span className="truncate">{gw.processingTime || '১-২ ঘণ্টা'}</span>
+                          </span>
+                        </div>
+
+                        <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                          <span className="text-[10px] text-slate-400 font-bold block">{t('সর্বনিম্ন / চার্জ', 'Min / Fee')}</span>
+                          <span className="font-black text-slate-900 block mt-0.5">
+                            ${gw.minWithdrawal || 10} • {gw.chargePercent || 0}% Fee
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Required Account Field Format */}
+                      {gw.accountTypeLabel && (
+                        <div className="p-2.5 rounded-xl bg-slate-100/70 border border-slate-200/80">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                            {t('সেলার যে তথ্য ইনপুট দেবে:', 'Required Account Field:')}
+                          </span>
+                          <span className="text-xs font-mono font-bold text-slate-800 block mt-0.5">
+                            {gw.accountTypeLabel}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Instructions */}
+                      {gw.instructions && (
+                        <p className="text-[11px] text-slate-600 leading-relaxed bg-white/70 p-2.5 rounded-xl border border-slate-100 italic">
+                          "{gw.instructions}"
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="flex items-center justify-between pt-3.5 mt-3.5 border-t border-slate-100">
+                      <span className={`text-[10px] font-black flex items-center gap-1.5 ${
+                        gw.isActive ? 'text-emerald-700' : 'text-slate-400'
+                      }`}>
+                        <span className={`w-2 h-2 rounded-full ${gw.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                        <span>{gw.isActive ? t('সেলারদের জন্য উন্মুক্ত', 'Active on Seller App') : t('বর্তমানে বন্ধ (Hidden)', 'Inactive / Hidden')}</span>
+                      </span>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditSellerGateway(gw)}
+                          className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        >
+                          <Edit2 className="w-3 h-3 text-slate-600" />
+                          <span>{t('এডিট', 'Edit')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSellerGateway(gw.id, gw.name)}
+                          className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition cursor-pointer"
+                          title={t('মুছে ফেলুন', 'Delete')}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+
+          {getSellerGatewaysList().filter(gw => sellerGatewayFilterType === 'all' || gw.type === sellerGatewayFilterType).length === 0 && (
+            <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-300 space-y-3">
+              <Wallet className="w-10 h-10 text-slate-300 mx-auto" />
+              <p className="text-xs text-slate-500 font-bold">{t('কোনো সেলার গেটওয়ে পাওয়া যায়নি', 'No gateways found in this tab')}</p>
+              <button
+                type="button"
+                onClick={() => handleOpenAddSellerGateway(sellerGatewayFilterType === 'usdt' ? 'usdt' : 'bdt')}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+              >
+                {t('+ গেটওয়ে যোগ করুন', '+ Add Gateway')}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -4389,6 +4808,337 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                   {editingCategoryId
                     ? t('পরিবর্তন সংরক্ষণ করুন', 'Update Category')
                     : t('ক্যাটাগরি সংরক্ষণ করুন', 'Save Category')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: ADD / EDIT SELLER PAYOUT GATEWAY */}
+      {/* ============================================================== */}
+      {sellerGatewayModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl border border-slate-200 animate-fade-in flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white p-5 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <Wallet className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black tracking-wide text-white">
+                    {editingSellerGatewayId
+                      ? t('সেলার পেআউট গেটওয়ে এডিট করুন', 'Edit Seller Payout Gateway')
+                      : t('নতুন সেলার পেআউট গেটওয়ে যোগ করুন', 'Add Seller Payout Gateway')}
+                  </h3>
+                  <p className="text-[11px] text-slate-300">
+                    {t('সেলার টাকা উইথড্র করার সময় এই গেটওয়ের মাধ্যমে আবেদন পাঠাবে।', 'Configured payout route for seller withdrawal requests.')}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSellerGatewayModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveSellerGateway} className="p-6 space-y-4 overflow-y-auto text-xs flex-1">
+              {/* Type Selection: BDT vs USDT */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1.5">
+                  {t('১. কারেন্সি ও পেমেন্ট ধরন (Currency Type) *', '1. Gateway Currency Type *')}
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSellerGatewayForm(prev => ({
+                        ...prev,
+                        type: 'bdt',
+                        category: prev.category === 'crypto' ? 'mobile_banking' : prev.category,
+                        logoType: prev.logoType === 'usdt' || prev.logoType === 'binance' ? 'bkash' : prev.logoType,
+                        accountTypeLabel: prev.accountTypeLabel || 'পার্সোনাল মোবাইল ব্যাংকিং নম্বর (১১ ডিজিট)'
+                      }));
+                    }}
+                    className={`p-3 rounded-2xl border-2 text-left font-bold transition flex items-center gap-2.5 cursor-pointer ${
+                      sellerGatewayForm.type === 'bdt'
+                        ? 'border-emerald-600 bg-emerald-50/80 text-emerald-950 shadow-xs ring-2 ring-emerald-500/20'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <span className="text-2xl">🇧🇩</span>
+                    <div>
+                      <span className="block font-black text-xs">{t('BDT (বাংলাদেশী টাকা)', 'BDT (Bangladeshi Taka)')}</span>
+                      <span className="text-[10px] font-normal text-slate-500">{t('বিকাশ, নগদ, রকেট, ব্যাংক ট্রান্সফার', 'bKash, Nagad, Rocket, Bank Transfer')}</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSellerGatewayForm(prev => ({
+                        ...prev,
+                        type: 'usdt',
+                        category: 'crypto',
+                        logoType: 'usdt',
+                        accountTypeLabel: 'TRC-20 Wallet Address (Starts with T...)'
+                      }));
+                    }}
+                    className={`p-3 rounded-2xl border-2 text-left font-bold transition flex items-center gap-2.5 cursor-pointer ${
+                      sellerGatewayForm.type === 'usdt'
+                        ? 'border-amber-500 bg-amber-50/80 text-amber-950 shadow-xs ring-2 ring-amber-500/20'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <span className="text-2xl">🪙</span>
+                    <div>
+                      <span className="block font-black text-xs">{t('USD / USDT (ক্রিপ্টো ও ডলার)', 'USD / USDT (Crypto & Dollar)')}</span>
+                      <span className="text-[10px] font-normal text-slate-500">{t('TRC-20, Binance Pay, BEP-20', 'TRC-20, Binance Pay, BEP-20')}</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Presets */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  {t('দ্রুত প্রিসেট (Quick Presets - ১ ক্লিকে পূরণ করুন):', 'Quick Presets:')}
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {sellerGatewayForm.type === 'bdt' ? (
+                    <>
+                      {[
+                        { name: 'বিকাশ পার্সোনাল (bKash Personal)', logo: 'bkash', cat: 'mobile_banking', field: 'পার্সোনাল বিকাশ নম্বর (১১ ডিজিট)', time: '১-২ ঘণ্টার মধ্যে', min: 10, inst: 'আপনার সচল পার্সোনাল বিকাশ একাউন্ট নম্বর দিন। ক্যাশ-আউট চার্জ প্ল্যাটফর্ম বহন করে।' },
+                        { name: 'নগদ পার্সোনাল (Nagad Personal)', logo: 'nagad', cat: 'mobile_banking', field: 'পার্সোনাল নগদ নম্বর (১১ ডিজিট)', time: '১-২ ঘণ্টার মধ্যে', min: 10, inst: 'আপনার সচল নগদ একাউন্ট নম্বর প্রদান করুন। ০% হিডেন চার্জে দ্রুততম সময়ে টাকা ছাড় করা হবে।' },
+                        { name: 'রকেট পার্সোনাল (DBBL Rocket)', logo: 'rocket', cat: 'mobile_banking', field: 'রকেট একাউন্ট নম্বর (১২ ডিজিট - চেক ডিজিট সহ)', time: '১-৩ ঘণ্টার মধ্যে', min: 10, inst: 'ডাচ-বাংলা ব্যাংক রকেট একাউন্ট নম্বর লিখুন (১১ ডিজিট মোবাইল নম্বর + ১ ডিজিট চেক কোড)।' },
+                        { name: 'বাংলাদেশি ব্যাংক ট্রান্সফার (NPSB / BEFTN)', logo: 'bank', cat: 'bank', field: 'ব্যাংকের নাম, একাউন্ট নং, হোল্ডারের নাম ও রাউটিং নং', time: '২-৬ ঘণ্টা (ব্যাংকিং কর্মদিবস)', min: 50, inst: 'বাংলাদেশের যেকোনো তফসিলি ব্যাংকে সরাসরি বিডিটি সমমূল্যে উইথড্র নিন। NPSB ট্রান্সফারে তাৎক্ষণিক ক্রেডিট।' },
+                        { name: 'উপায় পার্সোনাল (Upay Personal)', logo: 'upay', cat: 'mobile_banking', field: 'পার্সোনাল উপায় নম্বর (১১ ডিজিট)', time: '১-২ ঘণ্টার মধ্যে', min: 10, inst: 'আপনার ইউসিবি উপায় পার্সোনাল নম্বর দিন।' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() => {
+                            setSellerGatewayForm(prev => ({
+                              ...prev,
+                              name: preset.name,
+                              logoType: preset.logo as any,
+                              category: preset.cat as any,
+                              accountTypeLabel: preset.field,
+                              processingTime: preset.time,
+                              minWithdrawal: preset.min,
+                              chargePercent: 0,
+                              instructions: preset.inst
+                            }));
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-200 transition cursor-pointer"
+                        >
+                          + {preset.name.split(' (')[0]}
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {[
+                        { name: 'USDT (TRC-20 Network)', logo: 'usdt', cat: 'crypto', field: 'TRC-20 Wallet Address (শুরু T... দিয়ে)', time: '১৫-৩০ মিনিটের মধ্যে', min: 20, inst: 'আপনার ট্রন (TRC-20) নেটওয়ার্কের USDT ডিপোজিট অ্যাড্রেস দিন। ব্লকচেইনে নিশ্চিত হওয়ার পর ডলার সেন্ড হবে।' },
+                        { name: 'Binance Pay (Pay ID / Email)', logo: 'binance', cat: 'crypto', field: 'Binance Pay ID (৮-৯ ডিজিট) অথবা রেজিস্টার্ড ইমেইল', time: 'তাৎক্ষণিক / ৫-১০ মিনিট', min: 10, inst: 'আপনার বাইন্যান্স পে আইডি (Binance Pay ID) অথবা বাইন্যান্স একাউন্টের ইমেইল দিন। ০% গ্যাস ফি।' },
+                        { name: 'USDT (BEP-20 / BNB Chain)', logo: 'usdt', cat: 'crypto', field: 'BEP-20 Wallet Address (শুরু 0x... দিয়ে)', time: '১৫-৩০ মিনিটের মধ্যে', min: 20, inst: 'আপনার BNB Smart Chain (BEP-20) USDT অ্যাড্রেস প্রদান করুন।' },
+                        { name: 'Payeer (USD Account)', logo: 'other', cat: 'other', field: 'Payeer Account No (e.g. P1000...)', time: '১-৩ ঘণ্টার মধ্যে', min: 10, inst: 'আপনার পেয়ার (Payeer) একাউন্ট নম্বর দিন।' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() => {
+                            setSellerGatewayForm(prev => ({
+                              ...prev,
+                              name: preset.name,
+                              logoType: preset.logo as any,
+                              category: preset.cat as any,
+                              accountTypeLabel: preset.field,
+                              processingTime: preset.time,
+                              minWithdrawal: preset.min,
+                              chargePercent: 0,
+                              instructions: preset.inst
+                            }));
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 text-[11px] font-bold border border-amber-200 transition cursor-pointer"
+                        >
+                          + {preset.name.split(' (')[0]}
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Gateway Name */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('২. গেটওয়ের পুরো নাম (Gateway Title) *', '2. Gateway Title *')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={sellerGatewayForm.name || ''}
+                  onChange={(e) => setSellerGatewayForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder={sellerGatewayForm.type === 'bdt' ? 'e.g. বিকাশ পার্সোনাল (bKash Personal)' : 'e.g. USDT (TRC-20 Network)'}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold focus:border-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              {/* Category & Logo Icon Selectors */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    {t('৩. গেটওয়ে ক্যাটাগরি', '3. Category')}
+                  </label>
+                  <select
+                    value={sellerGatewayForm.category || 'mobile_banking'}
+                    onChange={(e) => setSellerGatewayForm(prev => ({ ...prev, category: e.target.value as any }))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-white"
+                  >
+                    <option value="mobile_banking">মোবাইল ব্যাংকিং (Mobile Banking)</option>
+                    <option value="bank">ব্যাংক একাউন্ট (Bank Account)</option>
+                    <option value="crypto">ক্রিপ্টোকারেন্সি (Crypto Wallet)</option>
+                    <option value="other">অন্যান্য (Other Method)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    {t('৪. লোগো আইকন (Logo Type)', '4. Visual Logo')}
+                  </label>
+                  <select
+                    value={sellerGatewayForm.logoType || 'bkash'}
+                    onChange={(e) => setSellerGatewayForm(prev => ({ ...prev, logoType: e.target.value as any }))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-white"
+                  >
+                    <option value="bkash">bKash (বিকাশ - Pink)</option>
+                    <option value="nagad">Nagad (নগদ - Orange)</option>
+                    <option value="rocket">Rocket (রকেট - Purple)</option>
+                    <option value="bank">Bank (ব্যাংক ট্রান্সফার - Blue)</option>
+                    <option value="usdt">USDT (Tether - Green)</option>
+                    <option value="binance">Binance Pay (Yellow)</option>
+                    <option value="upay">Upay (উপায় - Cyan)</option>
+                    <option value="other">Other Wallet (Generic)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Account Label Requirement */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('৫. সেলারের ইনপুট ফিল্ড লেবেল (Required Field Format) *', '5. Account Field Requirement *')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={sellerGatewayForm.accountTypeLabel || ''}
+                  onChange={(e) => setSellerGatewayForm(prev => ({ ...prev, accountTypeLabel: e.target.value }))}
+                  placeholder="e.g. পার্সোনাল বিকাশ নম্বর (১১ ডিজিট) বা TRC-20 Address"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:border-emerald-500 focus:outline-hidden"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  {t('উইথড্র করার সময় সেলার যে ইনপুট ফিল্ডে তার একাউন্ট নম্বর লিখবে তার উপরে এই লেখাটি থাকবে।', 'Displayed above the input box in seller withdrawal tab.')}
+                </span>
+              </div>
+
+              {/* Processing Time, Min Amount & Charge */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    {t('৬. প্রসেসিং সময়', '6. Processing Time')}
+                  </label>
+                  <input
+                    type="text"
+                    value={sellerGatewayForm.processingTime || ''}
+                    onChange={(e) => setSellerGatewayForm(prev => ({ ...prev, processingTime: e.target.value }))}
+                    placeholder="e.g. ১-২ ঘণ্টার মধ্যে"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    {t('৭. সর্বনিম্ন উত্তোলন ($ USD)', '7. Min Amount ($ USD)')}
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={sellerGatewayForm.minWithdrawal || 10}
+                    onChange={(e) => setSellerGatewayForm(prev => ({ ...prev, minWithdrawal: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    {t('৮. উইথড্রয়াল চার্জ (%)', '8. Fee / Charge (%)')}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={sellerGatewayForm.chargePercent ?? 0}
+                    onChange={(e) => setSellerGatewayForm(prev => ({ ...prev, chargePercent: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('৯. সেলারের জন্য দিকনির্দেশনা (Instructions for Seller)', '9. Instructions for Seller')}
+                </label>
+                <textarea
+                  rows={3}
+                  value={sellerGatewayForm.instructions || ''}
+                  onChange={(e) => setSellerGatewayForm(prev => ({ ...prev, instructions: e.target.value }))}
+                  placeholder="e.g. আপনার সচল পার্সোনাল বিকাশ নম্বর দিন। কোনো অতিরিক্ত ক্যাশআউট চার্জ কাটা হবে না।"
+                  className="w-full p-3 rounded-xl border border-slate-300 text-xs leading-relaxed focus:border-emerald-500 focus:outline-hidden resize-y"
+                />
+              </div>
+
+              {/* Active Toggle */}
+              <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
+                <div>
+                  <span className="font-black text-xs text-emerald-950 block">
+                    {t('গেটওয়ে সক্রিয় রাখুন (Active Status)', 'Active Gateway Status')}
+                  </span>
+                  <span className="text-[11px] text-emerald-800">
+                    {t('টিক চিহ্ন দিলে সেলার ড্যাশবোর্ডে উইথড্রয়াল অপশনটিতে এটি দৃশ্যমান হবে।', 'When active, sellers can select this method for withdrawal.')}
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={sellerGatewayForm.isActive ?? true}
+                  onChange={(e) => setSellerGatewayForm(prev => ({ ...prev, isActive: e.target.checked }))}
+                  className="w-5 h-5 accent-emerald-600 rounded cursor-pointer"
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setSellerGatewayModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer text-center"
+                >
+                  {t('বাতিল', 'Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black transition cursor-pointer text-center shadow-xs"
+                >
+                  {editingSellerGatewayId
+                    ? t('পরিবর্তন সংরক্ষণ করুন', 'Update Gateway')
+                    : t('গেটওয়ে যোগ করুন', 'Save Gateway')}
                 </button>
               </div>
             </form>

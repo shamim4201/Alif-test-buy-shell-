@@ -289,6 +289,23 @@ export interface CustomPaymentGateway {
   createdAt?: string;
 }
 
+export interface SellerPaymentGateway {
+  id: string;
+  name: string; // e.g. "বিকাশ পার্সোনাল (bKash Personal)", "নগদ পার্সোনাল", "ব্যাংক ট্রান্সফার", "USDT TRC-20"
+  type: 'bdt' | 'usdt';
+  category?: 'mobile_banking' | 'bank' | 'crypto' | 'other';
+  accountTypeLabel?: string; // e.g. "পার্সোনাল বিকাশ নম্বর (১১ ডিজিট)", "Wallet Address"
+  instructions?: string; // Guidance for seller on where & how payout will be sent
+  processingTime?: string; // e.g. "১-২ ঘণ্টার মধ্যে", "তাৎক্ষণিক"
+  minWithdrawal?: number; // Minimum USD, default 10
+  maxWithdrawal?: number;
+  chargePercent?: number; // Fee % (0% default)
+  fixedCharge?: number;
+  isActive: boolean;
+  logoType?: 'bkash' | 'nagad' | 'rocket' | 'bank' | 'usdt' | 'binance' | 'upay' | 'other';
+  createdAt?: string;
+}
+
 export interface CustomCategory {
   id: string; // unique slug e.g. "cooking_lifestyle", "islamic_media"
   name: string; // Bengali name e.g. "রান্না ও রেসিপি", "ইসলামিক আলোচনা ও ওয়াজ"
@@ -309,7 +326,8 @@ export interface WebsiteSettings {
   feeDeductionTarget?: 'both' | 'buyer' | 'seller'; // 'both' = উভয় পক্ষ (বায়ার ও সেলার)
   buyerFeePercent?: number; // e.g., 2.5%
   sellerFeePercent?: number; // e.g., 2.5%
-  customGateways?: CustomPaymentGateway[]; // ডায়নামিক পেমেন্ট গেটওয়ে ও ব্যাংক একাউন্ট তালিকা
+  customGateways?: CustomPaymentGateway[]; // বায়ার ডিপোজিটের জন্য ডায়নামিক পেমেন্ট গেটওয়ে
+  sellerGateways?: SellerPaymentGateway[]; // সেলার পেআউট/উইথড্রয়ালের জন্য গেটওয়ে তালিকা
   customCategories?: CustomCategory[]; // এডমিন প্যানেল থেকে যোগ করা কাস্টম ক্যাটাগরি তালিকা
   minimumListingPrice: number;
   featuredListingFee: number;

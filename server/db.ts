@@ -1665,6 +1665,107 @@ class Database {
       { id: 'islamic_media', name: 'ইসলামিক আলোচনা ও ওয়াজ', nameEn: 'Islamic Media & Lectures', platform: 'all', icon: '🕌', description: 'কোরআন তেলাওয়াত, ওয়াজ মাহফিল ও ইসলামিক স্কলার বক্তব্য', isActive: true }
     ];
 
+    const defaultSellerGateways: any[] = [
+      {
+        id: 'sgw_bkash_personal',
+        name: 'বিকাশ পার্সোনাল (bKash Personal)',
+        type: 'bdt',
+        category: 'mobile_banking',
+        accountTypeLabel: 'পার্সোনাল বিকাশ নম্বর (১১ ডিজিট)',
+        instructions: 'আপনার সচল পার্সোনাল বিকাশ একাউন্ট নম্বর দিন। ক্যাশ-আউট চার্জ প্ল্যাটফর্ম বহন করে। ভেরিফিকেশনের পর ১-২ ঘণ্টার মধ্যে পেমেন্ট পৌঁছে যাবে।',
+        processingTime: '১-২ ঘণ্টার মধ্যে',
+        minWithdrawal: 10,
+        chargePercent: 0,
+        isActive: true,
+        logoType: 'bkash',
+        createdAt: '2026-01-01T00:00:00.000Z'
+      },
+      {
+        id: 'sgw_nagad_personal',
+        name: 'নগদ পার্সোনাল (Nagad Personal)',
+        type: 'bdt',
+        category: 'mobile_banking',
+        accountTypeLabel: 'পার্সোনাল নগদ নম্বর (১১ ডিজিট)',
+        instructions: 'আপনার সচল নগদ একাউন্ট নম্বর প্রদান করুন। ০% হিডেন চার্জে দ্রুততম সময়ে টাকা ছাড় করা হবে।',
+        processingTime: '১-২ ঘণ্টার মধ্যে',
+        minWithdrawal: 10,
+        chargePercent: 0,
+        isActive: true,
+        logoType: 'nagad',
+        createdAt: '2026-01-01T00:00:00.000Z'
+      },
+      {
+        id: 'sgw_rocket_personal',
+        name: 'রকেট পার্সোনাল (DBBL Rocket)',
+        type: 'bdt',
+        category: 'mobile_banking',
+        accountTypeLabel: 'রকেট একাউন্ট নম্বর (১২ ডিজিট - চেক ডিজিট সহ)',
+        instructions: 'ডাচ-বাংলা ব্যাংক রকেট একাউন্ট নম্বর লিখুন (১১ ডিজিট মোবাইল নম্বর + ১ ডিজিট চেক কোড)।',
+        processingTime: '১-৩ ঘণ্টার মধ্যে',
+        minWithdrawal: 10,
+        chargePercent: 0,
+        isActive: true,
+        logoType: 'rocket',
+        createdAt: '2026-01-01T00:00:00.000Z'
+      },
+      {
+        id: 'sgw_bank_transfer',
+        name: 'বাংলাদেশি ব্যাংক ট্রান্সফার (NPSB / BEFTN)',
+        type: 'bdt',
+        category: 'bank',
+        accountTypeLabel: 'ব্যাংকের নাম, একাউন্ট নং ও রাউটিং নং',
+        instructions: 'বাংলাদেশের যেকোনো তফসিলি ব্যাংকে (সিটি ব্যাংক, ব্র্যাক, ইসলামী ব্যাংক, ডাচ-বাংলা ইত্যাদি) সরাসরি বিডিটি সমমূল্যে উইথড্র নিন। NPSB ট্রান্সফারে তাৎক্ষণিক ক্রেডিট।',
+        processingTime: '২-৬ ঘণ্টা (ব্যাংকিং কর্মদিবস)',
+        minWithdrawal: 50,
+        chargePercent: 0,
+        isActive: true,
+        logoType: 'bank',
+        createdAt: '2026-01-01T00:00:00.000Z'
+      },
+      {
+        id: 'sgw_usdt_trc20',
+        name: 'USDT (TRC-20 Network)',
+        type: 'usdt',
+        category: 'crypto',
+        accountTypeLabel: 'TRC-20 Wallet Address (শুরু T... দিয়ে)',
+        instructions: 'আপনার ট্রন (TRC-20) নেটওয়ার্কের USDT ডিপোজিট অ্যাড্রেস দিন। ব্লকচেইনে নিশ্চিত হওয়ার পর ডলার সেন্ড হবে।',
+        processingTime: '১৫-৩০ মিনিটের মধ্যে',
+        minWithdrawal: 20,
+        chargePercent: 0,
+        isActive: true,
+        logoType: 'usdt',
+        createdAt: '2026-01-01T00:00:00.000Z'
+      },
+      {
+        id: 'sgw_binance_pay',
+        name: 'Binance Pay (Pay ID / Email)',
+        type: 'usdt',
+        category: 'crypto',
+        accountTypeLabel: 'Binance Pay ID (৮-৯ ডিজিট) অথবা রেজিস্টার্ড ইমেইল',
+        instructions: 'আপনার বাইন্যান্স পে আইডি (Binance Pay ID) অথবা বাইন্যান্স একাউন্টের ইমেইল দিন। ০% গ্যাস ফি ও তাৎক্ষণিক ট্রান্সফার সুবিধা।',
+        processingTime: 'তাৎক্ষণিক / ৫-১০ মিনিট',
+        minWithdrawal: 10,
+        chargePercent: 0,
+        isActive: true,
+        logoType: 'binance',
+        createdAt: '2026-01-01T00:00:00.000Z'
+      },
+      {
+        id: 'sgw_usdt_bep20',
+        name: 'USDT (BEP-20 / BNB Chain)',
+        type: 'usdt',
+        category: 'crypto',
+        accountTypeLabel: 'BEP-20 Wallet Address (শুরু 0x... দিয়ে)',
+        instructions: 'আপনার BNB Smart Chain (BEP-20) USDT অ্যাড্রেস প্রদান করুন।',
+        processingTime: '১৫-৩০ মিনিটের মধ্যে',
+        minWithdrawal: 20,
+        chargePercent: 0,
+        isActive: true,
+        logoType: 'usdt',
+        createdAt: '2026-01-01T00:00:00.000Z'
+      }
+    ];
+
     if (!this.data.settings) {
       this.data.settings = {
         siteName: 'Alif Trust Escrow & Marketplace',
@@ -1685,6 +1786,7 @@ class Database {
         usdtBep20Address: '0x55d398326f99059fF775485246999027B3197955',
         bdtConversionRate: 122,
         customGateways: defaultGateways,
+        sellerGateways: defaultSellerGateways,
         customCategories: defaultCategories,
         enable2FA: true,
         termsOfService: 'আলিফ ট্রাস্ট এসক্রো প্ল্যাটফর্মে সকল লেনদেন ডিজিটাল এসক্রো চুক্তির অধীন। বায়ার কর্তৃক পুরো পেমেন্ট জমার পর সেলার ৭ দিনের মধ্যে প্রাইমারি ওনারশিপ হস্তান্তর করবে।',
@@ -1695,6 +1797,9 @@ class Database {
     } else {
       if (!this.data.settings.customGateways || this.data.settings.customGateways.length === 0) {
         this.data.settings.customGateways = defaultGateways;
+      }
+      if (!this.data.settings.sellerGateways || this.data.settings.sellerGateways.length === 0) {
+        this.data.settings.sellerGateways = defaultSellerGateways;
       }
       if (!this.data.settings.customCategories || this.data.settings.customCategories.length === 0) {
         this.data.settings.customCategories = defaultCategories;

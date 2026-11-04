@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChannelListing, Order, User, PlatformType, CustomCategory, Review } from '../types';
+import { ChannelListing, Order, User, PlatformType, CustomCategory, Review, SellerPaymentGateway } from '../types';
+import { DEFAULT_SELLER_GATEWAYS } from '../data/defaultSellerGateways';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -193,10 +194,12 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
     }
   });
 
-  // Withdrawals
+  // Withdrawals with Dual Currency Selection (BDT & USD/USDT)
+  const [withdrawalCurrencyTab, setWithdrawalCurrencyTab] = useState<'bdt' | 'usdt'>('bdt');
+  const [selectedSellerGatewayId, setSelectedSellerGatewayId] = useState<string>('');
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
-  const [withdrawalMethod, setWithdrawalMethod] = useState('bKash');
   const [withdrawalAccount, setWithdrawalAccount] = useState('');
+  const [withdrawalNotes, setWithdrawalNotes] = useState('');
   const [withdrawalList, setWithdrawalList] = useState<WithdrawalRecord[]>(() => {
     try {
       const saved = localStorage.getItem('channeltrust_seller_withdrawals');
@@ -335,6 +338,26 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
     }, 0);
   }, [pendingOrders]);
 
+  // Active seller payout gateways dynamically configured by Admin
+  const availableSellerGateways: SellerPaymentGateway[] = useMemo(() => {
+    const list: SellerPaymentGateway[] = settings?.sellerGateways && settings.sellerGateways.length > 0
+      ? settings.sellerGateways
+      : DEFAULT_SELLER_GATEWAYS;
+    return list.filter(g => g.isActive);
+  }, [settings]);
+
+  const filteredSellerGateways = useMemo(() => {
+    return availableSellerGateways.filter(g => g.type === withdrawalCurrencyTab);
+  }, [availableSellerGateways, withdrawalCurrencyTab]);
+
+  const currentSellerGateway = useMemo(() => {
+    if (selectedSellerGatewayId) {
+      const found = filteredSellerGateways.find(g => g.id === selectedSellerGatewayId);
+      if (found) return found;
+    }
+    return filteredSellerGateways[0] || null;
+  }, [selectedSellerGatewayId, filteredSellerGateways]);
+
   // File upload handler
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -460,18 +483,35 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
       showToast(t('উত্তোলনের পরিমাণ ব্যালেন্সের চেয়ে বেশি হতে পারবে না', 'Amount exceeds available balance'), 'error');
       return;
     }
+    if (currentSellerGateway?.minWithdrawal && amountNum < currentSellerGateway.minWithdrawal) {
+      showToast(
+        t(
+          `এই গেটওয়েতে সর্বনিম্ন উত্তোলন $${currentSellerGateway.minWithdrawal}`,
+          `Minimum withdrawal for this gateway is $${currentSellerGateway.minWithdrawal}`
+        ),
+        'error'
+      );
+      return;
+    }
     if (!withdrawalAccount.trim()) {
       showToast(t('অ্যাকাউন্ট বা ফোন নম্বর দিন', 'Provide account/phone details'), 'error');
       return;
     }
+
+    const gatewayName = currentSellerGateway?.name || (withdrawalCurrencyTab === 'bdt' ? 'বিকাশ পার্সোনাল' : 'USDT TRC20');
+    const feeRate = currentSellerGateway?.chargePercent || 0;
+    const feeAmount = Number(((amountNum * feeRate) / 100).toFixed(2));
+    const netPayout = Math.max(0, amountNum - feeAmount);
+    const bdtRate = settings?.bdtConversionRate || 122;
+    const bdtAmount = Math.round(netPayout * bdtRate);
 
     setWithdrawing(true);
     setTimeout(() => {
       const record: WithdrawalRecord = {
         id: `WTH-${Date.now().toString().slice(-5)}`,
         amount: amountNum,
-        method: withdrawalMethod,
-        accountDetails: withdrawalAccount.trim(),
+        method: `${gatewayName} (${withdrawalCurrencyTab.toUpperCase()})`,
+        accountDetails: `${withdrawalAccount.trim()}${withdrawalNotes ? ` [নোট: ${withdrawalNotes.trim()}]` : ''} - (নেট: $${netPayout} ≈ ৳${bdtAmount.toLocaleString()} BDT)`,
         status: 'pending',
         createdAt: new Date().toISOString()
       };
@@ -481,7 +521,14 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
       setWithdrawing(false);
       setWithdrawalAmount('');
       setWithdrawalAccount('');
-      showToast(t('উত্তোলন আবেদন জমা হয়েছে! অ্যাডমিন ২৪ ঘণ্টার মধ্যে পেআউট পাঠাবে।', 'Withdrawal request submitted! Admin will disburse within 24 hours.'), 'success');
+      setWithdrawalNotes('');
+      showToast(
+        t(
+          `উত্তোলন আবেদন ($${amountNum} ≈ ৳${bdtAmount.toLocaleString()} BDT) জমা হয়েছে! অ্যাডমিন দ্রুত পেআউট পাঠাবে।`,
+          `Withdrawal request ($${amountNum} ≈ ৳${bdtAmount.toLocaleString()} BDT) submitted! Admin will disburse.`
+        ),
+        'success'
+      );
     }, 500);
   };
 
@@ -1785,72 +1832,335 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
             {/* 18. WITHDRAWAL REQUEST (টাকা উত্তোলনের আবেদন) */}
             {/* ============================================================== */}
             {activeTab === 'withdrawal_request' && (
-              <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5 shadow-xs">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                    <ArrowDownToLine className="w-5 h-5 text-emerald-600" />
-                    <span>{t('Withdrawal Request (টাকা উত্তোলনের আবেদন)', 'Request Payout')}</span>
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {t('বিকাশ, নগদ, রকেট, ব্যাংক অ্যাকাউন্ট বা USDT-তে সরাসরি পেআউট নিন', 'Disburse funds to your personal mobile wallet or bank account')}
-                  </p>
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 space-y-6 shadow-xs">
+                {/* Header & Balance Notice */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white shadow-md">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">
+                        {t('উত্তোলনযোগ্য একাউন্ট ব্যালেন্স', 'Available Payout Balance')}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-3">
+                      <p className="text-3xl font-black text-white">{formatPrice(availableBalance)}</p>
+                      <span className="text-sm font-bold text-emerald-200">
+                        ≈ ৳{(availableBalance * (settings?.bdtConversionRate || 122)).toLocaleString('en-US')} BDT
+                      </span>
+                    </div>
+                  </div>
+
+                  {availableBalance > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setWithdrawalAmount(String(availableBalance))}
+                      className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider transition cursor-pointer self-start sm:self-auto shadow-sm"
+                    >
+                      {t('সর্বোচ্চ উইথড্র ($' + availableBalance + ')', 'Withdraw Full Balance')}
+                    </button>
+                  )}
                 </div>
 
-                <form onSubmit={handleSubmitWithdrawal} className="space-y-4 max-w-lg p-5 rounded-2xl bg-slate-50 border border-slate-200">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      {t('উত্তোলনের পরিমাণ (USD $)', 'Withdrawal Amount (USD $)')}
+                {/* Form starts */}
+                <form onSubmit={handleSubmitWithdrawal} className="space-y-6">
+                  {/* STEP 1: DUAL CURRENCY TABS (BDT vs USD/USDT) */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-black text-slate-800 uppercase tracking-wider">
+                      {t('১. কারেন্সি সিলেক্ট করুন (Select Payout Currency)', '1. Select Payout Currency')}
                     </label>
-                    <input
-                      type="number"
-                      placeholder={`Max: ${availableBalance}`}
-                      value={withdrawalAmount}
-                      onChange={(e) => setWithdrawalAmount(e.target.value)}
-                      required
-                      max={availableBalance}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono font-bold"
-                    />
-                    {withdrawalAmount && (
-                      <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
-                        ≈ ৳{(Number(withdrawalAmount) * 122).toLocaleString('en-US')} BDT
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWithdrawalCurrencyTab('bdt');
+                          setSelectedSellerGatewayId('');
+                        }}
+                        className={`p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 cursor-pointer ${
+                          withdrawalCurrencyTab === 'bdt'
+                            ? 'border-emerald-600 bg-emerald-50/70 text-emerald-950 shadow-sm ring-2 ring-emerald-500/20'
+                            : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <span className="text-3xl">🇧🇩</span>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-black text-sm">{t('BDT (বাংলাদেশি টাকা)', 'BDT (Bangladeshi Taka)')}</span>
+                            {withdrawalCurrencyTab === 'bdt' && (
+                              <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                            )}
+                          </div>
+                          <span className="text-xs text-slate-500 mt-0.5 block font-medium">
+                            {t('বিকাশ, নগদ, রকেট ও ব্যাংক একাউন্ট', 'bKash, Nagad, Rocket & Banks')}
+                          </span>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWithdrawalCurrencyTab('usdt');
+                          setSelectedSellerGatewayId('');
+                        }}
+                        className={`p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 cursor-pointer ${
+                          withdrawalCurrencyTab === 'usdt'
+                            ? 'border-amber-500 bg-amber-50/70 text-amber-950 shadow-sm ring-2 ring-amber-500/20'
+                            : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <span className="text-3xl">🪙</span>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-black text-sm">{t('USD / USDT (ক্রিপ্টো ও ডলার)', 'USD / USDT (Crypto & USD)')}</span>
+                            {withdrawalCurrencyTab === 'usdt' && (
+                              <span className="w-2 h-2 rounded-full bg-amber-600" />
+                            )}
+                          </div>
+                          <span className="text-xs text-slate-500 mt-0.5 block font-medium">
+                            {t('TRC-20, Binance Pay, BEP-20', 'TRC-20, Binance Pay, BEP-20')}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* STEP 2: GATEWAY SELECTOR CARDS (Dynamically populated from Admin Gateways) */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-black text-slate-800 uppercase tracking-wider">
+                        {withdrawalCurrencyTab === 'bdt'
+                          ? t('২. বাংলাদেশি পেমেন্ট গেটওয়ে নির্বাচন করুন (Admin Verified)', '2. Select Bangladeshi Payout Gateway')
+                          : t('২. ক্রিপ্টো / ডলার গেটওয়ে নির্বাচন করুন (Admin Verified)', '2. Select USD / Crypto Payout Gateway')}
+                      </label>
+                      <span className="text-[11px] text-slate-500">
+                        {filteredSellerGateways.length} {t('টি মাধ্যম উপলব্ধ', 'available')}
                       </span>
+                    </div>
+
+                    {filteredSellerGateways.length === 0 ? (
+                      <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-2">
+                        <Wallet className="w-8 h-8 text-slate-400 mx-auto" />
+                        <p className="text-xs font-bold text-slate-600">
+                          {t('বর্তমানে এই ক্যাটাগরিতে কোনো সক্রিয় গেটওয়ে নেই। এডমিন প্যানেল থেকে গেটওয়ে চালু করুন।', 'No active gateways in this category.')}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {filteredSellerGateways.map((gw) => {
+                          const isSelected = (currentSellerGateway?.id === gw.id);
+                          return (
+                            <div
+                              key={gw.id}
+                              onClick={() => setSelectedSellerGatewayId(gw.id)}
+                              className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-3 relative ${
+                                isSelected
+                                  ? withdrawalCurrencyTab === 'bdt'
+                                    ? 'border-emerald-600 bg-emerald-50/50 shadow-md ring-2 ring-emerald-500/20'
+                                    : 'border-amber-500 bg-amber-50/50 shadow-md ring-2 ring-amber-500/20'
+                                  : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2.5">
+                                  {/* Badge Logo */}
+                                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-2xs ${
+                                    gw.logoType === 'bkash'
+                                      ? 'bg-pink-600 text-white'
+                                      : gw.logoType === 'nagad'
+                                      ? 'bg-amber-600 text-white'
+                                      : gw.logoType === 'rocket'
+                                      ? 'bg-purple-600 text-white'
+                                      : gw.logoType === 'bank'
+                                      ? 'bg-blue-600 text-white'
+                                      : gw.logoType === 'binance'
+                                      ? 'bg-yellow-500 text-slate-950 font-black'
+                                      : gw.type === 'usdt'
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-slate-700 text-white'
+                                  }`}>
+                                    {gw.logoType === 'bkash' ? (
+                                      <span>bK</span>
+                                    ) : gw.logoType === 'nagad' ? (
+                                      <span>নগদ</span>
+                                    ) : gw.logoType === 'rocket' ? (
+                                      <span>DBBL</span>
+                                    ) : gw.logoType === 'bank' ? (
+                                      <Building2 className="w-4 h-4" />
+                                    ) : gw.logoType === 'binance' ? (
+                                      <span className="text-[10px]">PAY</span>
+                                    ) : (
+                                      <Coins className="w-4 h-4" />
+                                    )}
+                                  </div>
+
+                                  <div>
+                                    <h4 className="font-black text-xs text-slate-900">{gw.name}</h4>
+                                    <span className="text-[10px] text-slate-500 block">
+                                      {gw.processingTime || '১-২ ঘণ্টার মধ্যে'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                  isSelected ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300'
+                                }`}>
+                                  {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between text-[10px] pt-1 border-t border-slate-100">
+                                <span className="text-slate-500 font-semibold">Min: ${gw.minWithdrawal || 10}</span>
+                                <span className="text-emerald-700 font-bold">{gw.chargePercent || 0}% ফি</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">{t('পেআউট মেথড নির্বাচন করুন', 'Payout Method')}</label>
-                    <select
-                      value={withdrawalMethod}
-                      onChange={(e) => setWithdrawalMethod(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold"
-                    >
-                      <option value="bKash">বিকাশ পার্সোনাল (bKash Personal)</option>
-                      <option value="Nagad">নগদ পার্সোনাল (Nagad Personal)</option>
-                      <option value="Rocket">রকেট (Rocket)</option>
-                      <option value="Bank Transfer">ব্যাংক ট্রান্সফার (Bank Transfer)</option>
-                      <option value="USDT TRC20">USDT (TRC20 / BEP20)</option>
-                    </select>
+                  {/* STEP 3: AMOUNT & CONVERSION */}
+                  <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-black text-slate-800 uppercase tracking-wider">
+                        {t('৩. উত্তোলনের পরিমাণ (Withdrawal Amount)', '3. Withdrawal Amount')}
+                      </label>
+                      <span className="text-xs text-slate-500 font-bold">
+                        {t('উত্তোলনযোগ্য:', 'Max:')} ${availableBalance} USD
+                      </span>
+                    </div>
+
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-3 text-slate-400 font-black text-sm">$</span>
+                      <input
+                        type="number"
+                        min={currentSellerGateway?.minWithdrawal || 1}
+                        max={availableBalance}
+                        placeholder={currentSellerGateway ? `Min $${currentSellerGateway.minWithdrawal || 10}` : '0.00'}
+                        value={withdrawalAmount}
+                        onChange={(e) => setWithdrawalAmount(e.target.value)}
+                        required
+                        className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-mono font-black text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                      />
+                    </div>
+
+                    {/* Quick Percentage Buttons */}
+                    <div className="flex items-center gap-2">
+                      {[25, 50, 75, 100].map((pct) => (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => {
+                            const val = Math.floor((availableBalance * pct) / 100);
+                            setWithdrawalAmount(String(val));
+                          }}
+                          className="flex-1 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-[11px] font-bold text-slate-700 transition cursor-pointer"
+                        >
+                          {pct === 100 ? t('১০০% (সর্বোচ্চ)', '100% (Max)') : `${pct}%`}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Live Dual Currency & Net Payout Calculation Box */}
+                    {withdrawalAmount && Number(withdrawalAmount) > 0 && (
+                      <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between font-bold">
+                          <span className="text-slate-600">{t('সমপরিমাণ বাংলাদেশি টাকা:', 'BDT Equivalent:')}</span>
+                          <span className="text-base font-black text-emerald-800">
+                            ≈ ৳{(Number(withdrawalAmount) * (settings?.bdtConversionRate || 122)).toLocaleString('en-US')} BDT
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-emerald-200/60">
+                          <span>
+                            {t('রূপান্তর রেট:', 'Rate:')} $1 USD = ৳{settings?.bdtConversionRate || 122} BDT
+                          </span>
+                          <span>
+                            {t('উইথড্রয়াল চার্জ:', 'Fee:')} {currentSellerGateway?.chargePercent || 0}% ($0.00)
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">{t('অ্যাকাউন্ট নম্বর / ব্যাংক বিবরণ', 'Account Number / Details')}</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 017xxxxxxxx বা City Bank A/C: 123..."
-                      value={withdrawalAccount}
-                      onChange={(e) => setWithdrawalAccount(e.target.value)}
-                      required
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono"
-                    />
+                  {/* STEP 4: ACCOUNT DETAILS & NOTES */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-black text-slate-800 uppercase tracking-wider mb-1">
+                        <span>{t('৪. ', '4. ')}</span>
+                        <span>
+                          {currentSellerGateway?.accountTypeLabel ||
+                            (withdrawalCurrencyTab === 'bdt'
+                              ? t('পার্সোনাল বিকাশ / নগদ / ব্যাংক বিবরণ *', 'Personal Account / Bank Details *')
+                              : t('TRC-20 ওয়ালেট অ্যাড্রেস / Pay ID *', 'Crypto Address / Pay ID *'))}
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={withdrawalAccount}
+                        onChange={(e) => setWithdrawalAccount(e.target.value)}
+                        placeholder={
+                          currentSellerGateway?.logoType === 'bkash'
+                            ? 'e.g. 017xxxxxxxx (Personal bKash Number)'
+                            : currentSellerGateway?.logoType === 'nagad'
+                            ? 'e.g. 018xxxxxxxx (Personal Nagad Number)'
+                            : currentSellerGateway?.logoType === 'rocket'
+                            ? 'e.g. 019xxxxxxxx-x (12 Digit DBBL Rocket)'
+                            : currentSellerGateway?.logoType === 'bank'
+                            ? 'e.g. ব্যাংকের নাম: City Bank, A/C: 120..., নাম: মোঃ..., রাউটিং: 225...'
+                            : currentSellerGateway?.logoType === 'binance'
+                            ? 'e.g. Binance Pay ID (8-9 digits) বা Binance Email'
+                            : currentSellerGateway?.type === 'usdt'
+                            ? 'e.g. T... (TRC-20 USDT Deposit Address)'
+                            : 'e.g. আপনার অ্যাকাউন্ট বা ওয়ালেট নম্বর'
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold focus:border-emerald-500 focus:outline-hidden bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        {t('অতিরিক্ত নোট / নির্দেশাবলী (ঐচ্ছিক)', 'Additional Notes / Branch (Optional)')}
+                      </label>
+                      <input
+                        type="text"
+                        value={withdrawalNotes}
+                        onChange={(e) => setWithdrawalNotes(e.target.value)}
+                        placeholder="e.g. শাখা, জরুরি প্রয়োজনে কল ইত্যাদি"
+                        className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs bg-white"
+                      />
+                    </div>
                   </div>
 
+                  {/* Gateway Instructions Box */}
+                  {currentSellerGateway?.instructions && (
+                    <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-950 flex items-start gap-2.5">
+                      <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <span className="font-black text-[11px] block">{t('গেটওয়ে নির্দেশিকা:', 'Gateway Instructions:')}</span>
+                        <p className="text-[11px] leading-relaxed text-amber-900">{currentSellerGateway.instructions}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={withdrawing || availableBalance <= 0}
-                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-xs disabled:opacity-50 cursor-pointer"
+                    disabled={withdrawing || availableBalance <= 0 || !filteredSellerGateways.length}
+                    className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider shadow-md hover:shadow-emerald-600/20 disabled:opacity-50 transition cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {withdrawing ? t('আবেদন পাঠানো হচ্ছে...', 'Submitting...') : t('পেআউট আবেদন সাবমিট করুন', 'Submit Payout Request')}
+                    <ArrowDownToLine className="w-4 h-4" />
+                    <span>
+                      {withdrawing
+                        ? t('আবেদন পাঠানো হচ্ছে...', 'Submitting Request...')
+                        : withdrawalAmount && Number(withdrawalAmount) > 0
+                        ? t(`$${withdrawalAmount} উত্তোলন আবেদন জমা দিন (≈ ৳${(Number(withdrawalAmount) * (settings?.bdtConversionRate || 122)).toLocaleString()} BDT)`, `Submit Payout Request ($${withdrawalAmount})`)
+                        : t('পেআউট আবেদন সাবমিট করুন', 'Submit Payout Request')}
+                    </span>
                   </button>
+
+                  <p className="text-[11px] text-center text-slate-500">
+                    🔒 {t('আপনার ফান্ড শতভাগ সুরক্ষিত। অ্যাডমিন ভেরিফাই করে দ্রুততম সময়ে পেমেন্ট ডিসবার্স করবেন।', 'Safe and verified escrow payout disburse system.')}
+                  </p>
                 </form>
               </div>
             )}

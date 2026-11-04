@@ -1,6 +1,7 @@
 import { SEED_DATA } from './seedData';
 import { User, ChannelListing, Order, Review, Message, AdminStats } from '../types';
 import { DEFAULT_CUSTOM_CATEGORIES } from '../data/defaultCategories';
+import { DEFAULT_SELLER_GATEWAYS } from '../data/defaultSellerGateways';
 
 const STORAGE_KEY = 'channeltrust_client_db';
 
@@ -36,6 +37,9 @@ export function getClientDb(): LocalDbData {
       } else if (!parsed.settings.customGateways || parsed.settings.customGateways.length === 0) {
         parsed.settings.customGateways = SEED_DATA.settings.customGateways;
       }
+      if (!parsed.settings.sellerGateways || parsed.settings.sellerGateways.length === 0) {
+        parsed.settings.sellerGateways = DEFAULT_SELLER_GATEWAYS;
+      }
       if (!parsed.settings.customCategories || parsed.settings.customCategories.length === 0) {
         parsed.settings.customCategories = DEFAULT_CUSTOM_CATEGORIES;
       }
@@ -49,6 +53,9 @@ export function getClientDb(): LocalDbData {
   const initial = JSON.parse(JSON.stringify(SEED_DATA)) as LocalDbData;
   if (!initial.settings.customCategories) {
     initial.settings.customCategories = DEFAULT_CUSTOM_CATEGORIES;
+  }
+  if (!initial.settings.sellerGateways) {
+    initial.settings.sellerGateways = DEFAULT_SELLER_GATEWAYS;
   }
   saveClientDb(initial);
   return initial;
