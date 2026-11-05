@@ -35,14 +35,17 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     e.preventDefault();
     try {
       setLoading(true);
-      await api.submitReview({
+      const res = await api.submitReview({
         orderId,
         rating,
         comment,
         communicationRating,
         transferSpeedRating
       });
-      showToast(t('ধন্যবাদ! আপনার যাচাইকৃত লেনদেন রিভিউ সফলভাবে প্রকাশিত হয়েছে।', 'Thank you! Your verified transaction review has been published.'), 'success');
+      showToast(
+        res.message || t('ধন্যবাদ! আপনার রিভিউ সফলভাবে জমা হয়েছে এবং এডমিন অনুমোদনের পর সবার জন্য দৃশ্যমান হবে। একবার জমা দেওয়া রিভিউ পরিবর্তন বা অপসারণ করা যায় না।', 'Thank you! Your review was submitted and will be visible after admin approval. Submitted reviews are permanent.'),
+        'success'
+      );
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -119,12 +122,17 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             />
           </div>
 
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
+            <span className="font-bold block mb-0.5">🔒 {t('স্থায়ী ও অপরিবর্তনীয় রিভিউ নীতি:', 'Permanent Review Policy:')}</span>
+            <span>{t('স্বচ্ছতা ও নিরাপত্তার স্বার্থে একবার রিভিউ জমা দিলে তা ব্যবহারকারী নিজ থেকে এডিট বা মুছে ফেলতে পারেন না। এটি এডমিন দ্বারা যাচাই ও অনুমোদনের পর চ্যানেলে লাইভ হবে।', 'For marketplace trust and security, submitted reviews cannot be edited or removed by users. Once submitted, it will be published upon admin moderation.')}</span>
+          </div>
+
           <button
             type="submit"
             disabled={loading || !comment.trim()}
             className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white font-bold text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
           >
-            {loading ? t('সাবমিট হচ্ছে...', 'Submitting...') : t('যাচাইকৃত রিভিউ প্রকাশ করুন', 'Publish Verified Review')}
+            {loading ? t('সাবমিট হচ্ছে...', 'Submitting...') : t('রিভিউ জমা দিন (এডমিন অনুমোদনের জন্য)', 'Submit Review for Approval')}
           </button>
         </form>
       </div>

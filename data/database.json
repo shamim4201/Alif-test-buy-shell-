@@ -20,7 +20,7 @@
       "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-02-10T12:00:00.000Z",
       "isVerifiedSeller": true,
-      "rating": 4.95,
+      "rating": 5,
       "dealsCount": 14,
       "bio": "Full-time digital media incubator. Building and flipping high-retention monetized YouTube brands with 100% clean strike history."
     },
@@ -46,9 +46,85 @@
       "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-03-15T09:30:00.000Z",
       "bio": "Acquiring high-margin digital media assets and cash-flowing cash cow YouTube channels."
+    },
+    {
+      "id": "usr_1793894975057_yl16p",
+      "name": "Alif Seller Verified",
+      "email": "test.seller.1793894974907@example.com",
+      "passwordHash": "2d22ec73a6d9151e48c079d3b281fd43be7b4229ef861548712e7b606e4bf072de2412bffc692b47fea35a0b68302335979b33198d7881323bb4ecf145c429ac",
+      "role": "seller",
+      "avatar": "https://api.dicebear.com/7.x/initials/svg?seed=Alif%20Seller%20Verified",
+      "createdAt": "2026-11-05T16:09:35.058Z",
+      "isVerifiedSeller": false,
+      "bio": "",
+      "dealsCount": 0,
+      "rating": 5
     }
   ],
   "channels": [
+    {
+      "id": "chn_1793894975083_77paz",
+      "platform": "facebook",
+      "sellerId": "usr_1793894975057_yl16p",
+      "sellerName": "Alif Seller Verified",
+      "sellerEmail": "test.seller.1793894974907@example.com",
+      "sellerRating": 5,
+      "sellerDealsCount": 0,
+      "title": "Tech Trends Official Facebook Community",
+      "handle": "@techtrendsbangla",
+      "channelUrl": "https://facebook.com/techtrendsbangla",
+      "niche": "Tech & Science",
+      "accountType": "facebook_page",
+      "primaryLanguage": "Bengali / Bangla",
+      "tags": [],
+      "subscribers": 50000,
+      "lifetimeViews": 900000,
+      "monthlyViews": 150000,
+      "monthlyRevenue": 400,
+      "monetizationStatus": "monetized",
+      "strikeStatus": "clean",
+      "hasSilverButton": false,
+      "askingPrice": 950,
+      "description": "Active Bengali Facebook page with high engagement",
+      "creationYear": 2026,
+      "videoCount": 10,
+      "analyticsScreenshots": [],
+      "verificationStatus": "approved",
+      "isFeatured": false,
+      "status": "active",
+      "audience": {
+        "topCountries": [
+          {
+            "country": "United States",
+            "percentage": 50
+          },
+          {
+            "country": "United Kingdom",
+            "percentage": 20
+          },
+          {
+            "country": "Canada",
+            "percentage": 15
+          }
+        ],
+        "ageDistribution": [
+          {
+            "range": "18-24",
+            "percentage": 40
+          },
+          {
+            "range": "25-34",
+            "percentage": 45
+          }
+        ],
+        "genderSplit": {
+          "male": 70,
+          "female": 30
+        }
+      },
+      "createdAt": "2026-11-05T16:09:35.083Z",
+      "updatedAt": "2026-11-05T16:09:35.083Z"
+    },
     {
       "id": "chn_apex_gaming",
       "sellerId": "usr_seller_1",
@@ -1447,6 +1523,20 @@
   ],
   "reviews": [
     {
+      "id": "rev_1793894922384_zclc",
+      "channelId": "acc_x_ai_radar",
+      "channelTitle": "AI Daily & Web3 Radar (এক্স/টুইটার ৭৫K ফলোয়ার - ব্লু ভেরিফাইড)",
+      "buyerId": "guest_1793894922384",
+      "buyerName": "রাকিবুল হাসান",
+      "sellerId": "usr_seller_1",
+      "rating": 5,
+      "comment": "অসাধারণ চ্যানেল ও দারুণ সার্ভিস!",
+      "communicationRating": 5,
+      "transferSpeedRating": 5,
+      "status": "approved",
+      "createdAt": "2026-11-05T16:08:42.384Z"
+    },
+    {
       "id": "rev_101",
       "orderId": "ord_ct_88921",
       "channelId": "chn_daily_mindset",
@@ -1458,7 +1548,8 @@
       "comment": "Flawless acquisition process! Apex Studio Ventures walked me through the 7-day Google Brand Account manager handover step-by-step. All analytics matched 100%. Highly recommended seller!",
       "communicationRating": 5,
       "transferSpeedRating": 5,
-      "createdAt": "2026-09-20T12:00:00.000Z"
+      "createdAt": "2026-09-20T12:00:00.000Z",
+      "status": "approved"
     },
     {
       "id": "rev_102",
@@ -1472,7 +1563,8 @@
       "comment": "অসাধারণ চ্যানেল! অর্গানিক ভিউয়ার্স এবং ভিডিও আপলোড করার পর দিন থেকেই ভালো ভিউ পাচ্ছি। সেলার পুরো প্রাইমারি ওনারশিপ বুঝিয়ে দিয়েছেন এবং ৭ দিন পর সফলভাবে হ্যান্ডওভার সম্পন্ন হয়েছে।",
       "communicationRating": 5,
       "transferSpeedRating": 5,
-      "createdAt": "2026-09-24T15:30:00.000Z"
+      "createdAt": "2026-09-24T15:30:00.000Z",
+      "status": "approved"
     },
     {
       "id": "rev_103",
@@ -1485,7 +1577,8 @@
       "comment": "অ্যাডসেন্স সম্পূর্ণ ভেরিফাইড ছিল এবং পিন ভেরিফিকেশন ঠিকঠাক। ১০০% বিশ্বস্ত ও সেফ ট্রানজেকশন হয়েছে।",
       "communicationRating": 5,
       "transferSpeedRating": 5,
-      "createdAt": "2026-10-02T11:20:00.000Z"
+      "createdAt": "2026-10-02T11:20:00.000Z",
+      "status": "approved"
     },
     {
       "id": "rev_104",
@@ -1498,7 +1591,8 @@
       "comment": "Amazing experience. Silver play button is genuine and analytics screenshots were 100% accurate. 5-star rating deserved!",
       "communicationRating": 5,
       "transferSpeedRating": 5,
-      "createdAt": "2026-10-06T18:45:00.000Z"
+      "createdAt": "2026-10-06T18:45:00.000Z",
+      "status": "approved"
     },
     {
       "id": "rev_105",
@@ -1512,7 +1606,8 @@
       "comment": "একাউন্টের বয়স এবং মনিটাইজেশন ক্লিন স্ট্রাইক। রেসিপি চ্যানেলটি কিনে আমি অত্যন্ত সন্তুষ্ট। পুরো সাপোর্ট দেওয়ার জন্য ধন্যবাদ।",
       "communicationRating": 5,
       "transferSpeedRating": 5,
-      "createdAt": "2026-09-29T14:10:00.000Z"
+      "createdAt": "2026-09-29T14:10:00.000Z",
+      "status": "approved"
     },
     {
       "id": "rev_106",
@@ -1525,7 +1620,8 @@
       "comment": "Seamless transfer via Brand Account. Highly trustworthy escrow system with prompt communication.",
       "communicationRating": 5,
       "transferSpeedRating": 5,
-      "createdAt": "2026-10-04T09:15:00.000Z"
+      "createdAt": "2026-10-04T09:15:00.000Z",
+      "status": "approved"
     },
     {
       "id": "rev_107",
@@ -1538,7 +1634,8 @@
       "comment": "High RPM verified on Studio. Elena provided swift response and complete cooperation throughout the 7-day protocol.",
       "communicationRating": 5,
       "transferSpeedRating": 5,
-      "createdAt": "2026-10-07T16:00:00.000Z"
+      "createdAt": "2026-10-07T16:00:00.000Z",
+      "status": "approved"
     },
     {
       "id": "rev_108",
@@ -1551,7 +1648,8 @@
       "comment": "অনলাইনে চ্যানেল কেনা নিয়ে অনেক ভয় ছিল, কিন্তু ChannelTrust-এর এসক্রো সিস্টেম আমাকে ১০০% নিশ্চিন্ত করেছে। যতক্ষণ না আমি নিজে গুগল ব্র্যান্ড একাউন্টের প্রাইমারি ওনার হলাম, ততক্ষণ সেলার কোনো টাকা পায়নি। কোনো প্রতারণার সুযোগ নেই, সবচেয়ে বিশ্বস্ত প্ল্যাটফর্ম!",
       "communicationRating": 5,
       "transferSpeedRating": 5,
-      "createdAt": "2026-10-09T10:15:00.000Z"
+      "createdAt": "2026-10-09T10:15:00.000Z",
+      "status": "approved"
     },
     {
       "id": "rev_109",
@@ -1564,7 +1662,8 @@
       "comment": "এখানে কোনো জিমেইল পাসওয়ার্ড চাওয়া হয় না, যা সবচেয়ে বড় সিকিউরিটি! অফিশিয়াল ইউটিউব স্টুডিও ওনারশিপ ট্রান্সফারের নিয়মে সব সুন্দরভাবে সম্পন্ন হয়েছে। সাপোর্ট টিম প্রতি মুহূর্তে সহায়তা করেছে। ১০০% ট্রাস্টেড!",
       "communicationRating": 5,
       "transferSpeedRating": 5,
-      "createdAt": "2026-10-10T14:20:00.000Z"
+      "createdAt": "2026-10-10T14:20:00.000Z",
+      "status": "approved"
     },
     {
       "id": "rev_110",
@@ -1577,7 +1676,22 @@
       "comment": "চ্যানেলের লাইভ অ্যানালিটিক্স, অর্গানিক অডিয়েন্স এবং মনিটাইজেশন ক্লিন স্ট্রাইক প্রমাণ ১০০% মিলে গেছে। ৭ দিনের কুলডাউন পিরিয়ডে সেলার ও প্ল্যাটফর্মের দায়িত্বশীলতা ছিল অসাধারণ। চোখ বন্ধ করে বিশ্বাস করা যায়।",
       "communicationRating": 5,
       "transferSpeedRating": 5,
-      "createdAt": "2026-10-11T16:40:00.000Z"
+      "createdAt": "2026-10-11T16:40:00.000Z",
+      "status": "approved"
+    },
+    {
+      "id": "rev_pending_201",
+      "channelId": "chn_auntie_kitchen",
+      "channelTitle": "Auntie's Village Kitchen (আন্টির রান্নাঘর ও গ্রামীণ রেসিপি)",
+      "buyerId": "usr_buyer_1",
+      "buyerName": "তানভীর আহমেদ",
+      "sellerId": "usr_seller_2",
+      "rating": 5,
+      "comment": "চ্যানেলের সম্পূর্ণ ওনারশিপ ও AdSense পেমেন্ট প্রুফ সফলভাবে পেয়েছি। অসাধারণ সার্ভিস ও সিকিউর এসক্রো!",
+      "communicationRating": 5,
+      "transferSpeedRating": 5,
+      "status": "pending",
+      "createdAt": "2026-11-05T16:08:32.103Z"
     }
   ],
   "settings": {
@@ -1803,7 +1917,113 @@
         "description": "কোরআন তেলাওয়াত, ওয়াজ মাহফিল ও ইসলামিক স্কলার বক্তব্য",
         "isActive": true
       }
-    ]
+    ],
+    "sellerGateways": [
+      {
+        "id": "sgw_bkash_personal",
+        "name": "বিকাশ পার্সোনাল (bKash Personal)",
+        "type": "bdt",
+        "category": "mobile_banking",
+        "accountTypeLabel": "পার্সোনাল বিকাশ নম্বর (১১ ডিজিট)",
+        "instructions": "আপনার সচল পার্সোনাল বিকাশ একাউন্ট নম্বর দিন। ক্যাশ-আউট চার্জ প্ল্যাটফর্ম বহন করে। ভেরিফিকেশনের পর ১-২ ঘণ্টার মধ্যে পেমেন্ট পৌঁছে যাবে।",
+        "processingTime": "১-২ ঘণ্টার মধ্যে",
+        "minWithdrawal": 10,
+        "chargePercent": 0,
+        "isActive": true,
+        "logoType": "bkash",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "sgw_nagad_personal",
+        "name": "নগদ পার্সোনাল (Nagad Personal)",
+        "type": "bdt",
+        "category": "mobile_banking",
+        "accountTypeLabel": "পার্সোনাল নগদ নম্বর (১১ ডিজিট)",
+        "instructions": "আপনার সচল নগদ একাউন্ট নম্বর প্রদান করুন। ০% হিডেন চার্জে দ্রুততম সময়ে টাকা ছাড় করা হবে।",
+        "processingTime": "১-২ ঘণ্টার মধ্যে",
+        "minWithdrawal": 10,
+        "chargePercent": 0,
+        "isActive": true,
+        "logoType": "nagad",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "sgw_rocket_personal",
+        "name": "রকেট পার্সোনাল (DBBL Rocket)",
+        "type": "bdt",
+        "category": "mobile_banking",
+        "accountTypeLabel": "রকেট একাউন্ট নম্বর (১২ ডিজিট - চেক ডিজিট সহ)",
+        "instructions": "ডাচ-বাংলা ব্যাংক রকেট একাউন্ট নম্বর লিখুন (১১ ডিজিট মোবাইল নম্বর + ১ ডিজিট চেক কোড)।",
+        "processingTime": "১-৩ ঘণ্টার মধ্যে",
+        "minWithdrawal": 10,
+        "chargePercent": 0,
+        "isActive": true,
+        "logoType": "rocket",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "sgw_bank_transfer",
+        "name": "বাংলাদেশি ব্যাংক ট্রান্সফার (NPSB / BEFTN)",
+        "type": "bdt",
+        "category": "bank",
+        "accountTypeLabel": "ব্যাংকের নাম, একাউন্ট নং ও রাউটিং নং",
+        "instructions": "বাংলাদেশের যেকোনো তফসিলি ব্যাংকে (সিটি ব্যাংক, ব্র্যাক, ইসলামী ব্যাংক, ডাচ-বাংলা ইত্যাদি) সরাসরি বিডিটি সমমূল্যে উইথড্র নিন। NPSB ট্রান্সফারে তাৎক্ষণিক ক্রেডিট।",
+        "processingTime": "২-৬ ঘণ্টা (ব্যাংকিং কর্মদিবস)",
+        "minWithdrawal": 50,
+        "chargePercent": 0,
+        "isActive": true,
+        "logoType": "bank",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "sgw_usdt_trc20",
+        "name": "USDT (TRC-20 Network)",
+        "type": "usdt",
+        "category": "crypto",
+        "accountTypeLabel": "TRC-20 Wallet Address (শুরু T... দিয়ে)",
+        "instructions": "আপনার ট্রন (TRC-20) নেটওয়ার্কের USDT ডিপোজিট অ্যাড্রেস দিন। ব্লকচেইনে নিশ্চিত হওয়ার পর ডলার সেন্ড হবে।",
+        "processingTime": "১৫-৩০ মিনিটের মধ্যে",
+        "minWithdrawal": 20,
+        "chargePercent": 0,
+        "isActive": true,
+        "logoType": "usdt",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "sgw_binance_pay",
+        "name": "Binance Pay (Pay ID / Email)",
+        "type": "usdt",
+        "category": "crypto",
+        "accountTypeLabel": "Binance Pay ID (৮-৯ ডিজিট) অথবা রেজিস্টার্ড ইমেইল",
+        "instructions": "আপনার বাইন্যান্স পে আইডি (Binance Pay ID) অথবা বাইন্যান্স একাউন্টের ইমেইল দিন। ০% গ্যাস ফি ও তাৎক্ষণিক ট্রান্সফার সুবিধা।",
+        "processingTime": "তাৎক্ষণিক / ৫-১০ মিনিট",
+        "minWithdrawal": 10,
+        "chargePercent": 0,
+        "isActive": true,
+        "logoType": "binance",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "sgw_usdt_bep20",
+        "name": "USDT (BEP-20 / BNB Chain)",
+        "type": "usdt",
+        "category": "crypto",
+        "accountTypeLabel": "BEP-20 Wallet Address (শুরু 0x... দিয়ে)",
+        "instructions": "আপনার BNB Smart Chain (BEP-20) USDT অ্যাড্রেস প্রদান করুন।",
+        "processingTime": "১৫-৩০ মিনিটের মধ্যে",
+        "minWithdrawal": 20,
+        "chargePercent": 0,
+        "isActive": true,
+        "logoType": "usdt",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "seoRobotsIndex": true,
+    "seoMetaTitle": "Alif Trust - ভেরিফাইড সোশ্যাল মিডিয়া ও চ্যানেল মার্কেটপ্লেস | Buy & Sell Verified Channels",
+    "seoMetaDescription": "Alif Trust (alif sheen group) - ১০০% বিশ্বস্ত ও ভেরিফাইড ফেসবুক পেজ, ইউটিউব চ্যানেল, টিকটক ও ইনস্টাগ্রাম অ্যাকাউন্ট কেনাবেচার ডিজিটাল এসক্রো মার্কেটপ্লেস।",
+    "seoFocusKeywords": "facebook page buy sell, buy youtube channel bangladesh, monetized channel marketplace, alif sheen group, alif trust escrow, ফেসবুক পেজ বিক্রি, ইউটিউব চ্যানেল কেনাবেচা, বিকাশ নগদ চ্যানেল ক্রয়",
+    "seoCanonicalUrl": "https://official1.online",
+    "seoEnableSchemaJsonLd": true
   },
   "coupons": [
     {
@@ -2048,6 +2268,16 @@
     }
   ],
   "auditLogs": [
+    {
+      "adminId": "usr_admin_alif",
+      "adminName": "Alif Sheen Admin",
+      "action": "review_approved",
+      "targetType": "review",
+      "targetId": "rev_1793894922384_zclc",
+      "details": "Review rev_1793894922384_zclc status changed to approved. Reviewer: রাকিবুল হাসান, Rating: 5",
+      "id": "log_1793894944332_3euy",
+      "createdAt": "2026-11-05T16:09:04.332Z"
+    },
     {
       "adminId": "usr_admin_alif",
       "adminName": "Alif Sheen Admin",

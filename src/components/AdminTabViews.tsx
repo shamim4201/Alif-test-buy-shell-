@@ -14,7 +14,8 @@ import {
   SupportTicket,
   Coupon,
   FraudAlert,
-  NotificationItem
+  NotificationItem,
+  Review
 } from '../types';
 import { CategoryLogo, PlatformLogo } from './CategoryIcons';
 import { ORDER_STATUS_TRANSLATIONS } from '../translations/translations';
@@ -66,7 +67,9 @@ import {
   Globe,
   Laptop,
   Share2,
-  Key
+  Key,
+  Star,
+  MessageSquare
 } from 'lucide-react';
 
 export type TabType =
@@ -86,7 +89,8 @@ export type TabType =
   | 'notifications'
   | 'tickets'
   | 'fraud'
-  | 'seo';
+  | 'seo'
+  | 'reviews';
 
 interface AdminTabViewsProps {
   activeTab: TabType;
@@ -219,6 +223,67 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
   const [serpPreviewMode, setSerpPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [savingSeo, setSavingSeo] = useState(false);
   const [seoSaveMsg, setSeoSaveMsg] = useState('');
+
+  // Review Moderation Suite States
+  const [adminReviews, setAdminReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [reviewSearch, setReviewSearch] = useState('');
+  const [rejectingReviewId, setRejectingReviewId] = useState<string | null>(null);
+  const [adminFeedbackText, setAdminFeedbackText] = useState('');
+  const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
+  const [reviewActionMsg, setReviewActionMsg] = useState('');
+
+  const fetchAdminReviews = async () => {
+    try {
+      setLoadingReviews(true);
+      const res = await api.getAdminReviews('all');
+      setAdminReviews(res.reviews || []);
+    } catch (e) {
+      console.error('Failed to load admin reviews:', e);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (activeTab === 'reviews' || activeTab === 'overview') {
+      fetchAdminReviews();
+    }
+  }, [activeTab]);
+
+  const handleUpdateReviewStatus = async (id: string, newStatus: 'approved' | 'rejected' | 'pending', feedback?: string) => {
+    try {
+      setActionInProgressId(id);
+      const res = await api.updateAdminReviewStatus(id, newStatus, feedback);
+      setReviewActionMsg(res.message || 'রিভিউ সফলভাবে আপডেট হয়েছে');
+      setRejectingReviewId(null);
+      setAdminFeedbackText('');
+      await fetchAdminReviews();
+      setTimeout(() => setReviewActionMsg(''), 4000);
+    } catch (err: any) {
+      alert(err.message || 'রিভিউ স্ট্যাটাস পরিবর্তন করতে সমস্যা হয়েছে');
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
+
+  const handleDeleteReview = async (id: string) => {
+    if (!window.confirm(t('আপনি কি নিশ্চিত যে এই রিভিউটি স্থায়ীভাবে মুছে ফেলতে চান?', 'Are you sure you want to permanently delete this review?'))) {
+      return;
+    }
+    try {
+      setActionInProgressId(id);
+      const res = await api.deleteAdminReview(id);
+      setReviewActionMsg(res.message || 'রিভিউ সফলভাবে মুছে ফেলা হয়েছে');
+      await fetchAdminReviews();
+      setTimeout(() => setReviewActionMsg(''), 4000);
+    } catch (err: any) {
+      alert(err.message || 'রিভিউ মুছতে সমস্যা হয়েছে');
+    } finally {
+      setActionInProgressId(null);
+    }
+  };
 
   const handleOpenAddGateway = (defaultType: 'bdt' | 'usdt' = 'bdt', defaultCategory: 'bank' | 'mobile_banking' | 'crypto' = 'bank') => {
     setEditingGatewayId(null);
@@ -4847,6 +4912,403 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
           </div>
         </div>
       )}
+
+      {/* ============================================================== */}
+      {/* 14. REVIEWS & RATINGS MODERATION TAB */}
+      {/* ============================================================== */}
+      {activeTab === 'reviews' && (() => {
+        const pendingReviews = adminReviews.filter((r) => (r.status || 'approved') === 'pending');
+        const approvedReviews = adminReviews.filter((r) => (r.status || 'approved') === 'approved');
+        const rejectedReviews = adminReviews.filter((r) => r.status === 'rejected');
+
+        const avgRating = adminReviews.length > 0
+          ? (adminReviews.reduce((sum, r) => sum + (r.rating || 5), 0) / adminReviews.length).toFixed(1)
+          : '5.0';
+
+        const displayedReviews = adminReviews
+          .filter((r) => {
+            const st = r.status || 'approved';
+            if (reviewFilter !== 'all' && st !== reviewFilter) return false;
+            if (reviewSearch.trim()) {
+              const q = reviewSearch.toLowerCase().trim();
+              const matchName = r.buyerName?.toLowerCase().includes(q);
+              const matchChannel = r.channelTitle?.toLowerCase().includes(q);
+              const matchComment = r.comment?.toLowerCase().includes(q);
+              return matchName || matchChannel || matchComment;
+            }
+            return true;
+          });
+
+        return (
+          <div className="space-y-6">
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white p-6 sm:p-8 rounded-3xl border border-slate-700 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+                <div className="space-y-2 max-w-2xl">
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      <span>{t('রিভিউ ও রেটিং অডিট প্যানেল', 'Review & Rating Audit Panel')}</span>
+                    </span>
+                    {pendingReviews.length > 0 && (
+                      <span className="px-3 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black flex items-center gap-1 shadow-md animate-pulse">
+                        <span>{pendingReviews.length} {t('টি অনুমোদনের অপেক্ষায়', 'Pending Approval')}</span>
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+                    {t('বায়ারদের রিভিউ মডারেশন ও অনুমোদন কেন্দ্র', 'Buyer Review Moderation & Approval Center')}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    {t(
+                      'ব্যবহারকারীরা একবার রিভিউ দিলে তা নিজ থেকে পরিবর্তন বা মুছে ফেলতে পারে না। এডমিন হিসেবে আপনি প্রতিটি রিভিউ পর্যবেক্ষণ করে অনুমোদন (Approve), বাতিল (Reject) বা প্ল্যাটফর্ম থেকে স্থায়ীভাবে মুছে দিতে পারবেন। অনুমোদিত রিভিউ স্বয়ংক্রিয়ভাবে চ্যানেল পেজে ও সেলার প্রোফাইলে রেটিং বৃদ্ধি করবে।',
+                      'Submitted reviews are permanent and cannot be deleted or modified by buyers. As Super Admin, you have full authority to approve, reject, or permanently delete any review before or after publishing.'
+                    )}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={fetchAdminReviews}
+                    disabled={loadingReviews}
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center gap-2 cursor-pointer border border-slate-700 shadow-xs"
+                  >
+                    <RotateCcw className={`w-4 h-4 ${loadingReviews ? 'animate-spin text-amber-400' : ''}`} />
+                    <span>{t('রিফ্রেশ করুন', 'Refresh Reviews')}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Notification message */}
+            {reviewActionMsg && (
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2 shadow-xs animate-fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>{reviewActionMsg}</span>
+              </div>
+            )}
+
+            {/* 4 Overview Metric Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                <span className="text-[11px] font-bold text-slate-500 block uppercase tracking-wider">{t('মোট রিভিউ', 'Total Reviews')}</span>
+                <span className="text-xl sm:text-2xl font-black text-slate-900 block mt-1">{adminReviews.length}</span>
+                <span className="text-[10px] text-slate-400 mt-1 block">{t('প্ল্যাটফর্মের সর্বমোট রিভিউ', 'All submitted reviews')}</span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-amber-800 block uppercase tracking-wider">{t('অপেক্ষমাণ অনুমোদন', 'Pending Approval')}</span>
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                </div>
+                <span className="text-xl sm:text-2xl font-black text-amber-950 block mt-1">{pendingReviews.length}</span>
+                <span className="text-[10px] text-amber-700 mt-1 block">{t('এডমিন অনুমোদনের অপেক্ষায়', 'Awaiting admin decision')}</span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 shadow-2xs">
+                <span className="text-[11px] font-bold text-emerald-800 block uppercase tracking-wider">{t('অনুমোদিত ও লাইভ', 'Approved & Live')}</span>
+                <span className="text-xl sm:text-2xl font-black text-emerald-950 block mt-1">{approvedReviews.length}</span>
+                <span className="text-[10px] text-emerald-700 mt-1 block">{t('মার্কেটপ্লেসে দৃশ্যমান', 'Live on channel page')}</span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-rose-50/80 border border-rose-200/80 shadow-2xs">
+                <span className="text-[11px] font-bold text-rose-800 block uppercase tracking-wider">{t('বাতিলকৃত রিভিউ', 'Rejected Reviews')}</span>
+                <span className="text-xl sm:text-2xl font-black text-rose-950 block mt-1">{rejectedReviews.length}</span>
+                <span className="text-[10px] text-rose-700 mt-1 block">{t('অপ্রদর্শিত রিভিউ', 'Hidden from public')}</span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-sky-50/80 border border-sky-200/80 shadow-2xs col-span-2 lg:col-span-1">
+                <span className="text-[11px] font-bold text-sky-800 block uppercase tracking-wider">{t('প্ল্যাটফর্ম গড় রেটিং', 'Average Rating')}</span>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-xl sm:text-2xl font-black text-sky-950">{avgRating}</span>
+                  <div className="flex text-amber-400">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                    ))}
+                  </div>
+                </div>
+                <span className="text-[10px] text-sky-700 mt-1 block">{t('৫ এর মধ্যে গড় স্কোর', 'Out of 5.0 stars')}</span>
+              </div>
+            </div>
+
+            {/* Filter Tabs & Search Bar */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
+              {/* Filter Tabs */}
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                {[
+                  { id: 'all', label: t('সব রিভিউ', 'All Reviews'), count: adminReviews.length },
+                  { id: 'pending', label: t('অপেক্ষমাণ অনুমোদন', 'Pending Approval'), count: pendingReviews.length, alert: pendingReviews.length > 0 },
+                  { id: 'approved', label: t('অনুমোদিত', 'Approved'), count: approvedReviews.length },
+                  { id: 'rejected', label: t('বাতিলকৃত', 'Rejected'), count: rejectedReviews.length }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setReviewFilter(tab.id as any)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      reviewFilter === tab.id
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                        reviewFilter === tab.id
+                          ? 'bg-white/20 text-white'
+                          : tab.alert
+                          ? 'bg-amber-500 text-slate-950 animate-pulse'
+                          : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Search Box */}
+              <div className="relative w-full md:w-72">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder={t('ক্রেতা, চ্যানেল বা মন্তব্য সার্চ...', 'Search buyer, channel or review text...')}
+                  value={reviewSearch}
+                  onChange={(e) => setReviewSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:border-amber-500 focus:outline-hidden bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Reviews Cards List */}
+            {loadingReviews ? (
+              <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-2xs">
+                <RotateCcw className="w-8 h-8 text-amber-500 animate-spin mx-auto mb-3" />
+                <p className="text-sm font-bold text-slate-700">{t('রিভিউ ডাটা লোড হচ্ছে...', 'Loading reviews...')}</p>
+              </div>
+            ) : displayedReviews.length === 0 ? (
+              <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-2xs space-y-3">
+                <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                  <Star className="w-7 h-7" />
+                </div>
+                <h3 className="font-extrabold text-base text-slate-800">
+                  {t('কোনো রিভিউ পাওয়া যায়নি', 'No Reviews Found')}
+                </h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  {t(
+                    'বর্তমান ফিল্টারে কোনো রিভিউ নেই। ক্রেতারা চ্যানেল ক্রয়ের পর রিভিউ দিলে এখানে জমা হবে।',
+                    'No reviews match the current filter. Buyer feedback will appear here once submitted.'
+                  )}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {displayedReviews.map((rev) => {
+                  const status = rev.status || 'approved';
+                  const isPending = status === 'pending';
+                  const isApproved = status === 'approved';
+                  const isRejected = status === 'rejected';
+
+                  return (
+                    <div
+                      key={rev.id}
+                      className={`bg-white rounded-2xl p-5 border shadow-2xs transition-all space-y-4 ${
+                        isPending
+                          ? 'border-amber-300 ring-2 ring-amber-100 bg-amber-50/20'
+                          : isRejected
+                          ? 'border-rose-200 bg-rose-50/10'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      {/* Top Header of Card */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                        {/* Reviewer & Channel Info */}
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-white font-extrabold flex items-center justify-center text-sm shadow-2xs shrink-0">
+                            {rev.buyerName?.slice(0, 1).toUpperCase() || 'U'}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-sm text-slate-900">{rev.buyerName}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">
+                                {t('যাচাইকৃত ক্রেতা', 'Verified Buyer')}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                              <span>{t('চ্যানেল:', 'Target Channel:')}</span>
+                              <span className="font-bold text-slate-800">{rev.channelTitle || 'Alif Trust Channel'}</span>
+                              <span>•</span>
+                              <span>{new Date(rev.createdAt).toLocaleString(language === 'BN' ? 'bn-BD' : 'en-US')}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className="flex items-center gap-2 self-start sm:self-auto">
+                          {isPending && (
+                            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black flex items-center gap-1.5 shadow-2xs">
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                              <span>{t('অনুমোদনের অপেক্ষায় (Pending)', 'Pending Admin Approval')}</span>
+                            </span>
+                          )}
+                          {isApproved && (
+                            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-black flex items-center gap-1.5 shadow-2xs">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>{t('অনুমোদিত ও লাইভ (Live)', 'Approved & Live')}</span>
+                            </span>
+                          )}
+                          {isRejected && (
+                            <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-900 border border-rose-300 text-xs font-black flex items-center gap-1.5 shadow-2xs">
+                              <X className="w-3.5 h-3.5 text-rose-600" />
+                              <span>{t('বাতিলকৃত (Rejected)', 'Rejected')}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Ratings Breakdown */}
+                      <div className="flex flex-wrap items-center gap-4 py-1">
+                        {/* Overall Star Rating */}
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200/80">
+                          <div className="flex text-amber-400">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-4 h-4 ${
+                                  star <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs font-black text-amber-950">
+                            {Number(rev.rating).toFixed(1)} / 5.0
+                          </span>
+                        </div>
+
+                        {/* Sub Ratings */}
+                        {rev.communicationRating !== undefined && (
+                          <div className="text-xs text-slate-600 flex items-center gap-1.5">
+                            <span className="font-bold text-slate-700">{t('যোগাযোগ:', 'Communication:')}</span>
+                            <span className="font-black text-slate-900">{rev.communicationRating}/5</span>
+                          </div>
+                        )}
+                        {rev.transferSpeedRating !== undefined && (
+                          <div className="text-xs text-slate-600 flex items-center gap-1.5">
+                            <span className="font-bold text-slate-700">{t('হস্তান্তর গতি:', 'Transfer Speed:')}</span>
+                            <span className="font-black text-slate-900">{rev.transferSpeedRating}/5</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Comment Box */}
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 leading-relaxed font-medium relative">
+                        <MessageSquare className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+                        <p className="pr-6 italic">"{rev.comment}"</p>
+                      </div>
+
+                      {/* Admin Feedback / Rejection Note if present */}
+                      {rev.adminFeedback && (
+                        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                          <span className="font-bold block mb-0.5">{t('এডমিন নোট / কারণ:', 'Admin Feedback / Note:')}</span>
+                          <span>{rev.adminFeedback}</span>
+                        </div>
+                      )}
+
+                      {/* Rejection Note Form Input if currently rejecting */}
+                      {rejectingReviewId === rev.id && (
+                        <div className="p-4 rounded-2xl bg-rose-50/80 border border-rose-300 space-y-3 animate-fade-in">
+                          <label className="block text-xs font-bold text-rose-900">
+                            {t('রিভিউ বাতিলের কারণ বা নোট (ঐচ্ছিক):', 'Reason for Rejecting this Review (Optional):')}
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={adminFeedbackText}
+                            onChange={(e) => setAdminFeedbackText(e.target.value)}
+                            placeholder={t('যেমন: স্প্যাম বা অসংলগ্ন মন্তব্য...', 'e.g. Inappropriate language or spam...')}
+                            className="w-full px-3 py-2 rounded-xl border border-rose-300 text-xs text-slate-900 focus:outline-hidden bg-white"
+                          />
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateReviewStatus(rev.id, 'rejected', adminFeedbackText)}
+                              disabled={actionInProgressId === rev.id}
+                              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>{t('বাতিল নিশ্চিত করুন', 'Confirm Reject')}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRejectingReviewId(null);
+                                setAdminFeedbackText('');
+                              }}
+                              className="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition cursor-pointer"
+                            >
+                              {t('বাতিল', 'Cancel')}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action Buttons Row */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 text-xs">
+                        <div className="text-[11px] text-slate-500 font-mono">
+                          ID: {rev.id}
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* Approve Button */}
+                          {!isApproved && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateReviewStatus(rev.id, 'approved')}
+                              disabled={actionInProgressId === rev.id}
+                              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black transition cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>{t('অনুমোদন দিন (Approve)', 'Approve Review')}</span>
+                            </button>
+                          )}
+
+                          {/* Reject Button */}
+                          {!isRejected && rejectingReviewId !== rev.id && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRejectingReviewId(rev.id);
+                                setAdminFeedbackText('');
+                              }}
+                              disabled={actionInProgressId === rev.id}
+                              className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>{t('বাতিল করুন (Reject)', 'Reject Review')}</span>
+                            </button>
+                          )}
+
+                          {/* Delete Button (Super Admin Only) */}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteReview(rev.id)}
+                            disabled={actionInProgressId === rev.id}
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 transition cursor-pointer"
+                            title={t('রিভিউটি স্থায়ীভাবে মুছে ফেলুন', 'Permanently Delete Review')}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ============================================================== */}
       {/* MODAL: ADD / EDIT CUSTOM PAYMENT GATEWAY & BANK ACCOUNT */}

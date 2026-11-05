@@ -60,7 +60,8 @@ import {
   Lock,
   ArrowUpRight,
   Check,
-  ShieldAlert
+  ShieldAlert,
+  Star
 } from 'lucide-react';
 
 interface AdminDashboardViewProps {
@@ -496,6 +497,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     { id: 'seller_gateways', label: t('সেলার পেমেন্ট গেটওয়ে', 'Seller Gateways'), icon: Wallet, badge: settingsData?.sellerGateways ? settingsData.sellerGateways.filter(g => g.isActive).length : 7, badgeColor: 'bg-emerald-600' },
     { id: 'disputes', label: t('বিরোধ ও আরবিট্রেশন', 'Disputes'), icon: Scale, badge: disputedOrders.length, badgeColor: 'bg-rose-500 animate-pulse' },
     { id: 'policies', label: t('পলিসি ও ফুটার কন্ট্রোল', 'Policies & Legal Center'), icon: FileText, badge: 'লাইভ', badgeColor: 'bg-emerald-600' },
+    { id: 'reviews', label: t('রিভিউ ও রেটিং অনুমোদন', 'Reviews & Moderation'), icon: Star, badge: stats?.pendingReviewsCount || 0, badgeColor: 'bg-amber-500' },
     { id: 'settings', label: t('ওয়েবসাইট সেটিংস', 'Settings'), icon: Settings },
     { id: 'seo', label: t('SEO ও গুগল র‍্যাংকিং', 'SEO & Google Ranking'), icon: Globe, badge: settingsData?.seoRobotsIndex !== false ? 'র‍্যাংকিং ON' : 'OFF', badgeColor: settingsData?.seoRobotsIndex !== false ? 'bg-emerald-600' : 'bg-rose-600' },
     { id: 'security', label: t('নিরাপত্তা ও রোল', 'Security & Roles'), icon: ShieldCheck },
@@ -774,6 +776,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       ? t('বিরোধ নিষ্পত্তি ও আরবিট্রেশন সেন্টার', 'Dispute Arbitration Center')
                       : activeTab === 'policies'
                       ? t('পলিসি, সিকিউরিটি স্ট্যান্ডার্ড ও মার্কেটপ্লেস কন্ট্রোল', 'Policies, Security Standards & Marketplace Governance')
+                      : activeTab === 'reviews'
+                      ? t('রিভিউ ও রেটিং অনুমোদন ও মডারেশন কনসোল', 'Review Moderation & Rating Governance Console')
                       : t('সুপার অ্যাডমিন প্ল্যাটফর্ম সেটিংস', 'Administrative Platform Governance')}
                   </h1>
                 </div>

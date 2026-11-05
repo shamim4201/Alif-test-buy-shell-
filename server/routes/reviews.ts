@@ -5,8 +5,14 @@ import { Review, User } from '../types';
 export const reviewsRouter = express.Router();
 
 reviewsRouter.get('/', (req: Request, res: Response) => {
-  const { sellerId, channelId } = req.query;
-  const reviews = db.getReviews(sellerId as string | undefined, channelId as string | undefined);
+  const { sellerId, channelId, status } = req.query;
+  // By default, public browse shows only approved reviews unless status is specified
+  const targetStatus = status ? (status as string) : 'approved';
+  const reviews = db.getReviews(
+    sellerId as string | undefined,
+    channelId as string | undefined,
+    targetStatus === 'all' ? undefined : (targetStatus as 'pending' | 'approved' | 'rejected')
+  );
   res.json({ reviews });
 });
 
@@ -35,6 +41,9 @@ reviewsRouter.post('/', (req: Request, res: Response) => {
     const finalBuyerName = (user ? user.name : (reviewerName || 'যাচাইকৃত ক্রেতা')).trim();
     const finalBuyerId = user ? user.id : `guest_${Date.now()}`;
 
+    // Admin submissions are auto-approved; users and guests go to pending moderation
+    const initialStatus = user?.role === 'admin' ? 'approved' : 'pending';
+
     const newReview: Review = {
       id: `rev_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       channelId: targetChannelId,
@@ -46,18 +55,20 @@ reviewsRouter.post('/', (req: Request, res: Response) => {
       comment: (comment || 'চ্যানেলটি খুবই ভালো ও সন্তোষজনক ছিল। দ্রুত সব সাপোর্ট পেয়েছি।').trim(),
       communicationRating: Math.min(5, Math.max(1, Number(communicationRating) || 5)),
       transferSpeedRating: Math.min(5, Math.max(1, Number(transferSpeedRating) || 5)),
+      status: initialStatus,
       createdAt: new Date().toISOString()
     };
 
     db.createReview(newReview);
-    return res.status(201).json({ review: newReview });
+    return res.status(201).json({
+      review: newReview,
+      message: initialStatus === 'pending'
+        ? 'আপনার রিভিউ সফলভাবে জমা দেওয়া হয়েছে এবং এডমিন অনুমোদনের জন্য অপেক্ষমাণ। একবার জমা দিলে রিভিউ অপসারণ করা যায় না।'
+        : 'রিভিউ সফলভাবে প্রকাশিত হয়েছে।'
+    });
   }
 
   // Case 2: Order-specific review
-  if (!orderId) {
-    return res.status(400).json({ error: 'channelId or orderId is required' });
-  }
-
   if (!user) {
     return res.status(401).json({ error: 'Please sign in to review an order' });
   }
@@ -75,9 +86,9 @@ reviewsRouter.post('/', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Reviews can only be submitted for completed orders' });
   }
 
-  const existingReviews = db.getReviews().filter(r => r.orderId === orderId);
+  const existingReviews = db.getAllReviews().filter(r => r.orderId === orderId);
   if (existingReviews.length > 0) {
-    return res.status(400).json({ error: 'A review has already been submitted for this order' });
+    return res.status(400).json({ error: 'এই অর্ডারের জন্য রিভিউ ইতিমধ্যে জমা দেওয়া হয়েছে। রিভিউ পরিবর্তন বা অপসারণযোগ্য নয়।' });
   }
 
   const numRating = Math.min(5, Math.max(1, Number(rating) || 5));
@@ -93,9 +104,22 @@ reviewsRouter.post('/', (req: Request, res: Response) => {
     comment: (comment || 'Smooth and transparent transaction. Highly recommended!').trim(),
     communicationRating: Math.min(5, Math.max(1, Number(communicationRating) || 5)),
     transferSpeedRating: Math.min(5, Math.max(1, Number(transferSpeedRating) || 5)),
+    status: user.role === 'admin' ? 'approved' : 'pending',
     createdAt: new Date().toISOString()
   };
 
   db.createReview(newReview);
-  res.status(201).json({ review: newReview });
+  res.status(201).json({
+    review: newReview,
+    message: newReview.status === 'pending'
+      ? 'আপনার রিভিউ সফলভাবে জমা দেওয়া হয়েছে এবং এডমিন অনুমোদনের অপেক্ষায় রয়েছে।'
+      : 'রিভিউ প্রকাশিত হয়েছে।'
+  });
+});
+
+// Explicitly disallow general deletion by buyers/sellers
+reviewsRouter.delete('/:id', (req: Request, res: Response) => {
+  return res.status(403).json({
+    error: 'রিভিউ অপরিবর্তনীয় ও স্থায়ী। ব্যবহারকারী রিভিউ মুছে ফেলতে পারবেন না। কেবল এডমিন প্যানেল থেকে অনুমোদন বা ব্যবস্থাপনা সম্ভব।'
+  });
 });

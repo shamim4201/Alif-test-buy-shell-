@@ -21,6 +21,7 @@ adminRouter.get('/stats', (req: Request, res: Response) => {
   const tickets = db.getTickets();
   const fraudAlerts = db.getFraudAlerts();
   const transactions = db.getTransactions();
+  const allReviews = db.getAllReviews();
 
   const completedOrders = orders.filter(o => o.status === 'completed');
   const disputedOrders = orders.filter(o => o.status === 'disputed');
@@ -31,6 +32,7 @@ adminRouter.get('/stats', (req: Request, res: Response) => {
 
   const pendingListingApprovals = channels.filter(c => c.verificationStatus === 'pending');
   const activeListings = channels.filter(c => c.status === 'active' && c.verificationStatus === 'approved');
+  const pendingReviewsCount = allReviews.filter(r => r.status === 'pending').length;
 
   res.json({
     totalVolume,
@@ -48,7 +50,8 @@ adminRouter.get('/stats', (req: Request, res: Response) => {
     totalTransactions: transactions.length,
     pendingPayoutsCount: orders.filter(o => o.status === 'payment_confirmed' || o.status === 'transfer_in_progress').length,
     openTicketsCount: tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length,
-    fraudAlertsCount: fraudAlerts.filter(a => !a.resolved).length
+    fraudAlertsCount: fraudAlerts.filter(a => !a.resolved).length,
+    pendingReviewsCount
   });
 });
 
@@ -482,3 +485,63 @@ adminRouter.post('/backup/restore', (req: Request, res: Response) => {
   }
   res.json({ success: true, message: 'Database restored successfully' });
 });
+
+// 13. Review Moderation & Approval Management
+adminRouter.get('/reviews', (req: Request, res: Response) => {
+  const { status } = req.query;
+  let reviews = db.getAllReviews();
+  if (status && status !== 'all') {
+    reviews = reviews.filter(r => (r.status || 'approved') === status);
+  }
+  // Sort by newest first
+  reviews = [...reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  res.json({ reviews });
+});
+
+adminRouter.post('/reviews/:id/status', (req: Request, res: Response) => {
+  const { status, adminFeedback } = req.body;
+  if (!status || !['approved', 'rejected', 'pending'].includes(status)) {
+    return res.status(400).json({ error: 'Valid status (approved, rejected, pending) is required' });
+  }
+
+  const updated = db.updateReview(req.params.id, {
+    status,
+    adminFeedback: adminFeedback || undefined
+  });
+
+  if (!updated) {
+    return res.status(404).json({ error: 'Review not found' });
+  }
+
+  const user = (req as any).user;
+  db.createAuditLog({
+    adminId: user?.id || 'usr_admin',
+    adminName: user?.name || 'Super Admin',
+    action: `review_${status}`,
+    targetType: 'review',
+    targetId: updated.id,
+    details: `Review ${updated.id} status changed to ${status}. Reviewer: ${updated.buyerName}, Rating: ${updated.rating}`
+  });
+
+  res.json({ review: updated, message: `রিভিউ স্ট্যাটাস সফলভাবে '${status}' করা হয়েছে।` });
+});
+
+adminRouter.delete('/reviews/:id', (req: Request, res: Response) => {
+  const success = db.deleteReview(req.params.id);
+  if (!success) {
+    return res.status(404).json({ error: 'Review not found' });
+  }
+
+  const user = (req as any).user;
+  db.createAuditLog({
+    adminId: user?.id || 'usr_admin',
+    adminName: user?.name || 'Super Admin',
+    action: 'review_deleted',
+    targetType: 'review',
+    targetId: req.params.id,
+    details: `Review ${req.params.id} permanently deleted by admin`
+  });
+
+  res.json({ success: true, message: 'রিভিউ সফলভাবে মুছে ফেলা হয়েছে।' });
+});
+

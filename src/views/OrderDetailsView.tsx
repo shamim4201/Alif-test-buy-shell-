@@ -1642,20 +1642,41 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
             </div>
           )}
 
-          {/* Quick Admin Testing Switcher if logged in as buyer or seller */}
-          {order.paymentDetails && !isAdmin && (
-            <div className="p-3.5 bg-slate-100 border border-slate-300 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-700">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-slate-600" />
-                <span>{t("এডমিন প্যানেল থেকে পেমেন্ট অনুমোদন বা ফেক তথ্য রিসেট পরীক্ষা করতে চান?", "Want to test approving payment or resetting fake info as Admin?")}</span>
+          {/* Direct WhatsApp SMS to Admin Card (Replaces test Switch to Admin) */}
+          {order.paymentDetails && (
+            <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100 border border-emerald-300 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <MessageCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-xs sm:text-sm text-emerald-950">
+                      {t("এডমিনকে সরাসরি WhatsApp-এ এসএমএস পাঠান", "Send SMS / Message to Admin on WhatsApp")}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-black uppercase tracking-wider">
+                      {t("ফাস্ট ভেরিফাই", "Fast Verify")}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 mt-0.5">
+                    {t(
+                      "পেমেন্ট দ্রুত অনুমোদন ও সাপোর্টের জন্য সরাসরি এডমিনকে WhatsApp-এ মেসেজ পাঠান।",
+                      "Message the admin on WhatsApp with full order details for instant priority verification."
+                    )}
+                  </p>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => quickSwitch('admin')}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs cursor-pointer shadow-2xs"
-              >
-                {t("এডমিন হিসেবে সুইচ করুন", "Switch to Admin")}
-              </button>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={handleNotifyAdminWhatsApp}
+                  className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>{t("WhatsApp-এ এসএমএস দিন", "Send SMS on WhatsApp")}</span>
+                </button>
+              </div>
             </div>
           )}
 

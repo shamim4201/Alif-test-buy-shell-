@@ -397,10 +397,11 @@ export const api = {
   },
 
   // Reviews
-  async getReviews(params?: { sellerId?: string; channelId?: string }): Promise<{ reviews: Review[] }> {
+  async getReviews(params?: { sellerId?: string; channelId?: string; status?: string }): Promise<{ reviews: Review[] }> {
     const query = new URLSearchParams();
     if (params?.sellerId) query.set('sellerId', params.sellerId);
     if (params?.channelId) query.set('channelId', params.channelId);
+    if (params?.status) query.set('status', params.status);
     const qStr = query.toString();
     return callWithFallback(
       () => fetchWithAuth(`/api/reviews${qStr ? `?${qStr}` : ''}`),
@@ -416,7 +417,7 @@ export const api = {
     communicationRating?: number;
     transferSpeedRating?: number;
     reviewerName?: string;
-  }): Promise<{ review: Review }> {
+  }): Promise<{ review: Review; message?: string }> {
     return callWithFallback(
       () =>
         fetchWithAuth('/api/reviews', {
@@ -707,6 +708,37 @@ export const api = {
           body: JSON.stringify(payload)
         }),
       () => clientDbService.restoreAdminBackup(payload)
+    );
+  },
+
+  async getAdminReviews(status?: string): Promise<{ reviews: Review[] }> {
+    const query = new URLSearchParams();
+    if (status && status !== 'all') query.set('status', status);
+    const qStr = query.toString();
+    return callWithFallback(
+      () => fetchWithAuth(`/api/admin/reviews${qStr ? `?${qStr}` : ''}`),
+      () => clientDbService.getAdminReviews(status)
+    );
+  },
+
+  async updateAdminReviewStatus(id: string, status: 'approved' | 'rejected' | 'pending', adminFeedback?: string): Promise<{ review: Review; message: string }> {
+    return callWithFallback(
+      () =>
+        fetchWithAuth(`/api/admin/reviews/${id}/status`, {
+          method: 'POST',
+          body: JSON.stringify({ status, adminFeedback })
+        }),
+      () => clientDbService.updateAdminReviewStatus(id, status, adminFeedback)
+    );
+  },
+
+  async deleteAdminReview(id: string): Promise<{ success: boolean; message: string }> {
+    return callWithFallback(
+      () =>
+        fetchWithAuth(`/api/admin/reviews/${id}`, {
+          method: 'DELETE'
+        }),
+      () => clientDbService.deleteAdminReview(id)
     );
   }
 };

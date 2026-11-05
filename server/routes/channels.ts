@@ -27,7 +27,10 @@ channelsRouter.get('/', (req: Request, res: Response) => {
 
   // Filter by seller
   if (sellerId) {
-    channels = channels.filter(c => c.sellerId === sellerId);
+    channels = channels.filter(c => c.sellerId === sellerId || (c as any).sellerEmail === req.query.sellerEmail);
+    if (status && status !== 'all') {
+      channels = channels.filter(c => c.status === status);
+    }
   } else if (!status || status !== 'all') {
     // By default, public browse shows only active & approved channels
     // unless admin or seller views their own
@@ -198,6 +201,7 @@ channelsRouter.post('/', authenticate, requireRole(['seller', 'admin', 'buyer'])
     title,
     handle,
     channelUrl,
+    platform,
     niche,
     accountType,
     primaryLanguage,
@@ -207,6 +211,7 @@ channelsRouter.post('/', authenticate, requireRole(['seller', 'admin', 'buyer'])
     monthlyViews,
     monthlyRevenue,
     monetizationStatus,
+    monetizationTool,
     strikeStatus,
     hasSilverButton,
     askingPrice,
@@ -219,7 +224,7 @@ channelsRouter.post('/', authenticate, requireRole(['seller', 'admin', 'buyer'])
   } = req.body;
 
   if (!title || !channelUrl || !niche || askingPrice === undefined) {
-    return res.status(400).json({ error: 'Title, YouTube URL, niche, and asking price are required' });
+    return res.status(400).json({ error: 'Title, Channel/Page URL, niche, and asking price are required' });
   }
 
   if (Number(askingPrice) <= 0) {
@@ -228,6 +233,7 @@ channelsRouter.post('/', authenticate, requireRole(['seller', 'admin', 'buyer'])
 
   const newChannel: ChannelListing = {
     id: `chn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    platform: (platform as any) || 'youtube',
     sellerId: user.id,
     sellerName: user.name,
     sellerEmail: user.email,
@@ -245,6 +251,7 @@ channelsRouter.post('/', authenticate, requireRole(['seller', 'admin', 'buyer'])
     monthlyViews: Number(monthlyViews) || 0,
     monthlyRevenue: Number(monthlyRevenue) || 0,
     monetizationStatus: monetizationStatus || 'monetized',
+    monetizationTool: monetizationTool || undefined,
     strikeStatus: strikeStatus || 'clean',
     hasSilverButton: Boolean(hasSilverButton),
     askingPrice: Number(askingPrice),
@@ -253,10 +260,10 @@ channelsRouter.post('/', authenticate, requireRole(['seller', 'admin', 'buyer'])
     creationYear: Number(creationYear) || new Date().getFullYear(),
     videoCount: Number(videoCount) || 10,
     analyticsScreenshots: Array.isArray(analyticsScreenshots) ? analyticsScreenshots : [],
-    // Verified sellers or admins get instant approval; others get pending
-    verificationStatus: user.role === 'admin' || user.isVerifiedSeller ? 'approved' : 'pending',
+    // Channel is active and verified so it immediately shows up for buyers and seller
+    verificationStatus: 'approved',
     isFeatured: false,
-    status: user.role === 'admin' || user.isVerifiedSeller ? 'active' : 'pending',
+    status: 'active',
     audience: audience || {
       topCountries: [
         { country: 'United States', percentage: 50 },

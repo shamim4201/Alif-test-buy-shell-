@@ -161,6 +161,8 @@ export interface Review {
   comment: string;
   communicationRating: number;
   transferSpeedRating: number;
+  status?: 'pending' | 'approved' | 'rejected';
+  adminFeedback?: string;
   createdAt: string;
 }
 
@@ -169,7 +171,7 @@ export interface AdminAuditLog {
   adminId: string;
   adminName: string;
   action: string;
-  targetType: 'channel' | 'user' | 'order' | 'dispute' | 'settings' | 'coupon' | 'ticket' | 'payment';
+  targetType: 'channel' | 'user' | 'order' | 'dispute' | 'settings' | 'coupon' | 'ticket' | 'payment' | 'review';
   targetId: string;
   details: string;
   ipAddress?: string;

@@ -235,16 +235,21 @@ export const clientDbService = {
 
     if (params) {
       if (params.platform && params.platform !== 'all') {
-        channels = channels.filter((c) => (c.platform || '').toLowerCase() === params.platform.toLowerCase());
+        channels = channels.filter((c) => (c.platform || 'youtube').toLowerCase() === params.platform!.toLowerCase());
       }
       if (params.category && params.category !== 'all') {
         channels = channels.filter((c) => c.accountType === params.category || (c as any).category === params.category);
       }
-      if (params.status) {
-        channels = channels.filter((c) => c.status === params.status);
-      }
       if (params.sellerId) {
-        channels = channels.filter((c) => c.sellerId === params.sellerId);
+        channels = channels.filter((c) => c.sellerId === params.sellerId || (c as any).sellerEmail === (params as any).sellerEmail);
+        if (params.status && params.status !== 'all') {
+          channels = channels.filter((c) => c.status === params.status);
+        }
+      } else if (params.status && params.status !== 'all') {
+        channels = channels.filter((c) => c.status === params.status);
+      } else if (!params.status) {
+        // default public view shows active and approved channels
+        channels = channels.filter((c) => c.status === 'active' && c.verificationStatus === 'approved');
       }
       if (params.q) {
         const q = params.q.toLowerCase();
@@ -302,7 +307,7 @@ export const clientDbService = {
       videoCount: payload.videoCount || 50,
       verificationStatus: 'approved',
       analyticsScreenshots: payload.analyticsScreenshots || [],
-      status: 'pending',
+      status: 'active',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -645,18 +650,23 @@ export const clientDbService = {
   },
 
   // 5. Reviews
-  async getReviews(params?: { sellerId?: string; channelId?: string }): Promise<{ reviews: Review[] }> {
+  async getReviews(params?: { sellerId?: string; channelId?: string; status?: string }): Promise<{ reviews: Review[] }> {
     const db = getClientDb();
     let reviews = [...db.reviews];
     if (params?.sellerId) reviews = reviews.filter((r) => r.sellerId === params.sellerId);
     if (params?.channelId) reviews = reviews.filter((r) => r.channelId === params.channelId);
+    const targetStatus = params?.status || 'approved';
+    if (targetStatus !== 'all') {
+      reviews = reviews.filter((r) => (r.status || 'approved') === targetStatus);
+    }
     return { reviews };
   },
 
-  async submitReview(payload: any, token: string | null): Promise<{ review: Review }> {
+  async submitReview(payload: any, token: string | null): Promise<{ review: Review; message?: string }> {
     const db = getClientDb();
     const user = getClientCurrentUser(token);
 
+    const initialStatus = user?.role === 'admin' ? 'approved' : 'pending';
     const newRev: Review = {
       id: `rev_${Date.now()}`,
       orderId: payload.orderId || '',
@@ -669,12 +679,47 @@ export const clientDbService = {
       comment: payload.comment || '',
       communicationRating: payload.communicationRating || 5,
       transferSpeedRating: payload.transferSpeedRating || 5,
+      status: initialStatus,
       createdAt: new Date().toISOString()
     };
 
     db.reviews.unshift(newRev);
     saveClientDb(db);
-    return { review: newRev };
+    return {
+      review: newRev,
+      message: initialStatus === 'pending'
+        ? 'আপনার রিভিউ সফলভাবে জমা দেওয়া হয়েছে এবং এডমিন অনুমোদনের জন্য অপেক্ষমাণ। একবার জমা দিলে রিভিউ অপসারণ করা যায় না।'
+        : 'রিভিউ সফলভাবে প্রকাশিত হয়েছে।'
+    };
+  },
+
+  async getAdminReviews(status?: string): Promise<{ reviews: Review[] }> {
+    const db = getClientDb();
+    let reviews = [...db.reviews];
+    if (status && status !== 'all') {
+      reviews = reviews.filter((r) => (r.status || 'approved') === status);
+    }
+    reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return { reviews };
+  },
+
+  async updateAdminReviewStatus(id: string, status: 'approved' | 'rejected' | 'pending', adminFeedback?: string): Promise<{ review: Review; message: string }> {
+    const db = getClientDb();
+    const rev = db.reviews.find((r) => r.id === id);
+    if (!rev) throw new Error('Review not found');
+    rev.status = status;
+    if (adminFeedback) rev.adminFeedback = adminFeedback;
+    saveClientDb(db);
+    return { review: rev, message: `রিভিউ স্ট্যাটাস '${status}' করা হয়েছে।` };
+  },
+
+  async deleteAdminReview(id: string): Promise<{ success: boolean; message: string }> {
+    const db = getClientDb();
+    const idx = db.reviews.findIndex((r) => r.id === id);
+    if (idx === -1) throw new Error('Review not found');
+    db.reviews.splice(idx, 1);
+    saveClientDb(db);
+    return { success: true, message: 'রিভিউ সফলভাবে মুছে ফেলা হয়েছে।' };
   },
 
   // 6. Admin
@@ -702,7 +747,8 @@ export const clientDbService = {
       totalTransactions: db.transactions?.length || 18,
       pendingPayoutsCount: 3,
       openTicketsCount: db.tickets?.filter((t) => t.status !== 'closed').length || 2,
-      fraudAlertsCount: db.fraudAlerts?.filter((f) => !f.resolved).length || 0
+      fraudAlertsCount: db.fraudAlerts?.filter((f) => !f.resolved).length || 0,
+      pendingReviewsCount: db.reviews?.filter((r) => r.status === 'pending').length || 0
     };
   },
 

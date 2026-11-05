@@ -1381,24 +1381,70 @@ class Database {
   }
 
   // --- Reviews ---
-  public getReviews(sellerId?: string, channelId?: string): Review[] {
+  public getReviews(sellerId?: string, channelId?: string, status?: string): Review[] {
     return this.data.reviews.filter(r => {
       if (sellerId && r.sellerId !== sellerId) return false;
       if (channelId && r.channelId !== channelId) return false;
+      if (status && status !== 'all') {
+        const rStatus = r.status || 'approved';
+        if (rStatus !== status) return false;
+      }
       return true;
     });
   }
 
+  public getAllReviews(): Review[] {
+    return this.data.reviews || [];
+  }
+
   public createReview(review: Review): Review {
+    if (!review.status) {
+      review.status = 'pending';
+    }
     this.data.reviews.unshift(review);
     
-    // Update seller rating and deals count
-    const sellerReviews = this.data.reviews.filter(r => r.sellerId === review.sellerId);
-    const avgRating = Number((sellerReviews.reduce((sum, r) => sum + r.rating, 0) / sellerReviews.length).toFixed(2));
-    this.updateUser(review.sellerId, { rating: avgRating });
+    // Only update seller rating if review is approved
+    if (review.status === 'approved') {
+      const approvedSellerReviews = this.data.reviews.filter(r => r.sellerId === review.sellerId && (r.status === 'approved' || !r.status));
+      if (approvedSellerReviews.length > 0) {
+        const avgRating = Number((approvedSellerReviews.reduce((sum, r) => sum + r.rating, 0) / approvedSellerReviews.length).toFixed(2));
+        this.updateUser(review.sellerId, { rating: avgRating });
+      }
+    }
 
     this.save();
     return review;
+  }
+
+  public updateReview(id: string, updates: Partial<Review>): Review | null {
+    const idx = this.data.reviews.findIndex(r => r.id === id);
+    if (idx === -1) return null;
+    this.data.reviews[idx] = { ...this.data.reviews[idx], ...updates };
+
+    const sellerId = this.data.reviews[idx].sellerId;
+    const approvedSellerReviews = this.data.reviews.filter(r => r.sellerId === sellerId && (r.status === 'approved' || !r.status));
+    if (approvedSellerReviews.length > 0) {
+      const avg = Number((approvedSellerReviews.reduce((sum, r) => sum + r.rating, 0) / approvedSellerReviews.length).toFixed(2));
+      this.updateUser(sellerId, { rating: avg });
+    }
+
+    this.save();
+    return this.data.reviews[idx];
+  }
+
+  public deleteReview(id: string): boolean {
+    const target = this.data.reviews.find(r => r.id === id);
+    if (!target) return false;
+    this.data.reviews = this.data.reviews.filter(r => r.id !== id);
+
+    const approvedSellerReviews = this.data.reviews.filter(r => r.sellerId === target.sellerId && (r.status === 'approved' || !r.status));
+    const avg = approvedSellerReviews.length > 0
+      ? Number((approvedSellerReviews.reduce((sum, r) => sum + r.rating, 0) / approvedSellerReviews.length).toFixed(2))
+      : 5.0;
+    this.updateUser(target.sellerId, { rating: avg });
+
+    this.save();
+    return true;
   }
 
   // --- Admin Settings ---
@@ -2166,6 +2212,30 @@ class Database {
         u.role = 'buyer';
       }
     });
+
+    // Ensure all existing reviews have status and seed sample pending review for admin moderation
+    if (this.data.reviews) {
+      this.data.reviews.forEach(r => {
+        if (!r.status) r.status = 'approved';
+      });
+      const hasPending = this.data.reviews.some(r => r.status === 'pending');
+      if (!hasPending) {
+        this.data.reviews.push({
+          id: 'rev_pending_201',
+          channelId: 'chn_auntie_kitchen',
+          channelTitle: "Auntie's Village Kitchen (আন্টির রান্নাঘর ও গ্রামীণ রেসিপি)",
+          buyerId: 'usr_buyer_1',
+          buyerName: 'তানভীর আহমেদ',
+          sellerId: 'usr_seller_2',
+          rating: 5,
+          comment: 'চ্যানেলের সম্পূর্ণ ওনারশিপ ও AdSense পেমেন্ট প্রুফ সফলভাবে পেয়েছি। অসাধারণ সার্ভিস ও সিকিউর এসক্রো!',
+          communicationRating: 5,
+          transferSpeedRating: 5,
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        });
+      }
+    }
 
     this.save();
   }

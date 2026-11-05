@@ -264,8 +264,12 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
         api.getWebsiteSettings().catch(() => ({ settings: null }))
       ]);
 
-      setMyChannels((channelsRes.channels || []).filter((c: any) => c.sellerId === user?.id));
-      setMySales((ordersRes.orders || []).filter((o: Order) => o.sellerId === user?.id));
+      const fetchedChannels = channelsRes.channels || [];
+      const userChannels = fetchedChannels.filter(
+        (c: any) => c.sellerId === user?.id || (user?.email && c.sellerEmail?.toLowerCase() === user?.email?.toLowerCase())
+      );
+      setMyChannels(userChannels);
+      setMySales((ordersRes.orders || []).filter((o: Order) => o.sellerId === user?.id || (user?.email && (o as any).sellerEmail?.toLowerCase() === user?.email?.toLowerCase())));
 
       if (settingsRes?.settings) {
         setSettings(settingsRes.settings);
@@ -384,7 +388,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
 
     try {
       setSubmitting(true);
-      await api.createChannel({
+      const res = await api.createChannel({
         platform,
         title: title.trim(),
         handle: handle.trim().startsWith('@') ? handle.trim() : `@${handle.trim() || 'channel'}`,
@@ -406,6 +410,10 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
         description: description.trim(),
         analyticsScreenshots: uploadedScreenshots
       });
+
+      if (res?.channel) {
+        setMyChannels((prev) => [res.channel, ...prev.filter((c) => c.id !== res.channel.id)]);
+      }
 
       showToast(t('চ্যানেল সফলভাবে বিক্রির জন্য যুক্ত হয়েছে!', 'Channel submitted for listing!'), 'success');
       setActiveTab('my_listings');

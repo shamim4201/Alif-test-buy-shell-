@@ -206,9 +206,16 @@ export const ReviewSlider: React.FC<ReviewSliderProps> = ({
         transferSpeedRating
       });
 
-      showToast(t('আপনার ট্রাস্টেড রিভিউ সফলভাবে যোগ হয়েছে!', 'Your verified review has been submitted successfully!'), 'success');
-      setReviews((prev) => [res.review, ...prev]);
-      onReviewAdded?.(res.review);
+      showToast(
+        res.message || (res.review.status === 'pending'
+          ? t('আপনার রিভিউ সফলভাবে জমা দেওয়া হয়েছে এবং এডমিন অনুমোদনের পর প্রদর্শিত হবে। একবার জমা দেওয়া রিভিউ অপসারণ করা যায় না।', 'Review submitted for admin approval. Once submitted, reviews cannot be deleted.')
+          : t('আপনার ট্রাস্টেড রিভিউ সফলভাবে যোগ হয়েছে!', 'Your verified review has been submitted successfully!')),
+        'success'
+      );
+      if (res.review.status === 'approved') {
+        setReviews((prev) => [res.review, ...prev]);
+        onReviewAdded?.(res.review);
+      }
       setIsModalOpen(false);
       setComment('');
       setCurrentIndex(0);
