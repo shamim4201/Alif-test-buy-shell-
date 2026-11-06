@@ -99,6 +99,21 @@ export interface OrderTransferStep {
   completedAt?: string;
 }
 
+export interface OrderCustomPaymentRequest {
+  provider: string; // e.g. "Payoneer", "Custom Link", "Invoice"
+  status: 'requested' | 'provided' | 'completed';
+  paymentUrl?: string; // Direct payment URL provided by admin
+  recipientAccount?: string; // Payoneer email or account
+  buyerEmail?: string; // Buyer's Payoneer email
+  amount: number;
+  currency: string;
+  instructions?: string;
+  note?: string;
+  requestedAt?: string;
+  assignedAt?: string;
+  assignedBy?: string;
+}
+
 export interface Order {
   id: string;
   channelId: string;
@@ -126,6 +141,7 @@ export interface Order {
     adminRejectionReason?: string;
     adminReviewedAt?: string;
   };
+  customPaymentRequest?: OrderCustomPaymentRequest;
   transferSteps: OrderTransferStep[];
   disputeReason?: string;
   disputeRaisedBy?: 'buyer' | 'seller';
@@ -256,7 +272,7 @@ export interface CustomPaymentGateway {
   id: string;
   name: string;
   type: 'bdt' | 'usdt';
-  category: 'mobile_banking' | 'bank' | 'crypto';
+  category: 'mobile_banking' | 'bank' | 'crypto' | 'payoneer' | 'other';
   bankName?: string;
   accountHolderName?: string;
   accountNumber: string;
@@ -265,6 +281,7 @@ export interface CustomPaymentGateway {
   swiftCode?: string;
   instructions?: string;
   isActive: boolean;
+  isRequestBased?: boolean;
 }
 
 export interface SellerPaymentGateway {

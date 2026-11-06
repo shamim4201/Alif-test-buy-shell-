@@ -317,6 +317,34 @@ export const api = {
     );
   },
 
+  async requestCustomPaymentLink(
+    orderId: string,
+    payload: { provider?: string; buyerEmail?: string; note?: string; amount?: number; currency?: string }
+  ): Promise<{ order: Order; message: string }> {
+    return callWithFallback(
+      () =>
+        fetchWithAuth(`/api/orders/${orderId}/request-custom-payment`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        }),
+      () => clientDbService.requestCustomPaymentLink(orderId, payload, getStoredToken())
+    );
+  },
+
+  async assignCustomPaymentLink(
+    orderId: string,
+    payload: { provider?: string; paymentUrl: string; recipientAccount?: string; instructions?: string }
+  ): Promise<{ order: Order; message: string }> {
+    return callWithFallback(
+      () =>
+        fetchWithAuth(`/api/orders/${orderId}/assign-custom-payment`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        }),
+      () => clientDbService.assignCustomPaymentLink(orderId, payload, getStoredToken())
+    );
+  },
+
   async setBuyerGoogleEmail(orderId: string, buyerGoogleEmail: string): Promise<{ order: Order }> {
     return callWithFallback(
       () =>

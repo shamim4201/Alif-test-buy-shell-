@@ -1668,6 +1668,17 @@ export const SEED_DATA = {
         "accountHolderName": "Official BSC Vault",
         "instructions": "শুধুমাত্র BNB Smart Chain (BEP-20) নেটওয়ার্কে পাঠান।",
         "isActive": true
+      },
+      {
+        "id": "gw_payoneer_request",
+        "name": "Payoneer (পেওনিয়ার - পেমেন্ট রিকোয়েস্ট / কাস্টম লিংক)",
+        "type": "usdt",
+        "category": "payoneer",
+        "accountNumber": "Request-Based (প্রতি অর্ডারে আলাদা লিংক)",
+        "accountHolderName": "Official Payoneer Merchant Escrow",
+        "instructions": "পেওনিয়ারে প্রতি অর্ডারের জন্য এডমিন আলাদা পেমেন্ট রিকোয়েস্ট বা ইনভয়েস লিংক প্রদান করেন। রিকোয়েস্ট পাঠানোর পর প্রাপ্ত লিংকে ক্লিক করে কার্ড বা পেওনিয়ার দিয়ে সরাসরি পেমেন্ট করুন।",
+        "isActive": true,
+        "isRequestBased": true
       }
     ],
     "sellerGateways": [

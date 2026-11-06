@@ -39,7 +39,8 @@ import {
   RotateCcw,
   MessageCircle,
   Mail,
-  CheckCircle
+  CheckCircle,
+  Link as LinkIcon
 } from 'lucide-react';
 import {
   getWhatsAppUrl,
@@ -133,10 +134,85 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
   // Review modal
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
+  // Payoneer & Custom Payment Link Request States
+  const [buyerPayoneerEmail, setBuyerPayoneerEmail] = useState('');
+  const [buyerPayoneerNote, setBuyerPayoneerNote] = useState('');
+  const [submittingPayoneerRequest, setSubmittingPayoneerRequest] = useState(false);
+  const [assignLinkModalOpen, setAssignLinkModalOpen] = useState(false);
+  const [adminLinkForm, setAdminLinkForm] = useState({
+    provider: 'Payoneer',
+    paymentUrl: '',
+    recipientAccount: '',
+    instructions: 'এই লিংকে ক্লিক করে আপনার কার্ড বা Payoneer ব্যালেন্স দিয়ে নিরাপদ এস্ক্রো পেমেন্ট সম্পন্ন করুন। পেমেন্টের পর TrxID সাবমিট করুন।'
+  });
+  const [savingAdminLink, setSavingAdminLink] = useState(false);
+
   // Admin Escrow Audit
   const [adminRejectModalOpen, setAdminRejectModalOpen] = useState(false);
   const [adminRejectReason, setAdminRejectReason] = useState('');
   const [isProcessingAdminAction, setIsProcessingAdminAction] = useState(false);
+
+  // Buyer requests Payoneer / Custom Payment Link from Admin
+  const handleRequestPayoneerLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order) return;
+    const targetEmail = buyerPayoneerEmail.trim() || user?.email || order.buyerGoogleEmail || '';
+    if (!targetEmail || !targetEmail.includes('@')) {
+      showToast(t('অনুগ্রহ করে একটি সঠিক পেওনিয়ার/বিলিং ইমেইল প্রদান করুন!', 'Please enter a valid billing/Payoneer email!'), 'error');
+      return;
+    }
+
+    try {
+      setSubmittingPayoneerRequest(true);
+      const res = await api.requestCustomPaymentLink(order.id, {
+        provider: 'Payoneer',
+        buyerEmail: targetEmail,
+        amount: order.totalAmount,
+        currency: 'USD',
+        note: buyerPayoneerNote.trim()
+      });
+      setOrder(res.order);
+      showToast(
+        t('✅ Payoneer পেমেন্ট লিংকের আবেদন সফলভাবে এডমিনের কাছে পাঠানো হয়েছে! এডমিন দ্রুত এই অর্ডারের জন্য ডেডিকেটেড লিংক যুক্ত করবেন।', '✅ Payoneer payment link request sent to Admin! A dedicated link will be assigned shortly.'),
+        'success'
+      );
+      loadChat();
+    } catch (err: any) {
+      showToast(err.message || t('পেমেন্ট লিংক রিকোয়েস্ট পাঠাতে ব্যর্থ হয়েছে', 'Failed to request payment link'), 'error');
+    } finally {
+      setSubmittingPayoneerRequest(false);
+    }
+  };
+
+  // Admin assigns / updates dedicated payment link for this order
+  const handleAdminAssignLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order || !adminLinkForm.paymentUrl.trim()) {
+      showToast(t('অনুগ্রহ করে সঠিক পেমেন্ট URL/লিংক দিন!', 'Please provide the payment URL/link!'), 'error');
+      return;
+    }
+
+    try {
+      setSavingAdminLink(true);
+      const res = await api.assignCustomPaymentLink(order.id, {
+        provider: adminLinkForm.provider.trim() || 'Payoneer',
+        paymentUrl: adminLinkForm.paymentUrl.trim(),
+        recipientAccount: adminLinkForm.recipientAccount.trim(),
+        instructions: adminLinkForm.instructions.trim()
+      });
+      setOrder(res.order);
+      setAssignLinkModalOpen(false);
+      showToast(
+        t('✅ এই অর্ডারের জন্য কাস্টম পেমেন্ট লিংক বায়ারকে প্রদান করা হয়েছে!', '✅ Custom payment link assigned and provided to buyer!'),
+        'success'
+      );
+      loadChat();
+    } catch (err: any) {
+      showToast(err.message || t('পেমেন্ট লিংক যুক্ত করতে সমস্যা হয়েছে', 'Failed to assign payment link'), 'error');
+    } finally {
+      setSavingAdminLink(false);
+    }
+  };
 
   const handleNotifyAdminWhatsApp = () => {
     if (!order) return;
@@ -1003,7 +1079,152 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                     </p>
                   </div>
 
+                  {/* CUSTOM PAYMENT / PAYONEER LINK BANNER: PROVIDED */}
+                  {order.customPaymentRequest?.status === 'provided' && (
+                    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-lg space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-black uppercase tracking-wider">
+                              {order.customPaymentRequest.provider || 'Payoneer'} Dedicated Payment Link
+                            </span>
+                            <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping" />
+                          </div>
+                          <h4 className="font-extrabold text-base sm:text-lg mt-1 text-white">
+                            🎉 {t('আপনার অর্ডারের জন্য ডেডিকেটেড পেমেন্ট লিংক প্রস্তুত!', 'Dedicated Payment Link Ready for Your Order!')}
+                          </h4>
+                          <p className="text-xs text-emerald-100 mt-0.5">
+                            {t('এডমিন এই অর্ডারের জন্য বিশেষ পেওনিয়ার/ইনভয়েস লিংক তৈরি করেছেন। নিচের বাটনে ক্লিক করে সরাসরি পে করুন।', 'Admin has assigned a dedicated payment link for this order. Click below to pay directly.')}
+                          </p>
+                        </div>
 
+                        <div className="flex items-center gap-2 shrink-0">
+                          <a
+                            href={order.customPaymentRequest.paymentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-5 py-2.5 rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 active:scale-95 font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-md transition cursor-pointer"
+                          >
+                            <span>💳 {t('পেওনিয়ার এ সরাসরি পে করুন', 'Pay on Payoneer')}</span>
+                            <ExternalLink className="w-4 h-4 text-emerald-700" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(order.customPaymentRequest?.paymentUrl || '', 'custom_pay_url')}
+                            className="px-3 py-2.5 rounded-xl bg-emerald-800/80 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+                            title={t("লিংক কপি করুন", "Copy Link")}
+                          >
+                            {copiedKey === 'custom_pay_url' ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                            <span>{copiedKey === 'custom_pay_url' ? t("কপি হয়েছে", "Copied") : t("কপি", "Copy")}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Instructions & Recipient */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        {order.customPaymentRequest.recipientAccount && (
+                          <div className="p-2.5 rounded-xl bg-black/20 border border-white/10">
+                            <span className="text-[10px] uppercase font-bold text-emerald-200 block">{t('প্রাপক একাউন্ট / ইমেইল:', 'Recipient Account:')}</span>
+                            <span className="font-mono font-bold text-white select-all">{order.customPaymentRequest.recipientAccount}</span>
+                          </div>
+                        )}
+                        <div className="p-2.5 rounded-xl bg-black/20 border border-white/10">
+                          <span className="text-[10px] uppercase font-bold text-emerald-200 block">{t('প্রদেয় পরিমাণ:', 'Amount to Pay:')}</span>
+                          <span className="font-bold text-white font-mono">${(order.customPaymentRequest.amount || order.totalAmount).toLocaleString()} USD</span>
+                        </div>
+                      </div>
+
+                      {order.customPaymentRequest.instructions && (
+                        <div className="p-3 rounded-xl bg-black/20 text-xs text-emerald-50 border border-white/10">
+                          <span className="font-bold block text-white mb-0.5">{t("এডমিনের নির্দেশনা:", "Admin Instructions:")}</span>
+                          {order.customPaymentRequest.instructions}
+                        </div>
+                      )}
+
+                      <p className="text-[11px] text-emerald-100 font-medium">
+                        {t('* পেমেন্ট সম্পন্ন করার পর নিচের বক্সে প্রাপ্ত Payoneer Transaction ID এবং কনফার্মেশন স্ক্রিনশট আপলোড করে সাবমিট করুন।', '* After payment, enter your Payoneer Transaction ID and upload the confirmation screenshot below.')}
+                      </p>
+
+                      {isAdmin && (
+                        <div className="pt-1 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAdminLinkForm({
+                                provider: order.customPaymentRequest?.provider || 'Payoneer',
+                                paymentUrl: order.customPaymentRequest?.paymentUrl || '',
+                                recipientAccount: order.customPaymentRequest?.recipientAccount || '',
+                                instructions: order.customPaymentRequest?.instructions || ''
+                              });
+                              setAssignLinkModalOpen(true);
+                            }}
+                            className="text-[11px] text-white/90 hover:text-white underline font-bold cursor-pointer"
+                          >
+                            ✏️ {t("এডমিন: লিংক পরিবর্তন বা আপডেট করুন", "Admin: Edit / Update Link")}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* CUSTOM PAYMENT / PAYONEER LINK BANNER: REQUESTED (PENDING) */}
+                  {order.customPaymentRequest?.status === 'requested' && (
+                    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300 text-amber-950 space-y-3 shadow-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                            <Clock className="w-5 h-5 animate-spin text-amber-100" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-sm sm:text-base text-amber-950">
+                                {t("⏳ Payoneer পেমেন্ট লিংকের আবেদন এডমিনের কাছে পাঠানো হয়েছে!", "⏳ Payoneer Payment Link Request Sent to Admin!")}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black uppercase tracking-wider">
+                                {t("প্রক্রিয়াধীন", "Pending Link")}
+                              </span>
+                            </div>
+                            <p className="text-xs text-amber-800 mt-1">
+                              {t("বায়ার পেওনিয়ার ইমেইল:", "Buyer Payoneer Email:")} <strong className="font-mono text-amber-950">{order.customPaymentRequest.buyerEmail}</strong>
+                              {order.customPaymentRequest.note && <span className="block mt-0.5 text-[11px] font-medium text-amber-900">নোট: {order.customPaymentRequest.note}</span>}
+                            </p>
+                            <p className="text-[11px] text-amber-800 mt-1">
+                              {t("এডমিন আপনার জন্য পেওনিয়ারে ডেডিকেটেড লিংক প্রস্তুত করে এই পেইজে যুক্ত করবেন। লিংক পাওয়ার পর সরাসরি ক্লিক করে পে করতে পারবেন।", "Admin will assign a unique Payoneer payment link to this order shortly.")}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                          <button
+                            type="button"
+                            onClick={handleNotifyAdminWhatsApp}
+                            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span>{t("WhatsApp-এ জানান", "Notify via WhatsApp")}</span>
+                          </button>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAdminLinkForm({
+                                  provider: order.customPaymentRequest?.provider || 'Payoneer',
+                                  paymentUrl: '',
+                                  recipientAccount: settings?.contactEmail || 'alifsheenshopping@gmail.com',
+                                  instructions: 'এই লিংকে ক্লিক করে কার্ড বা পেওনিয়ার একাউন্ট ব্যালেন্স দিয়ে নিরাপদ এস্ক্রো পেমেন্ট সম্পন্ন করুন। পেমেন্টের পর TrxID সাবমিট করুন।'
+                                });
+                                setAssignLinkModalOpen(true);
+                              }}
+                              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                            >
+                              <LinkIcon className="w-3.5 h-3.5" />
+                              <span>{t("🔗 বায়ারকে লিংক দিন", "Assign Link")}</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Sub-Method Selector & Details based on Active Tab */}
                   {(() => {
@@ -1073,6 +1294,17 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                         accountNumber: settings?.usdtBep20Address || '0x55d398326f99059fF775485246999027B3197955',
                         accountHolderName: 'Official BSC Vault',
                         instructions: "শুধুমাত্র BNB Smart Chain (BEP-20) নেটওয়ার্কে পাঠান।",
+                        isActive: true
+                      },
+                      {
+                        id: 'gw_payoneer_request',
+                        name: 'Payoneer (পেওনিয়ার - পেমেন্ট রিকোয়েস্ট / কাস্টম লিংক)',
+                        type: 'usdt',
+                        category: 'payoneer',
+                        accountNumber: 'Request-Based (প্রতি অর্ডারে আলাদা লিংক)',
+                        accountHolderName: 'Official Payoneer Merchant Escrow',
+                        isRequestBased: true,
+                        instructions: "পেওনিয়ারে প্রতি অর্ডারের জন্য এডমিন আলাদা পেমেন্ট রিকোয়েস্ট বা ইনভয়েস লিংক প্রদান করেন। বায়ার রিকোয়েস্ট পাঠানোর পর প্রাপ্ত লিংকে ক্লিক করে কার্ড বা পেওনিয়ার দিয়ে সরাসরি পেমেন্ট করতে পারবেন।",
                         isActive: true
                       }
                     ];
@@ -1269,43 +1501,210 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                             })}
                           </div>
 
-                          {/* Detailed Crypto Card */}
+                          {/* Detailed Crypto / Payoneer Gateway Card */}
                           {activeGw && (
-                            <div className="p-4 rounded-xl bg-white border-2 border-amber-200 space-y-3.5 shadow-xs">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                                <div>
-                                  <h4 className="font-black text-sm text-slate-900">{activeGw.name}</h4>
-                                  <span className="text-[10px] text-amber-700 font-bold uppercase">
-                                    {t("অফিসিয়াল ক্রিপ্টো এসক্রো ডিপোজিট", "Official Crypto Escrow Vault")}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 self-start sm:self-auto">
-                                  <span className="font-mono font-black text-xs text-slate-900 select-all truncate max-w-[200px]">
-                                    {activeGw.accountNumber}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleCopyText(activeGw.accountNumber, activeGw.id)}
-                                    className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
-                                  >
-                                    {copiedKey === activeGw.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                    <span>{copiedKey === activeGw.id ? t("কপি হয়েছে", "Copied") : t("কপি", "Copy")}</span>
-                                  </button>
-                                </div>
-                              </div>
+                            activeGw.category === 'payoneer' || activeGw.isRequestBased ? (
+                              <div className="p-4 sm:p-5 rounded-2xl bg-white border-2 border-indigo-300 space-y-4 shadow-xs">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
+                                      <h4 className="font-black text-sm text-slate-900">{activeGw.name}</h4>
+                                      <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 text-[10px] font-bold uppercase">
+                                        {t("কাস্টম পেমেন্ট লিংক / ইনভয়েস", "Request-Based Invoice Link")}
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 mt-0.5">
+                                      {t("পেওনিয়ারে প্রতি অর্ডারে আলাদা পেমেন্ট লিংক তৈরি করা হয়।", "Payoneer uses unique custom payment links per order.")}
+                                    </p>
+                                  </div>
 
-                              <div className="text-[11px] text-slate-700 bg-amber-50/60 p-3 rounded-xl border border-amber-100 space-y-1">
-                                <p className="font-bold text-amber-950 flex items-center justify-between">
-                                  <span>{t(`প্রদেয় মোট USDT: ${order.totalAmount.toLocaleString()} USDT`, `Total to Pay: ${order.totalAmount.toLocaleString()} USDT`)}</span>
-                                </p>
-                                {activeGw.instructions && (
-                                  <p className="text-slate-600 pt-0.5">{activeGw.instructions}</p>
+                                  <div className="text-right">
+                                    <span className="text-[11px] text-slate-500 font-bold block">{t("প্রদেয় মোট:", "Amount to Pay:")}</span>
+                                    <span className="font-mono font-black text-sm text-indigo-700">${order.totalAmount.toLocaleString()} USD</span>
+                                  </div>
+                                </div>
+
+                                {order.customPaymentRequest?.status === 'provided' ? (
+                                  <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-300 space-y-3">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                      <div>
+                                        <span className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                          <span>{t("আপনার ডেডিকেটেড Payoneer পেমেন্ট লিংক সক্রিয় আছে!", "Your Dedicated Payoneer Link is Ready!")}</span>
+                                        </span>
+                                        <p className="text-[11px] text-emerald-800 mt-0.5">
+                                          {t("নিচের বাটনে ক্লিক করে কার্ড বা পেওনিয়ার দিয়ে সরাসরি পেমেন্ট সম্পন্ন করুন।", "Click button below to pay directly with credit card or Payoneer.")}
+                                        </p>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <a
+                                          href={order.customPaymentRequest.paymentUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                                        >
+                                          <span>💳 {t("লিংক ওপেন করুন", "Open Payment Link")}</span>
+                                          <ExternalLink className="w-3.5 h-3.5" />
+                                        </a>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleCopyText(order.customPaymentRequest?.paymentUrl || '', 'gw_pay_link')}
+                                          className="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs flex items-center gap-1 cursor-pointer"
+                                        >
+                                          {copiedKey === 'gw_pay_link' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                                          <span>{copiedKey === 'gw_pay_link' ? t("কপি হয়েছে", "Copied") : t("কপি", "Copy")}</span>
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {order.customPaymentRequest.instructions && (
+                                      <div className="text-[11px] text-slate-700 bg-white/80 p-2.5 rounded-lg border border-emerald-200">
+                                        <strong className="text-slate-900">{t("এডমিনের নির্দেশনা: ", "Instructions: ")}</strong>
+                                        {order.customPaymentRequest.instructions}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : order.customPaymentRequest?.status === 'requested' ? (
+                                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 space-y-2.5">
+                                    <div className="flex items-start gap-2.5">
+                                      <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-spin" />
+                                      <div>
+                                        <h5 className="font-bold text-xs text-amber-950">
+                                          {t("লিংক তৈরির আবেদন জমা আছে — এডমিন লিংক তৈরি করছেন", "Link Request Pending — Admin Generating Payment Link")}
+                                        </h5>
+                                        <p className="text-[11px] text-amber-800 mt-0.5">
+                                          {t("বায়ার ইমেইল:", "Buyer Email:")} <strong className="font-mono">{order.customPaymentRequest.buyerEmail}</strong>
+                                        </p>
+                                        <p className="text-[11px] text-amber-700 mt-1">
+                                          {t("এডমিন এই অর্ডারের জন্য বিশেষ পেওনিয়ার পেমেন্ট লিংক তৈরি করে এখানে পাঠিয়ে দেবেন। লিংক প্রস্তুত হলে পেইজ রিফ্রেশ বা মেসেজ পাবেন।", "Admin will assign your link shortly. You can also notify admin via WhatsApp for fast processing.")}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-1">
+                                      <button
+                                        type="button"
+                                        onClick={handleNotifyAdminWhatsApp}
+                                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                                      >
+                                        <MessageCircle className="w-3.5 h-3.5" />
+                                        <span>{t("WhatsApp-এ এডমিনকে জানান", "Notify via WhatsApp")}</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <form onSubmit={handleRequestPayoneerLink} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                                    <div className="space-y-1">
+                                      <span className="font-bold text-xs text-slate-900 block flex items-center gap-1.5">
+                                        <span>📩</span>
+                                        <span>{t("পেওনিয়ার পেমেন্ট লিংকের জন্য রিকোয়েস্ট পাঠান", "Send Request for Payoneer Payment Link")}</span>
+                                      </span>
+                                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                                        {t(
+                                          "পেওনিয়ারে সরাসরি ফিক্সড ওয়ালেট থাকে না। আপনার এই অর্ডারের জন্য এডমিন একটি কাস্টম পেওনিয়ার পেমেন্ট লিংক বা ইনভয়েস তৈরি করে এখানে পাঠিয়ে দেবেন। আবেদন করতে নিচের বক্সে আপনার ইমেইল প্রদান করুন:",
+                                          "Payoneer transactions require an individualized invoice or payment request link. Submit your billing email below so Admin can generate your payment link immediately:"
+                                        )}
+                                      </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                          {t("আপনার পেওনিয়ার বা বিলিং ইমেইল *", "Your Payoneer / Billing Email *")}
+                                        </label>
+                                        <input
+                                          type="email"
+                                          required
+                                          value={buyerPayoneerEmail || user?.email || order.buyerGoogleEmail || ''}
+                                          onChange={(e) => setBuyerPayoneerEmail(e.target.value)}
+                                          placeholder="e.g. yourname@gmail.com"
+                                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-hidden focus:border-indigo-500 font-semibold"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                          {t("অতিরিক্ত কোনো নোট (ঐচ্ছিক)", "Additional Note (Optional)")}
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={buyerPayoneerNote}
+                                          onChange={(e) => setBuyerPayoneerNote(e.target.value)}
+                                          placeholder={t("যেমন: ইনভয়েসে কার্ড পেমেন্ট সক্রিয় রাখুন", "e.g. Please enable credit card in invoice")}
+                                          className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-hidden focus:border-indigo-500"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+                                      <span className="text-[10px] text-slate-500">
+                                        {t("* রিকোয়েস্ট পাঠানোর পর এডমিন পেমেন্ট লিংক অ্যাসাইন করবেন।", "* Admin will generate and attach link to your order.")}
+                                      </span>
+                                      <button
+                                        type="submit"
+                                        disabled={submittingPayoneerRequest}
+                                        className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer disabled:opacity-50"
+                                      >
+                                        {submittingPayoneerRequest ? (
+                                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                          <Send className="w-3.5 h-3.5" />
+                                        )}
+                                        <span>{t("Payoneer পেমেন্ট লিংক রিকোয়েস্ট পাঠান", "Send Payoneer Link Request")}</span>
+                                      </button>
+                                    </div>
+                                  </form>
                                 )}
-                                <p className="text-[10px] text-amber-800 font-semibold pt-1">
-                                  {t("* ক্রিপ্টো ট্রান্সফার শেষে প্রাপ্ত TxHash / Transaction ID এবং কনফার্মেশন স্ক্রিনশট নিচের বক্সে দিন।", "* After transfer, input TxHash and upload confirmation slip below.")}
-                                </p>
+
+                                {/* General Instructions Note */}
+                                <div className="text-[11px] text-slate-700 bg-indigo-50/60 p-3 rounded-xl border border-indigo-100 space-y-1">
+                                  <p className="font-bold text-indigo-950 flex items-center justify-between">
+                                    <span>{t(`প্রদেয় মোট USD: $${order.totalAmount.toLocaleString()} USD`, `Total to Pay: $${order.totalAmount.toLocaleString()} USD`)}</span>
+                                  </p>
+                                  {activeGw.instructions && (
+                                    <p className="text-slate-600 pt-0.5">{activeGw.instructions}</p>
+                                  )}
+                                  <p className="text-[10px] text-indigo-900 font-semibold pt-1">
+                                    {t("* পেওনিয়ার লিংকের মাধ্যমে পেমেন্ট সম্পন্ন করে প্রাপ্ত Payoneer Transaction ID এবং কনফার্মেশন স্ক্রিনশট নিচের বক্সে যুক্ত করুন।", "* After payment, enter your Payoneer Transaction ID and upload proof screenshot below.")}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
+                            ) : (
+                              <div className="p-4 rounded-xl bg-white border-2 border-amber-200 space-y-3.5 shadow-xs">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                                  <div>
+                                    <h4 className="font-black text-sm text-slate-900">{activeGw.name}</h4>
+                                    <span className="text-[10px] text-amber-700 font-bold uppercase">
+                                      {t("অফিসিয়াল ক্রিপ্টো এসক্রো ডিপোজিট", "Official Crypto Escrow Vault")}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 self-start sm:self-auto">
+                                    <span className="font-mono font-black text-xs text-slate-900 select-all truncate max-w-[200px]">
+                                      {activeGw.accountNumber}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCopyText(activeGw.accountNumber, activeGw.id)}
+                                      className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                                    >
+                                      {copiedKey === activeGw.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                      <span>{copiedKey === activeGw.id ? t("কপি হয়েছে", "Copied") : t("কপি", "Copy")}</span>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="text-[11px] text-slate-700 bg-amber-50/60 p-3 rounded-xl border border-amber-100 space-y-1">
+                                  <p className="font-bold text-amber-950 flex items-center justify-between">
+                                    <span>{t(`প্রদেয় মোট USDT: ${order.totalAmount.toLocaleString()} USDT`, `Total to Pay: ${order.totalAmount.toLocaleString()} USDT`)}</span>
+                                  </p>
+                                  {activeGw.instructions && (
+                                    <p className="text-slate-600 pt-0.5">{activeGw.instructions}</p>
+                                  )}
+                                  <p className="text-[10px] text-amber-800 font-semibold pt-1">
+                                    {t("* ক্রিপ্টো ট্রান্সফার শেষে প্রাপ্ত TxHash / Transaction ID এবং কনফার্মেশন স্ক্রিনশট নিচের বক্সে দিন।", "* After transfer, input TxHash and upload confirmation slip below.")}
+                                  </p>
+                                </div>
+                              </div>
+                            )
                           )}
                         </div>
                       );
@@ -1609,6 +2008,24 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* Assign / Edit Custom Payment Link Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdminLinkForm({
+                        provider: order.customPaymentRequest?.provider || 'Payoneer',
+                        paymentUrl: order.customPaymentRequest?.paymentUrl || '',
+                        recipientAccount: order.customPaymentRequest?.recipientAccount || settings?.contactEmail || 'alifsheenshopping@gmail.com',
+                        instructions: order.customPaymentRequest?.instructions || 'এই লিংকে ক্লিক করে আপনার কার্ড বা Payoneer ব্যালেন্স দিয়ে নিরাপদ এস্ক্রো পেমেন্ট সম্পন্ন করুন। পেমেন্টের পর TrxID সাবমিট করুন।'
+                      });
+                      setAssignLinkModalOpen(true);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+                  >
+                    <LinkIcon className="w-4 h-4" />
+                    <span>{order.customPaymentRequest?.status === 'provided' ? t("পেমেন্ট লিংক এডিট", "Edit Payment Link") : t("🔗 কাস্টম পেমেন্ট লিংক দিন", "Assign Payment Link")}</span>
+                  </button>
+
                   {/* Reject & Reset Fake Info Button */}
                   <button
                     type="button"
@@ -1639,6 +2056,44 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* If buyer has not paid yet, but Admin wants to assign Payoneer/Custom Link proactively */}
+          {!order.paymentDetails && (isAdmin || user?.role === 'admin') && (
+            <div className="p-4 rounded-2xl bg-slate-900 border-2 border-indigo-500 text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                  <LinkIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                    <span>{t("এডমিন কন্ট্রোল: Payoneer বা কাস্টম পেমেন্ট লিংক অ্যাসাইন করুন", "Admin Control: Assign Payoneer / Custom Payment Link")}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 text-[10px] font-bold">
+                      {order.customPaymentRequest?.status === 'provided' ? t("সক্রিয় লিংক আছে", "Link Active") : t("নতুন লিংক দিন", "New Link")}
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    {t("প্রতিটি বায়ারকে তাদের নিজস্ব Payoneer পেমেন্ট রিকোয়েস্ট বা ইনভয়েস লিংক দিন। বায়ার সরাসরি লিংকে ক্লিক করে পে করতে পারবে।", "Provide a dedicated Payoneer or custom invoice link for this buyer to pay directly.")}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setAdminLinkForm({
+                    provider: order.customPaymentRequest?.provider || 'Payoneer',
+                    paymentUrl: order.customPaymentRequest?.paymentUrl || '',
+                    recipientAccount: order.customPaymentRequest?.recipientAccount || settings?.contactEmail || 'alifsheenshopping@gmail.com',
+                    instructions: order.customPaymentRequest?.instructions || 'এই লিংকে ক্লিক করে আপনার কার্ড বা Payoneer ব্যালেন্স দিয়ে নিরাপদ এস্ক্রো পেমেন্ট সম্পন্ন করুন। পেমেন্টের পর TrxID সাবমিট করুন।'
+                  });
+                  setAssignLinkModalOpen(true);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs flex items-center gap-2 shadow-md transition cursor-pointer shrink-0"
+              >
+                <LinkIcon className="w-4 h-4" />
+                <span>{order.customPaymentRequest?.status === 'provided' ? t("পেমেন্ট লিংক এডিট করুন", "Edit Payment Link") : t("🔗 বায়ারকে পেমেন্ট লিংক দিন", "Assign Payment Link")}</span>
+              </button>
             </div>
           )}
 
@@ -2154,6 +2609,138 @@ export const OrderDetailsView: React.FC<OrderDetailsViewProps> = ({
                 </span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: ASSIGN CUSTOM PAYMENT / PAYONEER LINK (ADMIN ONLY) */}
+      {/* ============================================================== */}
+      {assignLinkModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-fade-in text-slate-800">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold">
+                  <LinkIcon className="w-5 h-5 text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black tracking-wide">
+                    {t('অর্ডারের জন্য কাস্টম পেমেন্ট লিংক প্রদান করুন', 'Assign Custom Payment Link for Order')}
+                  </h3>
+                  <p className="text-[11px] text-slate-300">
+                    {order.channelTitle} • #{order.id}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssignLinkModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAdminAssignLink} className="p-6 space-y-4 text-xs">
+              {/* Buyer's Request Notice if exists */}
+              {order.customPaymentRequest?.buyerEmail && (
+                <div className="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 space-y-1">
+                  <span className="font-bold block text-[11px] uppercase tracking-wider text-indigo-800">
+                    {t("বায়ারের আবেদন তথ্য:", "Buyer's Request Info:")}
+                  </span>
+                  <p><strong>{t("বায়ার ইমেইল:", "Email:")}</strong> <span className="font-mono">{order.customPaymentRequest.buyerEmail}</span></p>
+                  {order.customPaymentRequest.note && (
+                    <p><strong>{t("বায়ারের নোট:", "Note:")}</strong> {order.customPaymentRequest.note}</p>
+                  )}
+                  {order.customPaymentRequest.requestedAt && (
+                    <p className="text-[10px] text-indigo-700">
+                      {t("আবেদনের সময়:", "Requested At:")} {new Date(order.customPaymentRequest.requestedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('পেমেন্ট গেটওয়ে / প্রদানকারী (Gateway Provider) *', 'Gateway Provider *')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={adminLinkForm.provider}
+                  onChange={(e) => setAdminLinkForm((prev) => ({ ...prev, provider: e.target.value }))}
+                  placeholder="Payoneer, Stripe, Wise, Custom Invoice"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-hidden focus:border-indigo-500 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('নির্দিষ্ট পেমেন্ট / ইনভয়েস লিংক (Unique Payment / Invoice URL) *', 'Unique Payment / Invoice URL *')}
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={adminLinkForm.paymentUrl}
+                  onChange={(e) => setAdminLinkForm((prev) => ({ ...prev, paymentUrl: e.target.value }))}
+                  placeholder="https://pay.payoneer.com/... or https://..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-900 focus:bg-white focus:outline-hidden focus:border-indigo-500 font-semibold"
+                />
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  {t('এই লিংকে ক্লিক করে বায়ার সরাসরি পে করতে পারবে। প্রতিটি বায়ারের জন্য আলাদা লিংক দেওয়া যাবে।', 'Buyer will click this button to pay directly. Assign unique links per order.')}
+                </span>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('প্রাপক একাউন্ট / ইমেইল (Recipient Account / Payoneer Email)', 'Recipient Account / Payoneer Email')}
+                </label>
+                <input
+                  type="text"
+                  value={adminLinkForm.recipientAccount}
+                  onChange={(e) => setAdminLinkForm((prev) => ({ ...prev, recipientAccount: e.target.value }))}
+                  placeholder="e.g. alifsheenpayoneer@gmail.com"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-hidden focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('বায়ারের জন্য বিশেষ নির্দেশনা (Instructions for Buyer)', 'Instructions for Buyer')}
+                </label>
+                <textarea
+                  rows={3}
+                  value={adminLinkForm.instructions}
+                  onChange={(e) => setAdminLinkForm((prev) => ({ ...prev, instructions: e.target.value }))}
+                  placeholder={t("লিংকে ক্লিক করে কার্ড বা পেওনিয়ার একাউন্ট ব্যালেন্স দিয়ে পে করুন...", "Click link to complete payment with card or Payoneer...")}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 focus:bg-white focus:outline-hidden focus:border-indigo-500 resize-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setAssignLinkModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer"
+                >
+                  {t('বাতিল', 'Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingAdminLink}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  {savingAdminLink ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  <span>{t('লিংক সংরক্ষণ ও বায়ারকে পাঠান', 'Assign & Send to Buyer')}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

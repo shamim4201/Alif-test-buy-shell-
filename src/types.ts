@@ -98,6 +98,21 @@ export interface OrderTransferStep {
   completedAt?: string;
 }
 
+export interface OrderCustomPaymentRequest {
+  provider: string; // e.g. "Payoneer", "Custom Link", "Invoice"
+  status: 'requested' | 'provided' | 'completed';
+  paymentUrl?: string; // Direct payment URL provided by admin
+  recipientAccount?: string; // Payoneer email or account
+  buyerEmail?: string; // Buyer's Payoneer email
+  amount: number;
+  currency: string;
+  instructions?: string;
+  note?: string;
+  requestedAt?: string;
+  assignedAt?: string;
+  assignedBy?: string;
+}
+
 export interface Order {
   id: string;
   channelId: string;
@@ -129,6 +144,7 @@ export interface Order {
     adminReviewedAt?: string;
     notes?: string;
   };
+  customPaymentRequest?: OrderCustomPaymentRequest;
   transferSteps: OrderTransferStep[];
   disputeReason?: string;
   disputeRaisedBy?: 'buyer' | 'seller';
@@ -277,10 +293,10 @@ export interface FraudAlert {
 
 export interface CustomPaymentGateway {
   id: string;
-  name: string; // e.g. "City Bank Corporate", "Islami Bank", "Upay Personal", "Binance Pay"
+  name: string; // e.g. "City Bank Corporate", "Islami Bank", "Payoneer (Request Payment)", "Binance Pay"
   type: 'bdt' | 'usdt';
-  category: 'mobile_banking' | 'bank' | 'crypto' | 'other';
-  accountNumber: string; // Account No, Phone No, or Wallet Address
+  category: 'mobile_banking' | 'bank' | 'crypto' | 'payoneer' | 'other';
+  accountNumber: string; // Account No, Phone No, Wallet Address or "Request-Based"
   accountHolderName?: string; // Account Name e.g. "Alif Trust Media Escrow"
   bankName?: string; // e.g. "City Bank PLC"
   branchName?: string; // e.g. "Gulshan-2 Branch"
@@ -289,6 +305,7 @@ export interface CustomPaymentGateway {
   instructions?: string; // Special notes for buyer e.g. "Send via NPSB / BEFTN and use Order ID in remarks"
   qrCodeUrl?: string;
   isActive: boolean;
+  isRequestBased?: boolean; // Whether buyer requests a dedicated payment link for this order
   createdAt?: string;
 }
 

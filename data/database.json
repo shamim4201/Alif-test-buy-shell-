@@ -1496,7 +1496,19 @@
         }
       ],
       "createdAt": "2026-09-12T09:00:00.000Z",
-      "updatedAt": "2026-09-20T11:00:00.000Z"
+      "updatedAt": "2026-11-06T15:37:13.199Z",
+      "customPaymentRequest": {
+        "provider": "Payoneer",
+        "status": "provided",
+        "paymentUrl": "https://pay.payoneer.com/inv/INV-2026-99014",
+        "recipientAccount": "alifsheenpayoneer@gmail.com",
+        "instructions": "Click the link to pay with your credit card or Payoneer account. Once completed, enter the TrxID below.",
+        "buyerEmail": "client.buyer@example.com",
+        "amount": 29925,
+        "currency": "USD",
+        "assignedAt": "2026-11-06T15:37:13.199Z",
+        "assignedBy": "alifsheenshopping@gmail.com"
+      }
     }
   ],
   "messages": [
@@ -1519,6 +1531,26 @@
       "recipientId": "usr_buyer_1",
       "text": "Welcome Mark! I have sent the YouTube Studio Manager invite to buyer.google.brand@gmail.com. Please accept the email invite from Google so the 7-day clock starts.",
       "createdAt": "2026-09-12T14:35:00.000Z"
+    },
+    {
+      "id": "msg_1793979433193",
+      "orderId": "ord_ct_88921",
+      "senderId": "usr_admin_alif",
+      "senderName": "Alif Sheen Admin",
+      "senderRole": "admin",
+      "recipientId": "admin",
+      "text": "📢 আমি এই অর্ডারের জন্য Payoneer-এ পেমেন্ট করতে চাই (অ্যামাউন্ট: $29925 USD, Email: client.buyer@example.com)। অনুগ্রহ করে আমার জন্য একটি ডেডিকেটেড Payoneer পেমেন্ট রিকোয়েস্ট / লিংক প্রদান করুন।",
+      "createdAt": "2026-11-06T15:37:13.193Z"
+    },
+    {
+      "id": "msg_1793979433200",
+      "orderId": "ord_ct_88921",
+      "senderId": "system",
+      "senderName": "ChannelTrust Escrow Management",
+      "senderRole": "admin",
+      "recipientId": "usr_buyer_1",
+      "text": "🎯 এডমিন আপনার অর্ডারের জন্য Payoneer পেমেন্ট লিংক তৈরি করেছেন: https://pay.payoneer.com/inv/INV-2026-99014 (নোট: Click the link to pay with your credit card or Payoneer account. Once completed, enter the TrxID below.)। লিংকে ক্লিক করে আপনার পেমেন্ট সম্পন্ন করুন এবং ট্রানজেকশন আইডি / রসিদ আপলোড করুন।",
+      "createdAt": "2026-11-06T15:37:13.200Z"
     }
   ],
   "reviews": [
@@ -2248,6 +2280,15 @@
     }
   ],
   "notifications": [
+    {
+      "title": "💳 বায়ার Payoneer পেমেন্ট লিংকের আবেদন করেছে (#ord_ct_88921)",
+      "message": "বায়ার: Mark Sterling (Sterling Capital) (client.buyer@example.com)। চ্যানেল: Daily Stoic Wisdom & Focus। পরিমাণ: $29925 USD। অনুগ্রহ করে বায়ারকে Payoneer পেমেন্ট লিংক বা ইনভয়েস প্রদান করুন।",
+      "targetAudience": "all",
+      "type": "urgent",
+      "isActive": true,
+      "id": "notif_1793979433179",
+      "createdAt": "2026-11-06T15:37:13.179Z"
+    },
     {
       "id": "notif_1",
       "title": "🛡️ ১০০% সুরক্ষিত এসক্রো গ্যারান্টি",

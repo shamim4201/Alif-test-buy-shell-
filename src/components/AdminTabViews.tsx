@@ -69,7 +69,8 @@ import {
   Share2,
   Key,
   Star,
-  MessageSquare
+  MessageSquare,
+  Link as LinkIcon
 } from 'lucide-react';
 
 export type TabType =
@@ -218,6 +219,51 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
   });
   const [gatewayFilterType, setGatewayFilterType] = useState<'all' | 'bdt' | 'usdt'>('all');
   const [adminProofModalUrl, setAdminProofModalUrl] = useState<string | null>(null);
+
+  // Admin Assign Custom Payment Link States
+  const [assignLinkModalOpen, setAssignLinkModalOpen] = useState(false);
+  const [selectedOrderForLink, setSelectedOrderForLink] = useState<Order | null>(null);
+  const [customLinkForm, setCustomLinkForm] = useState({
+    provider: 'Payoneer',
+    paymentUrl: '',
+    recipientAccount: '',
+    instructions: 'এই লিংকে ক্লিক করে আপনার কার্ড বা Payoneer ব্যালেন্স দিয়ে নিরাপদ এস্ক্রো পেমেন্ট সম্পন্ন করুন। পেমেন্টের পর TrxID সাবমিট করুন।'
+  });
+  const [savingCustomLink, setSavingCustomLink] = useState(false);
+  const [assignLinkSuccessMsg, setAssignLinkSuccessMsg] = useState<string | null>(null);
+
+  const handleOpenAssignModal = (ord: Order) => {
+    setSelectedOrderForLink(ord);
+    setCustomLinkForm({
+      provider: ord.customPaymentRequest?.provider || 'Payoneer',
+      paymentUrl: ord.customPaymentRequest?.paymentUrl || '',
+      recipientAccount: ord.customPaymentRequest?.recipientAccount || settingsData?.contactEmail || 'alifsheenshopping@gmail.com',
+      instructions: ord.customPaymentRequest?.instructions || 'এই লিংকে ক্লিক করে আপনার কার্ড বা Payoneer ব্যালেন্স দিয়ে নিরাপদ এস্ক্রো পেমেন্ট সম্পন্ন করুন। পেমেন্টের পর TrxID সাবমিট করুন।'
+    });
+    setAssignLinkModalOpen(true);
+  };
+
+  const handleSaveCustomPaymentLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrderForLink || !customLinkForm.paymentUrl.trim()) return;
+    try {
+      setSavingCustomLink(true);
+      const res = await api.assignCustomPaymentLink(selectedOrderForLink.id, {
+        provider: customLinkForm.provider.trim() || 'Payoneer',
+        paymentUrl: customLinkForm.paymentUrl.trim(),
+        recipientAccount: customLinkForm.recipientAccount.trim(),
+        instructions: customLinkForm.instructions.trim()
+      });
+      selectedOrderForLink.customPaymentRequest = res.order.customPaymentRequest;
+      setAssignLinkSuccessMsg(t('✅ এই অর্ডারের জন্য কাস্টম পেমেন্ট লিংক বায়ারকে পাঠানো হয়েছে!', '✅ Custom payment link assigned and sent to buyer!'));
+      setTimeout(() => setAssignLinkSuccessMsg(null), 4000);
+      setAssignLinkModalOpen(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to assign payment link');
+    } finally {
+      setSavingCustomLink(false);
+    }
+  };
 
   // SEO Control Suite States
   const [serpPreviewMode, setSerpPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
@@ -1591,6 +1637,18 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                         }`}>
                           {ORDER_STATUS_TRANSLATIONS[ord.status]?.[language] || ord.status}
                         </span>
+
+                        {/* Custom / Payoneer Link Request Badges */}
+                        {ord.customPaymentRequest?.status === 'requested' && (
+                          <span className="mt-1 block px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
+                            ⏳ Payoneer লিংক আবেদন
+                          </span>
+                        )}
+                        {ord.customPaymentRequest?.status === 'provided' && (
+                          <span className="mt-1 block px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            🔗 পেমেন্ট লিংক সক্রিয়
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
@@ -1604,12 +1662,33 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-right">
-                        <button
-                          onClick={() => onSelectOrder(ord.id)}
-                          className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition cursor-pointer shadow-xs"
-                        >
-                          {t('অর্ডার বিস্তারিত', 'Inspect')}
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAssignModal(ord)}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 border shadow-2xs ${
+                              ord.customPaymentRequest?.status === 'requested'
+                                ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 animate-pulse'
+                                : ord.customPaymentRequest?.status === 'provided'
+                                ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                            }`}
+                            title={t('এই অর্ডারের জন্য Payoneer / কাস্টম পেমেন্ট লিংক দিন', 'Assign Payoneer / Custom Payment Link')}
+                          >
+                            <LinkIcon className="w-3.5 h-3.5" />
+                            <span>
+                              {ord.customPaymentRequest?.status === 'provided'
+                                ? t('লিংক এডিট', 'Edit Link')
+                                : t('লিংক দিন', 'Assign Link')}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => onSelectOrder(ord.id)}
+                            className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition cursor-pointer shadow-xs"
+                          >
+                            {t('অর্ডার বিস্তারিত', 'Inspect')}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -5395,10 +5474,10 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                 <label className="block font-bold text-slate-700 mb-1.5">
                   {t('২. গেটওয়ে ক্যাটাগরি (Gateway Category) *', '2. Category *')}
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
                     type="button"
-                    onClick={() => setGatewayForm((prev) => ({ ...prev, category: 'bank' }))}
+                    onClick={() => setGatewayForm((prev) => ({ ...prev, category: 'bank', isRequestBased: false }))}
                     className={`p-2.5 rounded-xl border font-bold text-center transition flex flex-col items-center gap-1 cursor-pointer ${
                       gatewayForm.category === 'bank'
                         ? 'border-blue-600 bg-blue-50 text-blue-900 shadow-2xs'
@@ -5411,7 +5490,7 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setGatewayForm((prev) => ({ ...prev, category: 'mobile_banking' }))}
+                    onClick={() => setGatewayForm((prev) => ({ ...prev, category: 'mobile_banking', isRequestBased: false }))}
                     className={`p-2.5 rounded-xl border font-bold text-center transition flex flex-col items-center gap-1 cursor-pointer ${
                       gatewayForm.category === 'mobile_banking'
                         ? 'border-pink-600 bg-pink-50 text-pink-900 shadow-2xs'
@@ -5424,7 +5503,7 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setGatewayForm((prev) => ({ ...prev, category: 'crypto' }))}
+                    onClick={() => setGatewayForm((prev) => ({ ...prev, category: 'crypto', isRequestBased: false }))}
                     className={`p-2.5 rounded-xl border font-bold text-center transition flex flex-col items-center gap-1 cursor-pointer ${
                       gatewayForm.category === 'crypto'
                         ? 'border-amber-600 bg-amber-50 text-amber-900 shadow-2xs'
@@ -5433,6 +5512,29 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                   >
                     <Coins className="w-4 h-4 text-amber-600" />
                     <span className="text-[11px]">{t('ক্রিপ্টো ওয়ালেট', 'Crypto Wallet')}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setGatewayForm((prev) => ({
+                        ...prev,
+                        category: 'payoneer',
+                        type: 'usdt',
+                        isRequestBased: true,
+                        name: prev.name || 'Payoneer (পেওনিয়ার)',
+                        accountNumber: prev.accountNumber || 'Request-Based',
+                        instructions: prev.instructions || 'পেওনিয়ার পেমেন্ট লিংক রিকোয়েস্ট পাঠানোর পর এডমিন প্রতিটি অর্ডারের জন্য আলাদা পেমেন্ট লিংক তৈরি করে প্রদান করবেন।'
+                      }))
+                    }
+                    className={`p-2.5 rounded-xl border font-bold text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                      gatewayForm.category === 'payoneer'
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-900 shadow-2xs'
+                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <LinkIcon className="w-4 h-4 text-indigo-600" />
+                    <span className="text-[11px]">{t('Payoneer / লিংক', 'Payoneer / Link')}</span>
                   </button>
                 </div>
               </div>
@@ -5497,6 +5599,31 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                         </button>
                       ))}
                     </>
+                  ) : gatewayForm.category === 'payoneer' ? (
+                    <>
+                      {[
+                        { name: 'Payoneer (পেওনিয়ার - রিকোয়েস্ট লিংক)', note: 'পেওনিয়ার পেমেন্ট লিংক রিকোয়েস্ট পাঠানোর পর এডমিন প্রতিটি অর্ডারের জন্য আলাদা পেমেন্ট লিংক তৈরি করে প্রদান করবেন।' },
+                        { name: 'Wise (ট্রান্সফারওয়াইজ ইনভয়েস লিংক)', note: 'Wise পেমেন্ট রিকোয়েস্ট লিংক প্রদান করা হবে।' },
+                        { name: 'Custom Invoice Payment Link', note: 'প্রতি অর্ডারে আলাদা ডেডিকেটেড ইনভয়েস লিংক প্রদান করা হবে।' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() =>
+                            setGatewayForm((prev) => ({
+                              ...prev,
+                              name: preset.name,
+                              instructions: preset.note,
+                              isRequestBased: true,
+                              accountNumber: 'Request-Based'
+                            }))
+                          }
+                          className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-bold transition cursor-pointer"
+                        >
+                          + {preset.name}
+                        </button>
+                      ))}
+                    </>
                   ) : (
                     <>
                       {[
@@ -5522,6 +5649,20 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                     </>
                   )}
                 </div>
+              </div>
+
+              {/* Request-Based Gateway Toggle */}
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <input
+                  type="checkbox"
+                  id="isRequestBasedToggle"
+                  checked={!!gatewayForm.isRequestBased || gatewayForm.category === 'payoneer'}
+                  onChange={(e) => setGatewayForm((prev) => ({ ...prev, isRequestBased: e.target.checked }))}
+                  className="w-4 h-4 text-indigo-600 rounded cursor-pointer"
+                />
+                <label htmlFor="isRequestBasedToggle" className="text-xs font-bold text-slate-800 cursor-pointer">
+                  {t('রিকোয়েস্ট-ভিত্তিক পেমেন্ট লিংক (প্রতিটি বায়ারের জন্য আলাদা কাস্টম লিংক দেওয়া হবে)', 'Request-Based Payment Link (Admin assigns unique payment link per order)')}
+                </label>
               </div>
 
               {/* Gateway Title */}
@@ -6383,6 +6524,138 @@ export const AdminTabViews: React.FC<AdminTabViewsProps> = ({
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: ASSIGN CUSTOM PAYMENT / PAYONEER LINK (ADMIN) */}
+      {/* ============================================================== */}
+      {assignLinkModalOpen && selectedOrderForLink && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-fade-in text-slate-800">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold">
+                  <LinkIcon className="w-5 h-5 text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black tracking-wide">
+                    {t('অর্ডারের জন্য কাস্টম Payoneer পেমেন্ট লিংক দিন', 'Assign Custom Payoneer / Payment Link')}
+                  </h3>
+                  <p className="text-[11px] text-slate-300">
+                    {selectedOrderForLink.channelTitle} • #{selectedOrderForLink.id}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssignLinkModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomPaymentLink} className="p-6 space-y-4 text-xs">
+              {/* Order and Buyer Summary Card */}
+              <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200 text-indigo-950 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-bold">
+                  <span>{t('ক্রেতা (Buyer):', 'Buyer:')} {selectedOrderForLink.buyerName}</span>
+                  <span className="font-mono font-black text-indigo-800">${selectedOrderForLink.totalAmount.toLocaleString()} USD</span>
+                </div>
+                {selectedOrderForLink.customPaymentRequest?.buyerEmail && (
+                  <p className="text-[11px]">
+                    <strong>{t('আবেদনকৃত ইমেইল:', 'Requested Email:')}</strong> <span className="font-mono">{selectedOrderForLink.customPaymentRequest.buyerEmail}</span>
+                  </p>
+                )}
+                {selectedOrderForLink.customPaymentRequest?.note && (
+                  <p className="text-[11px] text-indigo-900">
+                    <strong>{t('বায়ারের নোট:', 'Buyer Note:')}</strong> {selectedOrderForLink.customPaymentRequest.note}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('পেমেন্ট গেটওয়ে / প্রদানকারী (Gateway Provider) *', 'Gateway Provider *')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={customLinkForm.provider}
+                  onChange={(e) => setCustomLinkForm((prev) => ({ ...prev, provider: e.target.value }))}
+                  placeholder="Payoneer, Stripe, Wise, Custom Invoice"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-hidden focus:border-indigo-500 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('নির্দিষ্ট পেমেন্ট / ইনভয়েস লিংক (Unique Payment / Invoice URL) *', 'Unique Payment / Invoice URL *')}
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={customLinkForm.paymentUrl}
+                  onChange={(e) => setCustomLinkForm((prev) => ({ ...prev, paymentUrl: e.target.value }))}
+                  placeholder="https://pay.payoneer.com/... or https://..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-900 focus:bg-white focus:outline-hidden focus:border-indigo-500 font-semibold"
+                />
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  {t('পেওনিয়ারে তৈরি করা পেমেন্ট রিকোয়েস্ট বা ইনভয়েস লিংক এখানে পেস্ট করুন। বায়ার সরাসরি এটি দিয়ে পে করতে পারবে।', 'Paste the unique Payoneer payment request or invoice URL for this buyer.')}
+                </span>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('প্রাপক একাউন্ট / পেওনিয়ার ইমেইল (Recipient Account / Payoneer Email)', 'Recipient Account / Payoneer Email')}
+                </label>
+                <input
+                  type="text"
+                  value={customLinkForm.recipientAccount}
+                  onChange={(e) => setCustomLinkForm((prev) => ({ ...prev, recipientAccount: e.target.value }))}
+                  placeholder="e.g. alifsheenpayoneer@gmail.com"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:bg-white focus:outline-hidden focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {t('বায়ারের জন্য বিশেষ নির্দেশনা (Instructions for Buyer)', 'Instructions for Buyer')}
+                </label>
+                <textarea
+                  rows={3}
+                  value={customLinkForm.instructions}
+                  onChange={(e) => setCustomLinkForm((prev) => ({ ...prev, instructions: e.target.value }))}
+                  placeholder={t("লিংকে ক্লিক করে কার্ড বা পেওনিয়ার ব্যালেন্স দিয়ে নিরাপদ এস্ক্রো পেমেন্ট সম্পন্ন করুন...", "Click link to pay securely with card or Payoneer balance...")}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 focus:bg-white focus:outline-hidden focus:border-indigo-500 resize-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setAssignLinkModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer"
+                >
+                  {t('বাতিল', 'Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingCustomLink}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  {savingCustomLink ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  <span>{t('লিংক বায়ারের অর্ডারে পাঠিয়ে দিন', 'Assign & Send Link')}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

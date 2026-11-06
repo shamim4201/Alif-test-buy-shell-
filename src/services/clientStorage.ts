@@ -547,6 +547,92 @@ export const clientDbService = {
     return { order };
   },
 
+  async requestCustomPaymentLink(
+    orderId: string,
+    payload: { provider?: string; buyerEmail?: string; note?: string; amount?: number; currency?: string },
+    token: string | null
+  ): Promise<{ order: Order; message: string }> {
+    const db = getClientDb();
+    const user = getClientCurrentUser(token);
+    const order = db.orders.find((o) => o.id === orderId);
+    if (!order) throw new Error('Order not found');
+
+    const provider = payload.provider || 'Payoneer';
+    const email = payload.buyerEmail || user?.email || order.buyerEmail;
+
+    order.customPaymentRequest = {
+      provider,
+      status: 'requested',
+      buyerEmail: email,
+      amount: order.totalAmount,
+      currency: 'USD',
+      note: payload.note,
+      requestedAt: new Date().toISOString()
+    };
+    order.updatedAt = new Date().toISOString();
+
+    db.messages.unshift({
+      id: `msg_${Date.now()}`,
+      orderId: order.id,
+      senderId: user?.id || 'usr_buyer_1',
+      senderName: user?.name || 'Buyer',
+      senderRole: 'buyer',
+      recipientId: 'admin',
+      text: `📢 আমি এই অর্ডারের জন্য ${provider}-এ পেমেন্ট করতে চাই (অ্যামাউন্ট: $${order.totalAmount} USD, Email: ${email})। অনুগ্রহ করে একটি ডেডিকেটেড ${provider} পেমেন্ট লিংক প্রদান করুন।`,
+      createdAt: new Date().toISOString()
+    });
+
+    saveClientDb(db);
+    return {
+      order,
+      message: `${provider} পেমেন্ট রিকোয়েস্ট সফলভাবে এডমিনের কাছে পাঠানো হয়েছে।`
+    };
+  },
+
+  async assignCustomPaymentLink(
+    orderId: string,
+    payload: { provider?: string; paymentUrl: string; recipientAccount?: string; instructions?: string },
+    token: string | null
+  ): Promise<{ order: Order; message: string }> {
+    const db = getClientDb();
+    const user = getClientCurrentUser(token);
+    const order = db.orders.find((o) => o.id === orderId);
+    if (!order) throw new Error('Order not found');
+
+    const provider = payload.provider || order.customPaymentRequest?.provider || 'Payoneer';
+
+    order.customPaymentRequest = {
+      provider,
+      status: 'provided',
+      paymentUrl: payload.paymentUrl.trim(),
+      recipientAccount: payload.recipientAccount?.trim(),
+      instructions: payload.instructions?.trim(),
+      amount: order.totalAmount,
+      currency: 'USD',
+      buyerEmail: order.customPaymentRequest?.buyerEmail || order.buyerEmail,
+      assignedAt: new Date().toISOString(),
+      assignedBy: user?.email || 'admin'
+    };
+    order.updatedAt = new Date().toISOString();
+
+    db.messages.unshift({
+      id: `msg_${Date.now()}`,
+      orderId: order.id,
+      senderId: 'system',
+      senderName: 'ChannelTrust Escrow Management',
+      senderRole: 'admin',
+      recipientId: order.buyerId,
+      text: `🎯 এডমিন আপনার অর্ডারের জন্য ${provider} পেমেন্ট লিংক তৈরি করেছেন: ${payload.paymentUrl.trim()}${payload.instructions ? ` (নোট: ${payload.instructions.trim()})` : ''}। লিংকে ক্লিক করে পেমেন্ট সম্পন্ন করুন।`,
+      createdAt: new Date().toISOString()
+    });
+
+    saveClientDb(db);
+    return {
+      order,
+      message: `বায়ারের অর্ডারের জন্য ${provider} পেমেন্ট লিংক সফলভাবে তৈরি ও প্রদান করা হয়েছে।`
+    };
+  },
+
   async updateTransferStep(orderId: string, stepNumber: number): Promise<{ order: Order }> {
     const db = getClientDb();
     const order = db.orders.find((o) => o.id === orderId);

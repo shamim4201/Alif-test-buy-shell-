@@ -493,3 +493,112 @@ ordersRouter.post('/:id/cancel', authenticate, (req: Request, res: Response) => 
 
   res.json({ order: updated });
 });
+
+// Buyer requests a dedicated Payoneer or custom payment link from admin
+ordersRouter.post('/:id/request-custom-payment', authenticate, (req: Request, res: Response) => {
+  const user = (req as any).user as User;
+  const order = db.getOrderById(req.params.id);
+
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  if (order.buyerId !== user.id && user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only the buyer can request a custom payment link' });
+  }
+
+  const { provider, buyerEmail, note } = req.body;
+  const targetProvider = provider?.trim() || 'Payoneer';
+  const targetEmail = (buyerEmail?.trim() || user.email || order.buyerEmail).toLowerCase();
+
+  const customPaymentRequest = {
+    provider: targetProvider,
+    status: 'requested' as const,
+    buyerEmail: targetEmail,
+    amount: order.totalAmount,
+    currency: 'USD',
+    note: note?.trim() || undefined,
+    requestedAt: new Date().toISOString()
+  };
+
+  const updated = db.updateOrder(order.id, {
+    customPaymentRequest
+  });
+
+  // Automated notification to Admin
+  sendAutomatedAdminNotification({
+    event: 'payment_submitted',
+    title: `💳 বায়ার ${targetProvider} পেমেন্ট লিংকের আবেদন করেছে (#${order.id})`,
+    details: `বায়ার: ${order.buyerName} (${targetEmail})। চ্যানেল: ${order.channelTitle}। পরিমাণ: $${order.totalAmount} USD। অনুগ্রহ করে বায়ারকে ${targetProvider} পেমেন্ট লিংক বা ইনভয়েস প্রদান করুন।`,
+    orderId: order.id,
+    amount: order.totalAmount,
+    customerName: order.buyerName,
+    customerEmail: targetEmail
+  });
+
+  // Chat message to order thread
+  db.createMessage({
+    id: `msg_${Date.now()}`,
+    orderId: order.id,
+    senderId: user.id,
+    senderName: user.name,
+    senderRole: user.role,
+    recipientId: 'admin',
+    text: `📢 আমি এই অর্ডারের জন্য ${targetProvider}-এ পেমেন্ট করতে চাই (অ্যামাউন্ট: $${order.totalAmount} USD, Email: ${targetEmail})। অনুগ্রহ করে আমার জন্য একটি ডেডিকেটেড ${targetProvider} পেমেন্ট রিকোয়েস্ট / লিংক প্রদান করুন।`,
+    createdAt: new Date().toISOString()
+  });
+
+  res.json({
+    order: updated,
+    message: `${targetProvider} পেমেন্ট রিকোয়েস্ট সফলভাবে এডমিনের কাছে পাঠানো হয়েছে। এডমিন লিংক প্রস্তুত করে দেওয়া মাত্র এখানে দেখতে পাবেন।`
+  });
+});
+
+// Admin assigns/generates a custom Payoneer or payment link specifically for this order
+ordersRouter.post('/:id/assign-custom-payment', authenticate, (req: Request, res: Response) => {
+  const user = (req as any).user as User;
+  if (user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only super administrators can assign custom payment links' });
+  }
+
+  const order = db.getOrderById(req.params.id);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+
+  const { provider, paymentUrl, recipientAccount, instructions } = req.body;
+  if (!paymentUrl || !paymentUrl.trim()) {
+    return res.status(400).json({ error: 'Payment URL / Link is required' });
+  }
+
+  const targetProvider = provider?.trim() || order.customPaymentRequest?.provider || 'Payoneer';
+
+  const customPaymentRequest = {
+    provider: targetProvider,
+    status: 'provided' as const,
+    paymentUrl: paymentUrl.trim(),
+    recipientAccount: recipientAccount?.trim() || undefined,
+    instructions: instructions?.trim() || undefined,
+    buyerEmail: order.customPaymentRequest?.buyerEmail || order.buyerEmail,
+    amount: order.totalAmount,
+    currency: 'USD',
+    assignedAt: new Date().toISOString(),
+    assignedBy: user.email
+  };
+
+  const updated = db.updateOrder(order.id, {
+    customPaymentRequest
+  });
+
+  // Chat message notifying buyer
+  db.createMessage({
+    id: `msg_${Date.now()}`,
+    orderId: order.id,
+    senderId: 'system',
+    senderName: 'ChannelTrust Escrow Management',
+    senderRole: 'admin',
+    recipientId: order.buyerId,
+    text: `🎯 এডমিন আপনার অর্ডারের জন্য ${targetProvider} পেমেন্ট লিংক তৈরি করেছেন: ${paymentUrl.trim()}${instructions ? ` (নোট: ${instructions.trim()})` : ''}। লিংকে ক্লিক করে আপনার পেমেন্ট সম্পন্ন করুন এবং ট্রানজেকশন আইডি / রসিদ আপলোড করুন।`,
+    createdAt: new Date().toISOString()
+  });
+
+  res.json({
+    order: updated,
+    message: `বায়ারের অর্ডারের জন্য ${targetProvider} পেমেন্ট লিংক সফলভাবে তৈরি ও প্রদান করা হয়েছে।`
+  });
+});
